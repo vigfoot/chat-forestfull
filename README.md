@@ -48,4 +48,4 @@ Chat-Forestfull은 실시간 커뮤니티를 제공하는 웹 애플리케이션
 ---
 
 ## 21일 개발 일정
-자세한 일정은 [`CHAT_FORESTFULL_21DAY_PLAN.md`](./PLAN.md) 참조.
+자세한 일정은 [`PLAN.md`](./PLAN.md) 참조.
