@@ -1,1 +1,3 @@
-spring.application.name=chat-forestfull
+spring:
+  application:
+    name: chat-forestfull
