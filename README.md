@@ -1,51 +1,97 @@
-# Chat-Forestfull
+# 🌳 chat-forestfull
 
-## 프로젝트 개요
-Chat-Forestfull은 실시간 커뮤니티를 제공하는 웹 애플리케이션입니다.  
-틱톡 팔로워를 기반으로 한 커뮤니티 기능과 포인트 시스템을 결합하여, 사용자에게 특별 채팅 기능과 임시 매니저 권한을 제공합니다.
+[![MVP Status](https://img.shields.io/badge/status-MVP-brightgreen)](https://github.com/)
+[![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
----
-
-## 주요 기능
-
-### 1. 회원가입 / 로그인
-- TikTok OAuth 전용 로그인
-- JWT 기반 인증 (액세스 토큰 30분 / 리프레시 토큰 14일)
-- 사용자 정보: 닉네임, TikTok ID, 팔로우 정보
-
-### 2. 실시간 채팅
-- 단일 채팅방, 선별된 사용자만 접근
-- WebSocket 기반 실시간 메시지 전송
-- 멘션 기능: `@username` 하이라이트
-- 특별 채팅: 사진 + 텍스트 업로드 (임시 매니저 권한 필요)
-
-### 3. 포인트 & 임시 매니저
-- PayPal 결제 연동
-- 포인트 구매 순위 상위 1~3위 사용자에게 1주일간 임시 매니저 권한
-- 권한: mute 기능(1시간, 주 10회), 특별 채팅 가능
-
-### 4. 관리자 기능
-- 사용자 관리: 가입 승인, 강퇴, mute, 임시 매니저 권한 관리
-- 채팅 모니터링: 메시지 스트림 확인, 금칙어 필터링
-- 공지 발행: 상단 배너, 모달 팝업
-- 결제/포인트 관리: 결제 로그 확인, 순위 집계
-- 로그 기록: 파일 + DB, 장애/결제 오류 알림
-
-### 5. 기타
-- 단일 인스턴스 운영 (Frontend + Backend 통합)
-- Docker 컨테이너화
-- Nginx와 기존 HTTPS 인증 활용
+chat-forestfull은 **WebSocket 기반 실시간 커뮤니티 채팅 시스템**입니다.  
+단일 Spring Boot 애플리케이션으로 구현되며, **MVP 개발을 목표**로 합니다.
 
 ---
 
-## 개발 환경
-- **Backend:** Spring Boot WebFlux, JWT, WebSocket
-- **DB:** MariaDB
-- **Frontend:** Thymeleaf
-- **결제:** PayPal REST API + Webhook
-- **배포:** Docker on GE40 노트북
+## 🎯 프로젝트 목표
+
+- **14일 MVP 완성**
+- OAuth(TikTok) 기반 회원 관리
+- 실시간 WebSocket 채팅 구현
+- 사용자 인증(JWT) 적용
+- 관리자 화면(Thymeleaf) 포함
+- Docker 기반 실행 환경 구성 (단일 컨테이너)
+
+> ⚠️ 확장 기능(PayPal 결제, 포인트 등)은 MVP 범위에서 제외되며, 추후 적용 예정입니다.
 
 ---
 
-## 21일 개발 일정
-자세한 일정은 [`PLAN.md`](./PLAN.md) 참조.
+## 📌 주요 기능 (MVP 범위)
+
+### 1️⃣ 회원가입 / 로그인
+- JWT 기반 인증
+- 사용자 정보 저장: 닉네임, 계정 식별 ID
+- 인증된 사용자만 WebSocket 연결 가능
+
+### 2️⃣ 실시간 채팅
+- 단일 채팅방 운영
+- 메시지 타입 구분:
+    - 사용자 메시지
+    - 시스템 메시지 (입장/퇴장)
+- Mentions: `@닉네임` 하이라이트 처리
+
+### 3️⃣ 관리자 기능
+- 관리자 로그인 화면 제공
+- 기능:
+    - 사용자 목록 확인
+    - 강퇴(Ban)
+    - 채팅 제한(mute)
+    - 시스템 공지 발행
+
+### 4️⃣ 로그 기록
+- 채팅 메시지: **DB(JSON) 저장**
+- 시스템 이벤트: **파일 로그** 저장
+- 장애 발생 시:
+    - 관리자 UI 알림
+    - 사용자 UI에는 최소 안내 메시지
+
+---
+
+## 📌 향후 확장 기능
+
+| 기능 | 상태 |
+|------|------|
+| PayPal 결제 | 🚧 향후 적용 예정 |
+| 포인트 시스템 | 🚧 결제 연동 완료 후 개발 |
+| 임시 매니저 권한 시스템 | 🚧 확장 기능 |
+| Webhook 기반 통신 | 🚧 추후 적용 |
+
+---
+
+## 🔒 인증 정책
+
+- JWT 기반 인증
+- WebSocket 핸드셰이크 단계에서 토큰 검증
+- Refresh Token 구조 고려만 유지 (MVP는 Access Token만 사용)
+
+---
+
+## 🧱 기술 스택
+
+| 영역 | 기술 |
+|------|------|
+| Backend | Spring Boot 3.x |
+| View | Thymeleaf + Vanilla JS |
+| DB | MariaDB (MyBatis 기반) |
+| Realtime | WebSocket (STOMP 없이 커스텀 핸들러) |
+| Auth | JWT |
+| Deployment | Docker 단일 컨테이너 |
+
+---
+
+## 🧩 단일 인스턴스 구조
+
+```text
+[ Client Browser ]
+         ↕ (HTTPS / WebSocket)
+[ Nginx Reverse Proxy ]
+         ↕
+[ Spring Boot Application ]
+         ↕
+[ MariaDB ]
+```
