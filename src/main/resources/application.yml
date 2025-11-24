@@ -7,75 +7,49 @@ logging:
   level:
     root: INFO
 jwt:
-  secret: ENC(JWT-SECRET-KEY)
+  secret: ${key}
   expiration: 86400000 # 24 hours
 websocket:
   endpoint: "/ws/chat"
   heartbeat-interval: 30000
+jasypt:
+  encryptor:
+    password: ${key}
+mybatis:
+  mapper-locations: classpath:mapper/**/*.xml
 
 ---
+
 # ==========================================
-# DEV ??
+# DEV
 # ==========================================
 spring:
   config:
     activate:
       on-profile: dev
-
   datasource:
     driver-class-name: org.mariadb.jdbc.Driver
-    url: jdbc:mariadb://localhost:3333/chatforestfull?characterEncoding=UTF-8&useSSL=false&allowPublicKeyRetrieval=true
-    username: james
-    password: ENC(DEV-PASSWORD)
-
-mybatis:
-  mapper-locations: classpath:mapper/**/*.xml
-  type-aliases-package: com.chatforestfull.domain
-  configuration:
-    map-underscore-to-camel-case: true
-    default-fetch-size: 100
-    default-statement-timeout: 5
-
-jasypt:
-  encryptor:
-    password: local-dev-secret
-    algorithm: PBEWITHHMACSHA512ANDAES_256
-
+    url: ENC(yG1Tqfee4n7K6kKe5P2fcKNnppvrCGUCgVw0Sd8R9IGmIix02R0iHNgu9rqb8QQmTZQ+4Tfz6AFOPvl3k3YTIRE10VvXWAW0VBVorJ898lE2dI6E9lKHiRDgyqT9boedE9rzrPlSzy2qVCVNT0xuVrUHJ8tNHhgrTEH/zxBpu70=)
+    username: ENC(T30E6AsfK5xzfaYkCm3y8Wv/LoaGtCDDMnyF2iJ82uTvXBiXrIeDnxXlHFXD9Fij)
+    password: ENC(/QGU/qVE/mgOAn6eUUa0tnEByjxxmR/3VOmFn8nK6bFZ8Qj2wWxyZ1U2IKHnfvIT)
 logging:
   level:
     com.forestfull.chat: DEBUG
-    org.apache.ibatis: DEBUG
-
+    org.apache.ibatis: INFO
 
 ---
 # ==========================================
-# PROD ??
+# PROD
 # ==========================================
 spring:
   config:
     activate:
       on-profile: prod
-
   datasource:
     driver-class-name: org.mariadb.jdbc.Driver
-    url: jdbc:mariadb://mariadb:3306/chatforestfull?useSSL=true&allowPublicKeyRetrieval=true&characterEncoding=UTF-8
-    username: prod_user
-    password: ENC(PROD-PASSWORD)
-
-mybatis:
-  mapper-locations: classpath:mapper/**/*.xml
-  type-aliases-package: com.chatforestfull.domain
-  configuration:
-    map-underscore-to-camel-case: true
-    default-fetch-size: 200
-    default-statement-timeout: 5
-
-
-jasypt:
-  encryptor:
-    password: ${JASYPT_PASSWORD}
-    algorithm: PBEWITHHMACSHA512ANDAES_256
-
+    url: ENC(VkWl/YF55J4zXYZLaaJlUcUXrDrv5b2U+/ss9Vpy3mX6R7DZ1MVxx1enarQDVwLudYIkIEH3/8grOJ77WB3f65n3TCeGdP7aiopR1MKxf9n3HkmXhDW53aTfWVwRAIX9lHIxyYDeoxvoPqTYom5nTg==)
+    username: ENC(gsxvIt9nz90E71Gruu/t/vB0aN/OSoR1yUCVwoKwzUu6SLygOdiPuZPzkVCQI4K5)
+    password: ENC(rVp7g+kSrfAeLKCZUoNBprmGmR2gwPgZomFYKcgITl22DkPvStaP6R6fLQI25G1J)
 logging:
   level:
     com.forestfull.chat: INFO
