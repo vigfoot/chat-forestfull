@@ -1,10 +1,12 @@
 package com.forestfull.config;
 
-/**
- * com.forestfull.config
- *
- * @author vigfoot
- * @version 2025-11-22
- */
+import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
+
+@Configuration
+@EnableWebFluxSecurity
+@RequiredArgsConstructor
 public class SecurityConfig {
+
 }
