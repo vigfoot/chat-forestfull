@@ -1,6 +1,5 @@
 package com.forestfull;
 
-import lombok.RequiredArgsConstructor;
 import org.jasypt.encryption.StringEncryptor;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
