@@ -1,4 +1,4 @@
-package com.forestfull.member;
+package com.forestfull.member.user;
 
 /**
  * com.forestfull.member

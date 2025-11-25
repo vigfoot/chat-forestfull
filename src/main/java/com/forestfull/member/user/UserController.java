@@ -1,4 +1,4 @@
-package com.forestfull.member;
+package com.forestfull.member.user;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.RestController;

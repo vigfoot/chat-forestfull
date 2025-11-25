@@ -3,7 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <title>Temp</title>
-<!--    <script src=""-->
+    <script>
+        const socket = new WebSocket("ws://localhost:8080/ws/chat");
+
+        socket.onopen = () => {
+            console.log("connected");
+            socket.send("hello websocket");
+        };
+
+        socket.onmessage = (event) => {
+            console.log("message:", event.data);
+        };
+    </script>
+
 </head>
 <body>
 

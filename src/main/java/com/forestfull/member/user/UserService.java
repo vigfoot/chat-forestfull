@@ -1,4 +1,4 @@
-package com.forestfull.member;
+package com.forestfull.member.user;
 
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
