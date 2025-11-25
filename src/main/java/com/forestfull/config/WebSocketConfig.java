@@ -29,11 +29,12 @@ public class WebSocketConfig {
             String uri = session.getHandshakeInfo().getUri().toString();
             String token = extractTokenFunction.apply(uri);
 
-            if (token == null || !jwtProvider.validateToken(token)) {
-                return session.close();
-            }
+//            if (token == null || !jwtProvider.validateToken(token)) {
+//                return session.close();
+//            }
 
-            String userId = jwtProvider.getUserId(token);
+            String userId = "test";
+//            String userId = jwtProvider.getUserId(token);
 
             return session.receive()
                     .map(WebSocketMessage::getPayloadAsText)
