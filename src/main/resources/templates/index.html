@@ -4,16 +4,14 @@
     <meta charset="UTF-8">
     <title>Temp</title>
     <script>
-        const socket = new WebSocket("ws://localhost:8080/ws/chat");
+        const ws = new WebSocket("ws://localhost:8080/ws/chat?token=YOUR_JWT");
 
-        socket.onopen = () => {
-            console.log("connected");
-            socket.send("hello websocket");
+        ws.onopen = () => {
+            console.log("Connected");
+            ws.send("hello");
         };
 
-        socket.onmessage = (event) => {
-            console.log("message:", event.data);
-        };
+        ws.onmessage = (msg) => console.log("server:", msg.data);
     </script>
 
 </head>
