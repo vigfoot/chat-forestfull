@@ -9,9 +9,6 @@ logging:
 jwt:
   secret: ${key}
   expiration: 86400000 # 24 hours
-websocket:
-  endpoint: "/ws/chat"
-  heartbeat-interval: 30000
 jasypt:
   encryptor:
     password: ${key}
