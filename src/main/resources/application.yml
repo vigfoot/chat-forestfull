@@ -6,11 +6,11 @@ spring:
 logging:
   level:
     root: INFO
-jwt:
-  secret: ${key}
-  jwks-uri: https://YOUR_AUTH_DOMAIN/.well-known/jwks.json
-  issuer: https://YOUR_AUTH_DOMAIN/
-  audience: your-audience
+tiktok:
+  client-key: ${TIKTOK_CLIENT_KEY}
+  client-secret: ${TIKTOK_CLIENT_SECRET}
+  redirect-uri: https://your-domain.com/auth/tiktok/callback
+  scope: user.info.basic
 jasypt:
   encryptor:
     password: ${key}
