@@ -1,43 +1,37 @@
 package com.forestfull.config;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.socket.WebSocketSession;
 
-import java.time.Instant;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.*;
 
-/**
- * com.forestfull.config
- *
- * @author vigfoot
- * @version 2025-11-27
- */
 @Component
 public class RoomSessionRegistry {
 
-    public record SessionInfo(WebSocketSession session, Instant lastActive) {}
-
-    private final Map<String, Map<String, SessionInfo>> rooms = new ConcurrentHashMap<>();
+    private final Map<String, Map<String, SessionWrapper>> rooms = new HashMap<>();
 
     public void addSession(String roomId, String userId, WebSocketSession session) {
-        rooms.computeIfAbsent(roomId, k -> new ConcurrentHashMap<>())
-                .put(userId, new SessionInfo(session, Instant.now()));
+        rooms.computeIfAbsent(roomId, k -> new HashMap<>())
+                .put(userId, new SessionWrapper(session));
     }
 
     public void removeSession(String roomId, String userId) {
-        Map<String, SessionInfo> room = rooms.get(roomId);
-        if (room != null) room.remove(userId);
+        Map<String, SessionWrapper> room = rooms.get(roomId);
+        if (room != null) {
+            room.remove(userId);
+            if (room.isEmpty()) rooms.remove(roomId);
+        }
     }
 
-    public Map<String, SessionInfo> getRoomSessions(String roomId) {
-        return rooms.getOrDefault(roomId, Map.of());
+    public Map<String, SessionWrapper> getRoomSessions(String roomId) {
+        return rooms.getOrDefault(roomId, Collections.emptyMap());
     }
 
-    public void cleanupExpiredSessions() {
-        Instant now = Instant.now();
-        rooms.values().forEach(room -> room.entrySet().removeIf(e ->
-                now.minusSeconds(300).isAfter(e.getValue().lastActive())
-        ));
+    @AllArgsConstructor
+    @Getter
+    public static class SessionWrapper {
+        private final WebSocketSession session;
     }
 }

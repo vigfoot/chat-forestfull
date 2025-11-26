@@ -1,14 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
 <mapper namespace="com.forestfull.chat.ChatRoomMapper">
     <insert id="joinRoom" parameterType="com.forestfull.member.MemberDTO$Room">
-        INSERT INTO chat_forestfull.member_rooms(room_id, member_id)
-        VALUES(#{roomId}, #{memberId})
+        INSERT INTO chat_forestfull.member_rooms(room_id, member_id, joined_at)
+        VALUES(#{roomId}, #{memberId}, NOW())
+        ON DUPLICATE KEY UPDATE joined_at = NOW()
     </insert>
 
     <delete id="leaveRoom">
-        DELETE FROM chat_forestfull.member_rooms
-        WHERE room_id = #{roomId} AND member_id = #{memberId}
+        DELETE FROM chat_forestfull.member_rooms WHERE room_id = #{roomId} AND member_id = #{memberId}
     </delete>
 </mapper>

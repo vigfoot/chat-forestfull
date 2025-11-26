@@ -1,5 +1,6 @@
 package com.forestfull.config.jwt;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
@@ -7,14 +8,10 @@ import reactor.core.publisher.Mono;
 import java.util.Map;
 
 @Service
+@RequiredArgsConstructor
 public class TikTokTokenValidator {
 
-    private final TikTokProperties props;
     private final WebClient webClient = WebClient.create();
-
-    public TikTokTokenValidator(TikTokProperties props) {
-        this.props = props;
-    }
 
     public Mono<String> validate(String accessToken) {
         return webClient.get()
@@ -23,7 +20,7 @@ public class TikTokTokenValidator {
                 .bodyToMono(Map.class)
                 .map(resp -> {
                     Map<String, Object> data = (Map<String, Object>) resp.get("data");
-                    return (String) data.get("open_id"); // userId 역할
+                    return (String) data.get("open_id"); // WebSocket에서 userId 역할
                 });
     }
 }

@@ -1,5 +1,6 @@
 package com.forestfull.config.jwt;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
 import org.springframework.util.LinkedMultiValueMap;
@@ -11,14 +12,12 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
 @Controller
+@RequiredArgsConstructor
 public class TikTokController {
 
     private final TikTokProperties props;
     private final WebClient webClient = WebClient.create();
 
-    public TikTokController(TikTokProperties props) {
-        this.props = props;
-    }
 
     // 1) 클라이언트를 TikTok 로그인으로 리다이렉트
     @GetMapping("/auth/tiktok/login")

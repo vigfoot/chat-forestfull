@@ -9,7 +9,7 @@ public class MemberDTO {
     @Data
     public static class Member {
         private Long id;
-        private String tiktokUserId;
+        private String tiktokUserId; // OAuth openId
         private String displayName;
         private String profileImage;
         private LocalDateTime createdAt;
@@ -18,6 +18,7 @@ public class MemberDTO {
         private String updatedBy;
     }
 
+    @Data
     public static class Room {
         private Long roomId;
         private Long memberId;

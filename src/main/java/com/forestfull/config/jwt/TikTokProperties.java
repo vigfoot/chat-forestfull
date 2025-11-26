@@ -4,12 +4,6 @@ import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
-/**
- * com.forestfull.config.jwt
- *
- * @author vigfoot
- * @version 2025-11-27
- */
 @Data
 @Component
 @ConfigurationProperties(prefix = "tiktok")

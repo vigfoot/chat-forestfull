@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.forestfull.chat.ChatMessageMapper">
+
+    <insert id="insertMessage" parameterType="com.forestfull.chat.ChatMessageDTO$Message">
+        INSERT INTO chat_forestfull.member_room_messages(room_id, member_id, message, created_by, updated_by, sent_at)
+        VALUES(#{roomId}, #{memberId}, #{message}, #{createdBy}, #{updatedBy}, NOW())
+    </insert>
+
+    <select id="findRecentMessages" resultType="com.forestfull.chat.ChatMessageDTO$Message">
+        SELECT * FROM chat_forestfull.member_room_messages
+        WHERE room_id = #{roomId}
+        ORDER BY sent_at DESC
+        LIMIT #{limit}
+    </select>
+</mapper>
