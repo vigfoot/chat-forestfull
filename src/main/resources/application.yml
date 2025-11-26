@@ -6,11 +6,6 @@ spring:
 logging:
   level:
     root: INFO
-tiktok:
-  client-key: ${TIKTOK_CLIENT_KEY}
-  client-secret: ${TIKTOK_CLIENT_SECRET}
-  redirect-uri: https://your-domain.com/auth/tiktok/callback
-  scope: user.info.basic
 jasypt:
   encryptor:
     password: ${key}
@@ -35,6 +30,11 @@ logging:
   level:
     com.forestfull.chat: DEBUG
     org.apache.ibatis: INFO
+tiktok:
+  client-key: ENC(j4Vs0fY54EW8BoO7YcGnTvOVIBY9IepImn5GE4zbfrr/U1vQr7RaoEo514M3CxOMmBcgf9uERhOqPeLtsBsF5A==)
+  client-secret: ENC(2ppMrCEwzJkDDSQ//vZFDHz/nSct1HsE2MalcXAOcp3P7aMq81tbsj9a8bN4jBh1JQaz0rQ7Y7TIC7W64PiPqlG/BQWXX9uB+SO9cEfDzDM=)
+  redirect-uri: ENC(w1+L6PxjcJ2GOZ10MNGpK4rh5AXIirfXdoQjpc+jzA+9Ufln2vipW4+PcPR5tlFoXqDrW4dAmgCoc0z0sfIbXSLSzT8qmQht8b3mmOOWLuA=)
+  scope: ENC(zKFHbHeSfgRY/QrZazIbNo4EQrfYPv98cfrjWiAaDKfxDWlb5ClrlPjMnZ9mjqWV)
 
 ---
 # ==========================================
@@ -53,3 +53,9 @@ logging:
   level:
     com.forestfull.chat: INFO
     org.apache.ibatis: WARN
+tiktok:
+  client-key: ENC(qrlI0ooMHLhyS/qLxNy2LupkXuFh4w9PHTVV8vG5mcTla9ZnzzH0F85jDPD4tvARSMy3zMldy66cvutm06EZ6g==)
+  client-secret: ENC(3nyUHa/W+SXQP1KB/jGy7+AG2/0uyDpvG59vOJXQtdksOZdddF0ettrFxRhcbhZyvVR06RiI49WrAxiLJ9m2kwqfE/bUezdwxAtBUddcZ3A=)
+  redirect-uri: ENC(YxQdJv9ifWD7obM1Vg09wFa9MfVtGU0XxuwNmGr2MEE3mUd2B+ZSeM6vmAA8j2yz5UXKWspazBZrji5AU58FJTfo6uxZGy00D8qy4opXz0NhwEtLQ+PNtOraVd1r5tkf)
+  scope: ENC(JzLkw8d9LIl88ftdnPIwP6lI2v2x7U51WYT92t2dqmM4ciXL9tgH+SIiCFdwXJQq)
+

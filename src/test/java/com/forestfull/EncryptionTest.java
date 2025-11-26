@@ -15,7 +15,19 @@ class EncryptionTest {
 
     @Test
     void encrypt() {
-        String encrypted = encryptor.encrypt("blarblar");
-        System.out.println("Encrypted: " + encrypted);
+        String[] keyValue = {
+                "client-key", ""
+                , "client-secret", ""
+                , "redirect-uri", ""
+                , "scope", ""
+        };
+
+        for (int i = 0; i < keyValue.length; i = i + 2) {
+            System.out.println(keyValue[i] + ": " + keyValue[i + 1]);
+        }
+
+        for (int i = 0; i < keyValue.length; i = i + 2) {
+            System.out.println(keyValue[i] + ": ENC(" + encryptor.encrypt(keyValue[i + 1]) + ")");
+        }
     }
 }
