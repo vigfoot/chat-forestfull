@@ -2,20 +2,70 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Temp</title>
-    <script>
-        const ws = new WebSocket("ws://localhost:8080/ws/chat?token=YOUR_JWT");
-
-        ws.onopen = () => {
-            console.log("Connected");
-            ws.send("hello");
-        };
-
-        ws.onmessage = (msg) => console.log("server:", msg.data);
-    </script>
-
+    <title>Chat Forestfull - TikTok OAuth</title>
 </head>
 <body>
+<h2>Forestfull Chat</h2>
+<button id="loginBtn">Login with TikTok</button>
 
+<div id="chatContainer" style="display:none;">
+    <h3>Room Chat</h3>
+    <input type="text" id="messageInput" placeholder="Type message"/>
+    <button id="sendBtn">Send</button>
+    <ul id="messages"></ul>
+</div>
+
+<script>
+    const clientKey = "YOUR_TIKTOK_CLIENT_KEY";
+    const redirectUri = "http://localhost:8080"; // 실제 서버 주소로 변경
+
+    let accessToken = null;
+    let memberId = null;
+    let roomId = "1"; // 테스트용 고정 룸 ID
+    let ws = null;
+
+    // 1️⃣ TikTok 로그인 버튼
+    document.getElementById('loginBtn').addEventListener('click', () => {
+        const url = `https://www.tiktok.com/auth/authorize?client_key=${clientKey}&scope=user.info.basic&response_type=code&redirect_uri=${redirectUri}`;
+        window.location.href = url;
+    });
+
+    // 2️⃣ URL에서 code 추출
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get('code');
+    if (code) {
+        fetch('/oauth/callback?code=' + code, { method: 'POST' })
+            .then(res => res.json())
+            .then(member => {
+                console.log('Member:', member);
+                accessToken = code; // 테스트용. 실제는 server에서 발급된 토큰 사용 가능
+                memberId = member.id;
+                document.getElementById('chatContainer').style.display = 'block';
+                initWebSocket();
+            })
+            .catch(err => console.error(err));
+    }
+
+    // 3️⃣ WebSocket 연결
+    function initWebSocket() {
+        ws = new WebSocket(`ws://localhost:8080/ws/chat?token=${accessToken}&room=${roomId}`);
+        ws.onmessage = (event) => {
+            const li = document.createElement('li');
+            li.textContent = event.data;
+            document.getElementById('messages').appendChild(li);
+        };
+        ws.onopen = () => console.log('WebSocket connected');
+        ws.onclose = () => console.log('WebSocket disconnected');
+    }
+
+    // 4️⃣ 메시지 전송
+    document.getElementById('sendBtn').addEventListener('click', () => {
+        const input = document.getElementById('messageInput');
+        if (input.value && ws) {
+            ws.send(input.value);
+            input.value = '';
+        }
+    });
+</script>
 </body>
 </html>
