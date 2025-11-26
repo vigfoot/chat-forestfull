@@ -24,20 +24,6 @@ spring:
   config:
     activate:
       on-profile: dev
-  datasource:
-    driver-class-name: org.mariadb.jdbc.Driver
-    url: ENC(nM4m2oM1wCOYj4utsZFVyb1Tt5RF8Yp9LVWvyGbhG6CTPL7xLGH45dE6gPja7dspTKmp+yCrdSCeQ5MZqEFqHHc9ojkHNCmL0RfXDYYhKU8=)
-    username: ENC(j36HrD1Bt0PQm5Z5goOhm0rUGUk5lVh2cToxIMzEc8Z+3BfU4P6AqMds80jVYnQh)
-    password: ENC(crkjDxKkoDHAe6JQzhQbVB48NsQYO0sPGrAraBNWBvVC//3BTeYAxUJ4wY9OwIuy)
-logging:
-  level:
-    com.forestfull.chat: DEBUG
-    org.apache.ibatis: INFO
-tiktok:
-  client-key: ENC(j4Vs0fY54EW8BoO7YcGnTvOVIBY9IepImn5GE4zbfrr/U1vQr7RaoEo514M3CxOMmBcgf9uERhOqPeLtsBsF5A==)
-  client-secret: ENC(2ppMrCEwzJkDDSQ//vZFDHz/nSct1HsE2MalcXAOcp3P7aMq81tbsj9a8bN4jBh1JQaz0rQ7Y7TIC7W64PiPqlG/BQWXX9uB+SO9cEfDzDM=)
-  redirect-uri: ENC(w1+L6PxjcJ2GOZ10MNGpK4rh5AXIirfXdoQjpc+jzA+9Ufln2vipW4+PcPR5tlFoXqDrW4dAmgCoc0z0sfIbXSLSzT8qmQht8b3mmOOWLuA=)
-  scope: ENC(zKFHbHeSfgRY/QrZazIbNo4EQrfYPv98cfrjWiAaDKfxDWlb5ClrlPjMnZ9mjqWV)
 
 ---
 # ==========================================
