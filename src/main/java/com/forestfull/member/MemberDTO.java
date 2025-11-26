@@ -1,12 +1,26 @@
 package com.forestfull.member;
 
-/**
- * com.forestfull.member
- *
- * @author vigfoot
- * @version 2025-11-22
- */
+import lombok.Data;
+
+import java.time.LocalDateTime;
+
 public class MemberDTO {
 
+    @Data
+    public static class Member {
+        private Long id;
+        private String tiktokUserId;
+        private String displayName;
+        private String profileImage;
+        private LocalDateTime createdAt;
+        private LocalDateTime updatedAt;
+        private String createdBy;
+        private String updatedBy;
+    }
 
+    public static class Room {
+        private Long roomId;
+        private Long memberId;
+        private LocalDateTime joinedAt;
+    }
 }
