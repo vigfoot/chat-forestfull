@@ -10,7 +10,10 @@ jasypt:
   encryptor:
     password: ${key}
 mybatis:
-  mapper-locations: classpath:mapper/**/*.xml
+  mapper-locations: classpath:mapper/*.xml
+  type-aliases-package: com.forestfull.member
+  configuration:
+    map-underscore-to-camel-case: true
 
 ---
 
@@ -23,9 +26,9 @@ spring:
       on-profile: dev
   datasource:
     driver-class-name: org.mariadb.jdbc.Driver
-    url: ENC(yG1Tqfee4n7K6kKe5P2fcKNnppvrCGUCgVw0Sd8R9IGmIix02R0iHNgu9rqb8QQmTZQ+4Tfz6AFOPvl3k3YTIRE10VvXWAW0VBVorJ898lE2dI6E9lKHiRDgyqT9boedE9rzrPlSzy2qVCVNT0xuVrUHJ8tNHhgrTEH/zxBpu70=)
-    username: ENC(T30E6AsfK5xzfaYkCm3y8Wv/LoaGtCDDMnyF2iJ82uTvXBiXrIeDnxXlHFXD9Fij)
-    password: ENC(/QGU/qVE/mgOAn6eUUa0tnEByjxxmR/3VOmFn8nK6bFZ8Qj2wWxyZ1U2IKHnfvIT)
+    url: ENC(nM4m2oM1wCOYj4utsZFVyb1Tt5RF8Yp9LVWvyGbhG6CTPL7xLGH45dE6gPja7dspTKmp+yCrdSCeQ5MZqEFqHHc9ojkHNCmL0RfXDYYhKU8=)
+    username: ENC(j36HrD1Bt0PQm5Z5goOhm0rUGUk5lVh2cToxIMzEc8Z+3BfU4P6AqMds80jVYnQh)
+    password: ENC(crkjDxKkoDHAe6JQzhQbVB48NsQYO0sPGrAraBNWBvVC//3BTeYAxUJ4wY9OwIuy)
 logging:
   level:
     com.forestfull.chat: DEBUG
@@ -46,7 +49,7 @@ spring:
       on-profile: prod
   datasource:
     driver-class-name: org.mariadb.jdbc.Driver
-    url: ENC(VkWl/YF55J4zXYZLaaJlUcUXrDrv5b2U+/ss9Vpy3mX6R7DZ1MVxx1enarQDVwLudYIkIEH3/8grOJ77WB3f65n3TCeGdP7aiopR1MKxf9n3HkmXhDW53aTfWVwRAIX9lHIxyYDeoxvoPqTYom5nTg==)
+    url: ENC(UFLJPC0ERXwtinOfeCjhNvTdLmRdxYF1LM2JXB0ycgTc92QoQv7jUcvXyuQ62+R9cidxgSlPlFP78+MA+7dsLA==)
     username: ENC(gsxvIt9nz90E71Gruu/t/vB0aN/OSoR1yUCVwoKwzUu6SLygOdiPuZPzkVCQI4K5)
     password: ENC(rVp7g+kSrfAeLKCZUoNBprmGmR2gwPgZomFYKcgITl22DkPvStaP6R6fLQI25G1J)
 logging:
@@ -58,4 +61,3 @@ tiktok:
   client-secret: ENC(3nyUHa/W+SXQP1KB/jGy7+AG2/0uyDpvG59vOJXQtdksOZdddF0ettrFxRhcbhZyvVR06RiI49WrAxiLJ9m2kwqfE/bUezdwxAtBUddcZ3A=)
   redirect-uri: ENC(YxQdJv9ifWD7obM1Vg09wFa9MfVtGU0XxuwNmGr2MEE3mUd2B+ZSeM6vmAA8j2yz5UXKWspazBZrji5AU58FJTfo6uxZGy00D8qy4opXz0NhwEtLQ+PNtOraVd1r5tkf)
   scope: ENC(JzLkw8d9LIl88ftdnPIwP6lI2v2x7U51WYT92t2dqmM4ciXL9tgH+SIiCFdwXJQq)
-

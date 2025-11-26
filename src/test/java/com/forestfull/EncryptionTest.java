@@ -5,9 +5,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
-@SpringBootTest(properties = {
-        "spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration"
-})
+@SpringBootTest
 class EncryptionTest {
 
     @Autowired
@@ -16,10 +14,10 @@ class EncryptionTest {
     @Test
     void encrypt() {
         String[] keyValue = {
-                "client-key", ""
-                , "client-secret", ""
-                , "redirect-uri", ""
-                , "scope", ""
+                "driver-class-name", ""
+                , "url", "jdbc:mariadb://"
+                , "username", ""
+                , "password", ""
         };
 
         for (int i = 0; i < keyValue.length; i = i + 2) {
