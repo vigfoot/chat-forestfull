@@ -2,6 +2,12 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
 <mapper namespace="com.forestfull.member.MemberMapper">
+    <insert id="insertMember" parameterType="com.forestfull.member.MemberDTO$Member" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO chat_forestfull.member(tiktok_user_id, display_name, profile_image)
+        VALUES(#{tiktokUserId}, #{displayName}, #{profileImage})
+    </insert>
 
-
+    <select id="findByTikTokUserId" resultType="com.forestfull.member.MemberDTO$Member">
+        SELECT * FROM chat_forestfull.member WHERE tiktok_user_id = #{tiktokUserId}
+    </select>
 </mapper>
