@@ -8,7 +8,9 @@ logging:
     root: INFO
 jwt:
   secret: ${key}
-  expiration: 86400000 # 24 hours
+  jwks-uri: https://YOUR_AUTH_DOMAIN/.well-known/jwks.json
+  issuer: https://YOUR_AUTH_DOMAIN/
+  audience: your-audience
 jasypt:
   encryptor:
     password: ${key}
