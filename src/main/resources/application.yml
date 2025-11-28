@@ -9,6 +9,7 @@ logging:
 jasypt:
   encryptor:
     password: ${key}
+    bean: jasyptStringEncryptor
 mybatis:
   mapper-locations: classpath:mapper/*.xml
   type-aliases-package: com.forestfull.member
@@ -24,7 +25,20 @@ spring:
   config:
     activate:
       on-profile: dev
-
+  datasource:
+    driver-class-name: org.mariadb.jdbc.Driver
+    url: ENC(D7FksKNaRiTUa4BwcImsF6HEHDJkt56FPqERYtMSsPP/eE+IO13MmNkERJEa+ctJ)
+    username: ENC(j+pbKxXJNJx1XP3/lYjPiw==)
+    password: ENC(S4n1c2JlysEjgHtwhkb1ZRneRh/IGFuK)
+logging:
+  level:
+    com.forestfull.chat: DEBUG
+    org.apache.ibatis: INFO
+tiktok:
+  client-key: ENC(ttOlI31RZl027PBkYcqbeDKZyfB6gpv/u7wCJ72Q5AI=)
+  client-secret: ENC(7k8/DfgRorImyUPfE/9/1Rn4q8cnv7SOjm9AR/Ln1NCW7RvhhZTtyQxxS4j+cQ0i)
+  redirect-uri: ENC(q2hrTSQpW0hod3Beq7KrDdkkO0jTt1lZLPXxAkG82B4cTsFiNC0DeKYZ3le2/Nl6)
+  scope: ENC(RkFhNItvhRZgBIQYg2+65RWzDJAXFuFy)
 
 ---
 # ==========================================
@@ -36,15 +50,15 @@ spring:
       on-profile: prod
   datasource:
     driver-class-name: org.mariadb.jdbc.Driver
-    url: ENC(UFLJPC0ERXwtinOfeCjhNvTdLmRdxYF1LM2JXB0ycgTc92QoQv7jUcvXyuQ62+R9cidxgSlPlFP78+MA+7dsLA==)
-    username: ENC(gsxvIt9nz90E71Gruu/t/vB0aN/OSoR1yUCVwoKwzUu6SLygOdiPuZPzkVCQI4K5)
-    password: ENC(rVp7g+kSrfAeLKCZUoNBprmGmR2gwPgZomFYKcgITl22DkPvStaP6R6fLQI25G1J)
+    url: ENC(YvqJNMByP56n98AhiegK57MxQFP8RfIx1U9fOujlhE0yFopiS0RLfw==)
+    username: ENC(ZBZDdAwf0sT/raKt8MfxIw==)
+    password: ENC(fhLYXOLuuJKsDhf5TRIfks71Y+AfHgSK)
 logging:
   level:
     com.forestfull.chat: INFO
     org.apache.ibatis: WARN
 tiktok:
-  client-key: ENC(qrlI0ooMHLhyS/qLxNy2LupkXuFh4w9PHTVV8vG5mcTla9ZnzzH0F85jDPD4tvARSMy3zMldy66cvutm06EZ6g==)
-  client-secret: ENC(3nyUHa/W+SXQP1KB/jGy7+AG2/0uyDpvG59vOJXQtdksOZdddF0ettrFxRhcbhZyvVR06RiI49WrAxiLJ9m2kwqfE/bUezdwxAtBUddcZ3A=)
-  redirect-uri: ENC(YxQdJv9ifWD7obM1Vg09wFa9MfVtGU0XxuwNmGr2MEE3mUd2B+ZSeM6vmAA8j2yz5UXKWspazBZrji5AU58FJTfo6uxZGy00D8qy4opXz0NhwEtLQ+PNtOraVd1r5tkf)
-  scope: ENC(JzLkw8d9LIl88ftdnPIwP6lI2v2x7U51WYT92t2dqmM4ciXL9tgH+SIiCFdwXJQq)
+  client-key: ENC(WiVfQrnIvUljbrkCVLu+Kv+z8NQPN1f5QcvInHIhBKg=)
+  client-secret: ENC(uYKLrBXih3wkmb+7FhLk0sv9P+QMQjbL4YyIqgb4SgCk61XVoSY2Vd401uf68YhK)
+  redirect-uri: ENC(ZEljp+4CHPI8Jp0IVKqppnqiPKFZ1m7p2LGOlweH7CZUwlCWKx5mpIRTU+RV4vIz)
+  scope: ENC(sK07a57NUiOyrUqKitiDcHRU+CbjdOEv)
