@@ -1,7 +1,6 @@
 package com.forestfull.common.file;
 
 import com.forestfull.common.ResponseException;
-import io.netty.util.internal.StringUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -13,8 +12,6 @@ import java.io.File;
 import java.io.IOException;
 import java.time.Clock;
 import java.time.LocalDateTime;
-import java.time.Month;
-import java.time.ZoneId;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -45,7 +42,7 @@ public class FileService {
                 .toList();
     }
 
-    public ResponseException uploadFile(MultipartFile file, String type, String fileName) throws IOException {
+    public ResponseException saveFile(MultipartFile file, String type, String fileName) throws IOException {
         if (!StringUtils.hasText(fileName) || fileName.length() > 255)
             return ResponseException.fail("no file name, check please");
 
@@ -57,7 +54,7 @@ public class FileService {
         File dest = new File(absolutePath + directory);
         file.transferTo(dest);
 
-        fileMapper.insertFile(FileDTO.builder()
+        fileMapper.saveFile(FileDTO.builder()
                 .type(type)
                 .name(fileName)
                 .directory(directory)
@@ -71,6 +68,7 @@ public class FileService {
         FileDTO fileById = getFileById(id);
         if (Objects.isNull(fileById)) return ResponseException.fail("no file id, check please");
 
+        fileMapper.deleteFile(id);
         getFile(fileById.getDirectory()).deleteOnExit();
 
         return ResponseException.ok();

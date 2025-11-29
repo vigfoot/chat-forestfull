@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.forestfull.common.file.FileMapper">
+    <select id="getFileById" parameterType="long" resultType="com.forestfull.common.file.FileDTO">
+        SELECT
+            f.id
+            , f.type
+            , f.name
+            , f.directory
+            , f.uploaded_at
+        FROM
+            chat_forestfull.file f
+        WHERE
+            f.id = #{id}
+    </select>
+
+    <select id="getEmojiList" parameterType="string" resultType="com.forestfull.common.file.FileDTO">
+        SELECT
+            f.id
+             , f.type
+             , f.name
+             , f.directory
+             , f.uploaded_at
+        FROM
+            chat_forestfull.file f
+        WHERE
+            f.type = 'EMOJI'
+    </select>
+
+    <insert id="saveFile" parameterType="com.forestfull.common.file.FileDTO" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO chat_forestfull.file(type, name, directory)
+        VALUES (#{type}, #{name}, #{directory})
+    </insert>
+
+    <delete id="deleteFile" parameterType="long">
+        DELETE f FROM chat_forestfull.file f WHERE f.id = #{id}
+    </delete>
+</mapper>
