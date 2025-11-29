@@ -26,6 +26,9 @@
             chat_forestfull.file f
         WHERE
             f.type = 'EMOJI'
+            <if test='emojiFileName != "" and emojiFileName != null'>
+                AND f.name LIKE CONCAT('%', #{emojiFileName},'%');
+            </if>
     </select>
 
     <insert id="saveFile" parameterType="com.forestfull.common.file.FileDTO" useGeneratedKeys="true" keyProperty="id">

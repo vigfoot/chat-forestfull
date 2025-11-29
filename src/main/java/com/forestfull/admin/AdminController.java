@@ -6,6 +6,7 @@ import com.forestfull.common.file.FileService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.multipart.MultipartFile;
@@ -29,5 +30,9 @@ public class AdminController {
         }
     }
 
-
+    @DeleteMapping("/file/emoji/{id}")
+    Mono<ResponseEntity<ResponseException>> deleteEmoji(@PathVariable Long id) {
+        final ResponseException result = fileService.deleteFile(id);
+        return Mono.just(result.isSuccess() ? ResponseEntity.ok(result) : ResponseEntity.badRequest().body(result));
+    }
 }

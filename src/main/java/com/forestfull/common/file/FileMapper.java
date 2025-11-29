@@ -10,7 +10,7 @@ public interface FileMapper {
 
     FileDTO getFileById(@Param("id") Long id);
 
-    List<FileDTO> getEmojiList(@Param("id") String emojiFileName);
+    List<FileDTO> getEmojiList(@Param("emojiFileName") String emojiFileName);
 
     void saveFile(FileDTO dto);
 
