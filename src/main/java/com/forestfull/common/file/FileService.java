@@ -10,6 +10,9 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.Collections;
@@ -46,18 +49,27 @@ public class FileService {
         if (!StringUtils.hasText(fileName) || fileName.length() > 255)
             return ResponseException.fail("no file name, check please");
 
-        final LocalDateTime now = LocalDateTime.now(Clock.systemUTC());
-        final String directory = now.getYear() + File.pathSeparator
-                + now.getMonth().getValue() + File.pathSeparator
-                + UUID.randomUUID() + "_" + fileName;
+        if (fileName.contains("..") || fileName.contains("/") || fileName.contains("\\") || fileName.contains(File.pathSeparator))
+            return ResponseException.fail("invalid file name");
 
-        File dest = new File(absolutePath + directory);
-        file.transferTo(dest);
+        final LocalDateTime now = LocalDateTime.now(Clock.systemUTC());
+        final Path baseDir = Paths.get(absolutePath).normalize();
+
+        final Path targetPath = baseDir.resolve(
+                now.getYear() + "/" +
+                        now.getMonth().getValue() + "/" +
+                        UUID.randomUUID() + "_" + fileName
+        ).normalize();
+
+        if (!targetPath.startsWith(baseDir)) return ResponseException.fail("invalid path");
+
+        Files.createDirectories(targetPath.getParent());
+        file.transferTo(targetPath.toFile());
 
         fileMapper.saveFile(FileDTO.builder()
                 .type(type)
                 .name(fileName)
-                .directory(directory)
+                .directory(baseDir.relativize(targetPath).toString())
                 .build()
         );
 

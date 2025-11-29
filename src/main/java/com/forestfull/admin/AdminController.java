@@ -20,13 +20,14 @@ public class AdminController {
     private final FileService fileService;
 
     @PostMapping("/file/emoji/{filename}")
-    Mono<ResponseEntity<ResponseException>> saveEmoji(MultipartFile file, @PathVariable String filename){
+    Mono<ResponseEntity<ResponseException>> saveEmoji(MultipartFile file, @PathVariable String filename) {
         try {
-            final ResponseException body = fileService.saveFile(file, FILE_TYPE.EMOJI.name(), filename);
-            return Mono.just(ResponseEntity.ok(body));
+            ResponseException result = fileService.saveFile(file, FILE_TYPE.EMOJI.name(), filename);
+            return Mono.just(result.isSuccess() ? ResponseEntity.ok(result) : ResponseEntity.badRequest().body(result));
         } catch (IOException e) {
             return Mono.just(ResponseEntity.internalServerError().build());
         }
     }
+
 
 }
