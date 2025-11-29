@@ -42,11 +42,11 @@ public class MemberService {
         if (existing != null) {
             existing.setDisplayName(user.getDisplayName());
             existing.setProfileImage(user.getProfileImage());
-            memberMapper.insertMember(existing); // 필요시 update 쿼리로 교체
+            memberMapper.saveMember(existing); // 필요시 update 쿼리로 교체
             return existing;
         } else {
             user.setTiktokUserId(accessToken); // WebSocket token용
-            memberMapper.insertMember(user);
+            memberMapper.saveMember(user);
             return user;
         }
     }
