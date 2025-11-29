@@ -1,10 +1,10 @@
 package com.forestfull.admin;
 
-/**
- * com.forestfull.admin
- *
- * @author vigfoot
- * @version 2025-11-22
- */
+import org.springframework.stereotype.Controller;
+
+@Controller
 public class AdminController {
+
+
+
 }

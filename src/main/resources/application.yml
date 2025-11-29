@@ -39,6 +39,10 @@ tiktok:
   client-secret: ENC(7k8/DfgRorImyUPfE/9/1Rn4q8cnv7SOjm9AR/Ln1NCW7RvhhZTtyQxxS4j+cQ0i)
   redirect-uri: ENC(q2hrTSQpW0hod3Beq7KrDdkkO0jTt1lZLPXxAkG82B4cTsFiNC0DeKYZ3le2/Nl6)
   scope: ENC(RkFhNItvhRZgBIQYg2+65RWzDJAXFuFy)
+file:
+  directory:
+    absolute: "C:/Development/test-storage/"
+
 
 ---
 # ==========================================
@@ -62,3 +66,6 @@ tiktok:
   client-secret: ENC(uYKLrBXih3wkmb+7FhLk0sv9P+QMQjbL4YyIqgb4SgCk61XVoSY2Vd401uf68YhK)
   redirect-uri: ENC(ZEljp+4CHPI8Jp0IVKqppnqiPKFZ1m7p2LGOlweH7CZUwlCWKx5mpIRTU+RV4vIz)
   scope: ENC(sK07a57NUiOyrUqKitiDcHRU+CbjdOEv)
+file:
+  directory:
+    absolute: "C:/Development/test-storage/"
