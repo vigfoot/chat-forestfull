@@ -105,9 +105,9 @@ public class FileService {
 
         // 디렉토리 구조를 Path 기반으로 안전하게 구성
         Path targetRelative = Paths.get("")
-                .resolve(type == null ? "other" : type)
                 .resolve(String.valueOf(now.getYear()))
                 .resolve(String.valueOf(now.getMonth().getValue()))
+                .resolve(String.valueOf(now.getDayOfMonth()))
                 .resolve(UUID.randomUUID() + "_" + safeFileName);
 
         Path targetPath = basePath.resolve(targetRelative).normalize();
