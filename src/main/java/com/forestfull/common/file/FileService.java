@@ -3,6 +3,8 @@ package com.forestfull.common.file;
 import com.forestfull.common.ResponseException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
 import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -15,7 +17,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Clock;
 import java.time.LocalDateTime;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
@@ -33,17 +34,16 @@ public class FileService {
      * 엄격한 파일명 검증: 허용되는 문자만, 경로 관련 문자 차단
      */
     private String sanitizeFilename(String filename) {
-        if (!StringUtils.hasText(filename)) {
-            throw new IllegalArgumentException("Filename must not be empty");
-        }
-        // 허용 문자: 영숫자, 마침표(.), 언더스코어(_), 하이픈(-)
-        if (!filename.matches("[a-zA-Z0-9._-]+")) {
+        if (!StringUtils.hasText(filename))
+            return filename;
+
+        if (!filename.matches("[\\w\\s._-]+"))
             throw new IllegalArgumentException("Invalid filename format");
-        }
+
         // 추가로 경로 조작을 위한 문자가 있는지 확인
-        if (filename.contains("..") || filename.contains("/") || filename.contains("\\")) {
+        if (filename.contains("..") || filename.contains("/") || filename.contains("\\"))
             throw new IllegalArgumentException("Invalid filename: path traversal characters detected");
-        }
+
         return filename;
     }
 
@@ -64,25 +64,12 @@ public class FileService {
         return fileMapper.getFileById(id);
     }
 
+    public List<FileDTO> getEmojiList() {
+        return getEmojiList("");
+    }
+
     public List<FileDTO> getEmojiList(String emojiFileName) {
-        String safeFilename = null;
-        if (StringUtils.hasText(emojiFileName)) {
-            safeFilename = sanitizeFilename(emojiFileName);
-        }
-
-        final List<FileDTO> emojiList = fileMapper.getEmojiList(safeFilename);
-        if (Objects.isNull(emojiList) || emojiList.isEmpty()) return Collections.emptyList();
-
-        return emojiList.stream()
-                .peek(fileDTO -> {
-                    try {
-                        fileDTO.setFile(safePath(fileDTO.getDirectory()));
-                    } catch (Exception ex) {
-                        // 안전을 위해 문제가 있는 항목은 null 처리
-                        fileDTO.setFile(null);
-                    }
-                })
-                .toList();
+        return fileMapper.getEmojiList(emojiFileName);
     }
 
     /**
@@ -170,5 +157,24 @@ public class FileService {
         }
 
         return ResponseException.ok();
+    }
+    /**
+     * directory 경로를 받아 Resource 반환
+     */
+    public Resource getFileResource(String directory) {
+        // directory 경로가 외부 입력이므로 보안상 경로 검증 필요
+        if(directory.contains("..")) {
+            throw new IllegalArgumentException("Invalid directory path");
+        }
+
+        // 실제 파일 경로 생성
+        File file = Paths.get(absolutePath, directory).toFile();
+
+        // 존재 여부 확인 후 Resource 반환
+        if(file.exists() && file.isFile()){
+            return new FileSystemResource(file);
+        } else {
+            return null; // 없으면 null 혹은 예외 처리
+        }
     }
 }

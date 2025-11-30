@@ -17,7 +17,6 @@
         #canvas-popup { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #fff; padding: 20px; z-index: 1001; border: 1px solid #ccc; }
         #popup-overlay { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.5); z-index:1000; }
         canvas { border: 1px solid #ccc; touch-action: none; }
-        .handle { width: 12px; height: 12px; background: red; position: absolute; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -64,19 +63,21 @@
         fetch('/file/emoji')
             .then(res => res.json())
             .then(data => {
-                const list = data?.body?.json || data || [];
+                const list = Array.isArray(data) ? data : (data?.body || []);
                 emojiList.innerHTML = '';
                 list.forEach(item => {
                     const div = document.createElement('div');
                     div.className = 'emoji-item';
                     const image = document.createElement('img');
-                    image.src = item.file?.path || item.file?.name || '';
+                    image.src = item.directory ? `/file/emoji/resource/${encodeURIComponent(item.directory)}` : '';
                     div.appendChild(image);
+
                     const delBtn = document.createElement('button');
                     delBtn.textContent = 'X';
                     delBtn.className = 'delete-btn';
                     delBtn.onclick = () => deleteEmoji(item.id);
                     div.appendChild(delBtn);
+
                     emojiList.appendChild(div);
                 });
             })
@@ -88,9 +89,9 @@
             .then(res => res.json())
             .then(data => {
                 if(data?.success) fetchEmojiList();
-                else alert('삭제 실패');
+                else alert(data?.message || '삭제 실패');
             })
-            .catch(err => console.error(err));
+            .catch(err => { console.error(err); alert('삭제 실패 (서버 오류)'); });
     }
 
     // --- 드래그앤드롭 ---
@@ -118,7 +119,8 @@
     function drawCanvas() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        // 점선 사각형 (UI용)
+
+        // UI용 점선 사각형
         ctx.strokeStyle = 'red';
         ctx.setLineDash([5,3]);
         ctx.strokeRect(selection.x, selection.y, selection.size, selection.size);
@@ -153,7 +155,6 @@
                 return;
             }
         }
-        // 사각형 내부 클릭
         if(mx >= selection.x && mx <= selection.x + selection.size && my >= selection.y && my <= selection.y + selection.size){
             dragging = true;
             startPos = { x: mx - selection.x, y: my - selection.y };
@@ -171,22 +172,10 @@
         } else if(resizing && currentHandle){
             let newX = selection.x, newY = selection.y, newSize = selection.size;
             switch(currentHandle){
-                case 'se':
-                    newSize = Math.max(256, Math.min(mx - selection.x, my - selection.y));
-                    break;
-                case 'sw':
-                    newSize = Math.max(256, Math.min(selection.x + selection.size - mx, my - selection.y));
-                    newX = selection.x + selection.size - newSize;
-                    break;
-                case 'ne':
-                    newSize = Math.max(256, Math.min(mx - selection.x, selection.y + selection.size - my));
-                    newY = selection.y + selection.size - newSize;
-                    break;
-                case 'nw':
-                    newSize = Math.max(256, Math.min(selection.x + selection.size - mx, selection.y + selection.size - my));
-                    newX = selection.x + selection.size - newSize;
-                    newY = selection.y + selection.size - newSize;
-                    break;
+                case 'se': newSize = Math.max(256, Math.min(mx - selection.x, my - selection.y)); break;
+                case 'sw': newSize = Math.max(256, Math.min(selection.x + selection.size - mx, my - selection.y)); newX = selection.x + selection.size - newSize; break;
+                case 'ne': newSize = Math.max(256, Math.min(mx - selection.x, selection.y + selection.size - my)); newY = selection.y + selection.size - newSize; break;
+                case 'nw': newSize = Math.max(256, Math.min(selection.x + selection.size - mx, selection.y + selection.size - my)); newX = selection.x + selection.size - newSize; newY = selection.y + selection.size - newSize; break;
             }
             if(newX<0) newX=0;
             if(newY<0) newY=0;
@@ -207,13 +196,25 @@
     // --- 업로드 ---
     confirmBtn.addEventListener('click', ()=>{
         if(!uploadedFile) return;
+
         const tmpCanvas = document.createElement('canvas');
         tmpCanvas.width = selection.size;
         tmpCanvas.height = selection.size;
-        tmpCanvas.getContext('2d').drawImage(canvas,
-            selection.x, selection.y, selection.size, selection.size,
-            0,0,selection.size,selection.size
+        const tmpCtx = tmpCanvas.getContext('2d');
+
+        const scaleX = img.width / canvas.width;
+        const scaleY = img.height / canvas.height;
+
+        tmpCtx.drawImage(img,
+            selection.x * scaleX,
+            selection.y * scaleY,
+            selection.size * scaleX,
+            selection.size * scaleY,
+            0, 0,
+            selection.size,
+            selection.size
         );
+
         tmpCanvas.toBlob(blob => {
             const formData = new FormData();
             formData.append('file', blob, uploadedFile.name);
@@ -228,5 +229,6 @@
 
     fetchEmojiList();
 </script>
+
 </body>
 </html>

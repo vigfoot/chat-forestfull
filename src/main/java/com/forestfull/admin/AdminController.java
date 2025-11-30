@@ -20,7 +20,7 @@ public class AdminController {
     private final FileService fileService;
 
     @GetMapping("/emoji")
-    String emojiPage(Model model){
+    String emojiPage(){
         return "admin-emoji";
     }
 
