@@ -4,33 +4,42 @@ import com.forestfull.common.ResponseException;
 import com.forestfull.common.file.FILE_TYPE;
 import com.forestfull.common.file.FileService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.multipart.MultipartFile;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
-
-import java.io.IOException;
 
 @Controller
 @RequiredArgsConstructor
+@RequestMapping("/admin")
 public class AdminController {
 
     private final FileService fileService;
 
-    @PostMapping("/file/emoji/{filename}")
-    Mono<ResponseEntity<ResponseException>> saveEmoji(MultipartFile file, @PathVariable String filename) {
-        try {
-            ResponseException result = fileService.saveFile(file, FILE_TYPE.EMOJI.name(), filename);
-            return Mono.just(result.isSuccess() ? ResponseEntity.ok(result) : ResponseEntity.badRequest().body(result));
-        } catch (IOException e) {
-            return Mono.just(ResponseEntity.internalServerError().build());
-        }
+    @GetMapping("/emoji")
+    String emojiPage(Model model){
+        return "admin-emoji";
     }
 
-    @DeleteMapping("/file/emoji/{id}")
+    @ResponseBody
+    @PostMapping(value = "/emoji/{filename}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public Mono<ResponseEntity<ResponseException>> saveEmoji(
+            @RequestPart("file") Mono<FilePart> filePartMono,
+            @PathVariable String filename) {
+
+        return filePartMono.flatMap(filePart ->
+                fileService.saveFile(filePart, FILE_TYPE.EMOJI.name(), filename)
+                        .map(result -> result.isSuccess()
+                                ? ResponseEntity.ok(result)
+                                : ResponseEntity.badRequest().body(result))
+        );
+    }
+
+    @ResponseBody
+    @DeleteMapping("/emoji/{id}")
     Mono<ResponseEntity<ResponseException>> deleteEmoji(@PathVariable Long id) {
         final ResponseException result = fileService.deleteFile(id);
         return Mono.just(result.isSuccess() ? ResponseEntity.ok(result) : ResponseEntity.badRequest().body(result));
