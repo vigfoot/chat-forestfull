@@ -37,6 +37,6 @@
     </insert>
 
     <delete id="deleteFile" parameterType="long">
-        DELETE f FROM chat_forestfull.file f WHERE f.id = #{id}
+        DELETE FROM chat_forestfull.file WHERE id = #{id}
     </delete>
 </mapper>
