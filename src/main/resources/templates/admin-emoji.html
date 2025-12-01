@@ -5,48 +5,59 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Emoji 관리</title>
     <style>
-        body { font-family: Arial, sans-serif; padding: 20px; background: #f4f4f4; }
+        body { font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5; }
         h1 { text-align: center; }
         #emoji-list { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; justify-content: center; }
-        .emoji-item { position: relative; width: 100px; height: 100px; border-radius: 8px; background: #fff; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.2);}
-        .emoji-item img { max-width: 90%; max-height: 90%; border-radius: 4px; }
-        .delete-btn { position: absolute; top: 2px; right: 2px; background: red; color: #fff; border: none; cursor: pointer; border-radius: 50%; width:20px;height:20px; font-size:12px; }
+        .emoji-item { position: relative; width: 100px; height: 100px; border: 1px solid #ccc; border-radius: 8px; display: flex; align-items: center; justify-content: center; background:#fff; box-shadow:0 2px 4px rgba(0,0,0,0.1);}
+        .emoji-item img { max-width: 90%; max-height: 90%; border-radius:4px;}
+        .delete-btn { position: absolute; top: 2px; right: 2px; background: red; color: #fff; border: none; border-radius: 50%; width: 20px; height: 20px; cursor: pointer; font-weight:bold; line-height: 18px; }
 
-        #drop-zone { border: 2px dashed #aaa; padding: 20px; text-align: center; cursor: pointer; border-radius: 8px; background: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.1);}
+        #drop-zone { border: 2px dashed #aaa; padding: 20px; text-align: center; cursor: pointer; border-radius: 8px; background:#fff; box-shadow: 0 2px 4px rgba(0,0,0,0.1);}
         #drop-zone.hover { border-color: #333; }
 
-        #canvas-popup { display: none; position: fixed; top:50%; left:50%; transform: translate(-50%, -50%); background: #fff; padding: 15px; z-index:1001; border-radius: 8px; box-shadow:0 5px 15px rgba(0,0,0,0.3); }
-        #popup-overlay { display:none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.5); z-index:1000; }
+        #canvas-popup { display:none; position: fixed; top:50%; left:50%; transform: translate(-50%, -50%); background:#fff; padding: 20px; z-index:1001; border-radius:10px; box-shadow:0 4px 20px rgba(0,0,0,0.3);}
+        #popup-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.5); z-index:1000;}
+        canvas { border:1px solid #ccc; touch-action: none; display:block; margin:auto; }
 
-        canvas { border: 1px solid #ccc; touch-action: none; display:block; margin:0 auto; }
-        #controls { display:flex; justify-content: space-between; margin-top:10px; }
-        #controls > * { margin-right: 5px; }
+        .control-panel { margin-top:10px; display:flex; gap:10px; justify-content:center; flex-wrap:wrap;}
+        .control-panel label { display:flex; flex-direction:column; align-items:center; font-size:12px;}
+        .control-panel input[type="color"], .control-panel input[type="range"] { margin-top:5px; }
 
-        .handle { width: 14px; height: 14px; background: #ff5722; position:absolute; border-radius:50%; box-shadow:0 0 3px rgba(0,0,0,0.3); cursor: pointer; }
-        #info { text-align:center; margin-top:5px; font-size:14px; }
+        .template-btn { background:#007bff; color:#fff; border:none; padding:5px 10px; border-radius:4px; cursor:pointer;}
+        .template-btn:hover { background:#0056b3;}
     </style>
 </head>
 <body>
 
 <h1>Emoji 관리</h1>
 
-<div id="drop-zone">이미지 드래그 또는 클릭</div>
+<div id="drop-zone">여기에 이미지 드래그 또는 클릭하여 업로드</div>
 <div id="emoji-list"></div>
 
 <div id="popup-overlay"></div>
 <div id="canvas-popup">
     <canvas id="emoji-canvas" width="512" height="512"></canvas>
-    <div id="info">선택 영역: X=0, Y=0, 크기=256</div>
-    <div style="margin-top:10px;">
-        <label>배경색: <input type="color" id="bg-color" value="#ffffff"></label>
-        <button id="rotate-btn">회전</button>
-        <button id="flip-btn">좌우 반전</button>
-        <button id="reset-filter">필터 초기화</button>
-        <label>밝기: <input type="range" id="brightness" min="0" max="200" value="100"></label>
-        <label>대비: <input type="range" id="contrast" min="0" max="200" value="100"></label>
-        <label>채도: <input type="range" id="saturate" min="0" max="200" value="100"></label>
+    <div class="control-panel">
+
+        <!-- 🔥 투명 or 배경색 선택 추가됨 -->
+        <label>
+            배경 처리
+            <div style="display:flex; gap:5px; margin-top:5px;">
+                <label><input type="radio" name="bgOption" value="transparent" checked> 투명</label>
+                <label><input type="radio" name="bgOption" value="color"> 색상</label>
+            </div>
+            <input type="color" id="bg-color" value="#ffffff" disabled>
+        </label>
+
+        <label>회전<input type="range" id="rotate" min="0" max="360" value="0"></label>
+        <label>좌우반전<button id="flip">↔</button></label>
+        <label>밝기<input type="range" id="brightness" min="0" max="200" value="100"></label>
+        <label>대비<input type="range" id="contrast" min="0" max="200" value="100"></label>
+        <label>채도<input type="range" id="saturation" min="0" max="200" value="100"></label>
+        <label>템플릿<button class="template-btn" id="template-256">256px</button></label>
     </div>
-    <div id="controls">
+
+    <div style="margin-top:10px; display:flex; gap:10px; justify-content:center;">
         <button id="confirm-btn">확인</button>
         <button id="cancel-btn">취소</button>
     </div>
@@ -62,60 +73,84 @@
     const overlay = document.getElementById('popup-overlay');
     const canvas = document.getElementById('emoji-canvas');
     const ctx = canvas.getContext('2d');
+
     const confirmBtn = document.getElementById('confirm-btn');
     const cancelBtn = document.getElementById('cancel-btn');
+
     const bgColorInput = document.getElementById('bg-color');
-    const rotateBtn = document.getElementById('rotate-btn');
-    const flipBtn = document.getElementById('flip-btn');
+    const bgOption = document.getElementsByName('bgOption');
+    const rotateInput = document.getElementById('rotate');
+    const flipBtn = document.getElementById('flip');
     const brightnessInput = document.getElementById('brightness');
     const contrastInput = document.getElementById('contrast');
-    const saturateInput = document.getElementById('saturate');
-    const resetFilterBtn = document.getElementById('reset-filter');
-    const info = document.getElementById('info');
+    const saturationInput = document.getElementById('saturation');
+    const templateBtn = document.getElementById('template-256');
+
+    let backgroundTransparent = true;
+    let backgroundColor = "#ffffff";
+
+    bgOption.forEach(option => {
+        option.addEventListener("change", () => {
+            if(option.value === "transparent"){
+                backgroundTransparent = true;
+                bgColorInput.disabled = true;
+            } else {
+                backgroundTransparent = false;
+                bgColorInput.disabled = false;
+            }
+            drawCanvas();
+        });
+    });
+
+    bgColorInput.addEventListener("input", (e)=>{
+        backgroundColor = e.target.value;
+        if(!backgroundTransparent) drawCanvas();
+    });
 
     let uploadedFile = null;
     let img = new Image();
+    let imgLoaded = false;
 
-    // 선택 영역
-    let selection = {x:0, y:0, size:256};
-    let dragging=false, resizing=false, currentHandle=null, startPos={x:0,y:0};
+    let selection = { x:0, y:0, size:256 };
+    let dragging = false;
+    let resizing = false;
+    let currentHandle = null;
+    let startPos = {x:0, y:0};
 
-    // 회전/반전/필터
-    let rotation = 0; // 0,90,180,270
-    let flipped = false;
-    let brightness = 100, contrast =100, saturate=100;
+    let rotate = 0, flipped=false, brightness=100, contrast=100, saturation=100;
 
-    // --- Emoji 목록 ---
     function fetchEmojiList(){
         fetch('/file/emoji')
-            .then(res=>res.json())
-            .then(data=>{
+            .then(res => res.json())
+            .then(data => {
                 const list = Array.isArray(data) ? data : (data?.body || []);
-                emojiList.innerHTML='';
-                list.forEach(item=>{
-                    const div=document.createElement('div'); div.className='emoji-item';
-                    const image=document.createElement('img');
+                emojiList.innerHTML = '';
+                list.forEach(item => {
+                    const div = document.createElement('div');
+                    div.className = 'emoji-item';
+                    const image = document.createElement('img');
                     image.src = item.directory ? `/file/emoji/resource/${encodeURIComponent(item.directory)}` : '';
                     div.appendChild(image);
 
-                    const delBtn=document.createElement('button');
-                    delBtn.textContent='X'; delBtn.className='delete-btn';
-                    delBtn.onclick = ()=>deleteEmoji(item.id);
+                    const delBtn = document.createElement('button');
+                    delBtn.textContent = 'X';
+                    delBtn.className = 'delete-btn';
+                    delBtn.onclick = () => deleteEmoji(item.id);
                     div.appendChild(delBtn);
 
                     emojiList.appendChild(div);
                 });
             }).catch(err=>console.error(err));
     }
+
     function deleteEmoji(id){
-        fetch(`/admin/emoji/${id}`,{method:'DELETE'})
+        fetch(`/admin/emoji/${id}`, { method:'DELETE' })
             .then(res=>res.json())
-            .then(data=>{ if(data?.success) fetchEmojiList(); else alert('삭제 실패'); })
-            .catch(err=>{ console.error(err); alert('삭제 실패'); });
+            .then(data=>{ if(data?.success) fetchEmojiList(); else alert(data?.message || '삭제 실패'); })
+            .catch(err=>{ console.error(err); alert('삭제 실패 (서버 오류)'); });
     }
 
-    // --- 드래그앤드롭 ---
-    dropZone.addEventListener('click',()=>fileInput.click());
+    dropZone.addEventListener('click', ()=>fileInput.click());
     dropZone.addEventListener('dragover', e=>{ e.preventDefault(); dropZone.classList.add('hover'); });
     dropZone.addEventListener('dragleave', e=>{ e.preventDefault(); dropZone.classList.remove('hover'); });
     dropZone.addEventListener('drop', e=>{ e.preventDefault(); dropZone.classList.remove('hover'); handleFile(e.dataTransfer.files[0]); });
@@ -123,49 +158,61 @@
 
     function handleFile(file){
         if(!file) return;
-        const url=URL.createObjectURL(file);
-        img.onload = ()=>{
-            // 최소 256x256 이상이면 OK, 미만이면 확대
+        uploadedFile = file;
+
+        const imgURL = URL.createObjectURL(file);
+        img.onload = () => {
+            imgLoaded = true;
             if(img.width<256 || img.height<256){
                 selection.size = 256;
             } else {
-                selection.size = Math.min(256,img.width,img.height);
+                selection.size = Math.min(img.width, img.height, 256);
             }
-            uploadedFile=file;
+            selection.x = 0;
+            selection.y = 0;
             drawCanvas();
             overlay.style.display='block';
             popup.style.display='block';
         }
-        img.src=url;
+        img.src = imgURL;
     }
 
-    // --- 캔버스 그리기 ---
     function drawCanvas(){
-        ctx.clearRect(0,0,canvas.width,canvas.height);
+        if(!imgLoaded) return;
+
+        if(backgroundTransparent){
+            ctx.clearRect(0,0,canvas.width,canvas.height);
+        } else {
+            ctx.fillStyle = backgroundColor;
+            ctx.fillRect(0,0,canvas.width,canvas.height);
+        }
+
         ctx.save();
-        // 배경색
-        ctx.fillStyle=bgColorInput.value; ctx.fillRect(0,0,canvas.width,canvas.height);
-        // 필터
-        ctx.filter = `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturate}%)`;
+        ctx.filter = `brightness(${brightnessInput.value}%) contrast(${contrastInput.value}%) saturate(${saturationInput.value}%)`;
         ctx.translate(canvas.width/2, canvas.height/2);
-        if(flipped) ctx.scale(-1,1);
-        ctx.rotate(rotation*Math.PI/180);
+        ctx.rotate(rotateInput.value*Math.PI/180);
+        ctx.scale(flipped?-1:1,1);
         ctx.drawImage(img, -canvas.width/2, -canvas.height/2, canvas.width, canvas.height);
         ctx.restore();
 
-        // 점선 선택 영역
-        ctx.strokeStyle='red'; ctx.setLineDash([5,3]);
+        ctx.strokeStyle = 'red';
+        ctx.setLineDash([5,3]);
         ctx.strokeRect(selection.x, selection.y, selection.size, selection.size);
         ctx.setLineDash([]);
-        info.textContent=`X=${Math.round(selection.x)}, Y=${Math.round(selection.y)}, 크기=${Math.round(selection.size)}`;
     }
 
-    // --- 마우스 / 터치 이벤트 ---
+    bgColorInput.addEventListener('input', drawCanvas);
+    rotateInput.addEventListener('input', drawCanvas);
+    flipBtn.addEventListener('click', ()=>{ flipped=!flipped; drawCanvas(); });
+    brightnessInput.addEventListener('input', drawCanvas);
+    contrastInput.addEventListener('input', drawCanvas);
+    saturationInput.addEventListener('input', drawCanvas);
+    templateBtn.addEventListener('click', ()=>{ selection={x:0,y:0,size:256}; drawCanvas(); });
+
     canvas.addEventListener('mousedown', startMouse);
     canvas.addEventListener('mousemove', moveMouse);
     canvas.addEventListener('mouseup', endMouse);
     canvas.addEventListener('mouseleave', endMouse);
-
     canvas.addEventListener('touchstart', e=>{ const t=e.touches[0]; startMouse({clientX:t.clientX, clientY:t.clientY}); e.preventDefault(); });
     canvas.addEventListener('touchmove', e=>{ const t=e.touches[0]; moveMouse({clientX:t.clientX, clientY:t.clientY}); e.preventDefault(); });
     canvas.addEventListener('touchend', e=>{ endMouse(); e.preventDefault(); });
@@ -182,84 +229,89 @@
         ];
         currentHandle=null;
         for(let h of handles){
-            if(Math.abs(mx-h.x)<=10 && Math.abs(my-h.y)<=10){resizing=true; currentHandle=h.name; return;}
+            if(Math.abs(mx-h.x)<=10 && Math.abs(my-h.y)<=10){ resizing=true; currentHandle=h.name; return; }
         }
         if(mx>=selection.x && mx<=selection.x+selection.size && my>=selection.y && my<=selection.y+selection.size){
             dragging=true;
             startPos={x:mx-selection.x, y:my-selection.y};
         }
     }
+
     function moveMouse(e){
         const rect = canvas.getBoundingClientRect();
         const mx = e.clientX-rect.left;
         const my = e.clientY-rect.top;
-        if(dragging){ selection.x=Math.max(0,Math.min(mx-startPos.x,canvas.width-selection.size)); selection.y=Math.max(0,Math.min(my-startPos.y,canvas.height-selection.size)); drawCanvas(); }
-        else if(resizing && currentHandle){
-            let newX=selection.x, newY=selection.y, newSize=selection.size;
+        if(dragging){
+            selection.x=Math.max(0, Math.min(mx-startPos.x, canvas.width-selection.size));
+            selection.y=Math.max(0, Math.min(my-startPos.y, canvas.height-selection.size));
+            drawCanvas();
+        } else if(resizing && currentHandle){
+            let newX=selection.x,newY=selection.y,newSize=selection.size;
             switch(currentHandle){
-                case 'se': newSize = Math.max(256, Math.min(mx-selection.x, my-selection.y)); break;
-                case 'sw': newSize = Math.max(256, Math.min(selection.x+selection.size-mx, my-selection.y)); newX=selection.x+selection.size-newSize; break;
-                case 'ne': newSize = Math.max(256, Math.min(mx-selection.x, selection.y+selection.size-my)); newY=selection.y+selection.size-newSize; break;
-                case 'nw': newSize = Math.max(256, Math.min(selection.x+selection.size-mx, selection.y+selection.size-my)); newX=selection.x+selection.size-newSize; newY=selection.y+selection.size-newSize; break;
+                case 'se': newSize=Math.max(256,Math.min(mx-selection.x,my-selection.y)); break;
+                case 'sw': newSize=Math.max(256,Math.min(selection.x+selection.size-mx,my-selection.y)); newX=selection.x+selection.size-newSize; break;
+                case 'ne': newSize=Math.max(256,Math.min(mx-selection.x,selection.y+selection.size-my)); newY=selection.y+selection.size-newSize; break;
+                case 'nw': newSize=Math.max(256,Math.min(selection.x+selection.size-mx,selection.y+selection.size-my)); newX=selection.x+selection.size-newSize; newY=selection.y+selection.size-newSize; break;
             }
-            if(newX<0)newX=0; if(newY<0)newY=0;
-            if(newX+newSize>canvas.width)newSize=canvas.width-newX;
-            if(newY+newSize>canvas.height)newSize=canvas.height-newY;
-            selection={x:newX,y:newY,size:newSize}; drawCanvas();
+            if(newX<0) newX=0; if(newY<0) newY=0;
+            if(newX+newSize>canvas.width) newSize=canvas.width-newX;
+            if(newY+newSize>canvas.height) newSize=canvas.height-newY;
+            selection={x:newX,y:newY,size:newSize};
+            drawCanvas();
         }
     }
+
     function endMouse(){ dragging=false; resizing=false; currentHandle=null; }
 
-    // --- 팝업 닫기 ---
-    function closePopup(){ overlay.style.display='none'; popup.style.display='none'; fileInput.value=''; uploadedFile=null; rotation=0; flipped=false; brightness=100; contrast=100; saturate=100; drawCanvas();}
+    function closePopup(){ overlay.style.display='none'; popup.style.display='none'; fileInput.value=''; uploadedFile=null; imgLoaded=false; }
     cancelBtn.addEventListener('click', closePopup);
     overlay.addEventListener('click', closePopup);
 
-    // --- 회전 / 반전 / 필터 ---
-    rotateBtn.addEventListener('click', ()=>{ rotation=(rotation+90)%360; drawCanvas(); });
-    flipBtn.addEventListener('click', ()=>{ flipped=!flipped; drawCanvas(); });
-    brightnessInput.addEventListener('input', e=>{ brightness=e.target.value; drawCanvas(); });
-    contrastInput.addEventListener('input', e=>{ contrast=e.target.value; drawCanvas(); });
-    saturateInput.addEventListener('input', e=>{ saturate=e.target.value; drawCanvas(); });
-    resetFilterBtn.addEventListener('click', ()=>{ brightness=100; contrast=100; saturate=100; drawCanvas(); });
-
-    // --- 업로드 ---
     confirmBtn.addEventListener('click', ()=>{
-        if(!uploadedFile) return;
+        if(!uploadedFile || !imgLoaded) return;
+
         const tmpCanvas=document.createElement('canvas');
         tmpCanvas.width=selection.size; tmpCanvas.height=selection.size;
         const tmpCtx=tmpCanvas.getContext('2d');
 
-        tmpCtx.fillStyle=bgColorInput.value; tmpCtx.fillRect(0,0,tmpCanvas.width,tmpCanvas.height);
-        tmpCtx.filter = `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturate}%)`;
+        const scaleX=img.width/canvas.width;
+        const scaleY=img.height/canvas.height;
+
+        if(backgroundTransparent){
+            tmpCtx.clearRect(0,0,tmpCanvas.width,tmpCanvas.height);
+        } else {
+            tmpCtx.fillStyle=backgroundColor;
+            tmpCtx.fillRect(0,0,tmpCanvas.width,tmpCanvas.height);
+        }
+
         tmpCtx.save();
-        tmpCtx.translate(tmpCanvas.width/2, tmpCanvas.height/2);
-        if(flipped) tmpCtx.scale(-1,1);
-        tmpCtx.rotate(rotation*Math.PI/180);
-
-        // 선택 영역 좌표 변환
-        const scaleX = img.width / canvas.width;
-        const scaleY = img.height / canvas.height;
-        const sx = selection.x*scaleX;
-        const sy = selection.y*scaleY;
-        const sWidth = selection.size*scaleX;
-        const sHeight = selection.size*scaleY;
-
-        tmpCtx.drawImage(img, sx, sy, sWidth, sHeight, -tmpCanvas.width/2, -tmpCanvas.height/2, tmpCanvas.width, tmpCanvas.height);
+        tmpCtx.filter=`brightness(${brightnessInput.value}%) contrast(${contrastInput.value}%) saturate(${saturationInput.value}%)`;
+        tmpCtx.translate(tmpCanvas.width/2,tmpCanvas.height/2);
+        tmpCtx.rotate(rotateInput.value*Math.PI/180);
+        tmpCtx.scale(flipped?-1:1,1);
+        tmpCtx.drawImage(img,
+            selection.x*scaleX,
+            selection.y*scaleY,
+            selection.size*scaleX,
+            selection.size*scaleY,
+            -tmpCanvas.width/2,
+            -tmpCanvas.height/2,
+            tmpCanvas.width,
+            tmpCanvas.height
+        );
         tmpCtx.restore();
 
         tmpCanvas.toBlob(blob=>{
-            const formData = new FormData();
-            formData.append('file', blob, uploadedFile.name.replace(/\..+$/,'')+'.png'); // PNG 강제
-            fetch(`/admin/emoji/${uploadedFile.name}`,{method:'POST', body:formData})
+            const formData=new FormData();
+            formData.append('file', blob, uploadedFile.name.replace(/\..+$/,'')+'.png');
+            fetch(`/admin/emoji/${uploadedFile.name}`, { method:'POST', body:formData })
                 .then(res=>res.json())
-                .then(data=>{ if(data?.success){ closePopup(); fetchEmojiList(); } else alert('업로드 실패'); })
-                .catch(err=>console.error(err));
+                .then(data=>{ if(data?.success){ closePopup(); fetchEmojiList(); }else alert('업로드 실패'); })
+                .catch(err=>{ console.error(err); alert('업로드 실패'); });
         }, 'image/png');
     });
 
     fetchEmojiList();
 </script>
-
 </body>
 </html>
