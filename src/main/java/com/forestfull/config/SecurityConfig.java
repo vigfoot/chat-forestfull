@@ -1,6 +1,7 @@
 package com.forestfull.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.forestfull.domain.CustomUserDetailsService;
 import com.forestfull.filter.CustomLoginFilter;
 import com.forestfull.filter.TokenFilter;
 import com.forestfull.util.JwtUtil;
@@ -9,8 +10,10 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -27,6 +30,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     private final ObjectMapper objectMapper;
+    private final CustomUserDetailsService customUserDetailsService;
 
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http, JwtUtil jwtUtil, AuthenticationManager manager) throws Exception {
@@ -35,6 +39,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**").permitAll()
                         .anyRequest().authenticated()
                 )
+                .userDetailsService(customUserDetailsService)
+                .sessionManagement(config -> config.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(new TokenFilter(jwtUtil), UsernamePasswordAuthenticationFilter.class)
                 .addFilterAt(new CustomLoginFilter(manager, jwtUtil, objectMapper), UsernamePasswordAuthenticationFilter.class)
                 .build();
@@ -54,14 +60,7 @@ public class SecurityConfig {
     }
 
     @Bean
-    AuthenticationManager authenticationManager(HttpSecurity http, PasswordEncoder encoder) throws Exception {
-        AuthenticationManagerBuilder authManagerBuilder = http.getSharedObject(AuthenticationManagerBuilder.class);
-        authManagerBuilder
-                .inMemoryAuthentication()
-                .withUser("user")
-                .password(encoder.encode("password"))
-                .roles("USER");
-
-        return authManagerBuilder.build();
+    AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
+        return config.getAuthenticationManager();
     }
 }
