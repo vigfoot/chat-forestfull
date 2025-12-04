@@ -8,19 +8,23 @@ import org.springframework.web.bind.annotation.GetMapping;
 @RequiredArgsConstructor
 public class PageRouter {
 
-    /*TODO: TEST*/
-    @GetMapping("/verify")
-    public String verifyPage() {
-        return "verify-pages"; // templates/verify-pages.html
+    @GetMapping("/pages/admin/dashboard")
+    String adminDashboard() {
+        return "admin/dashboard";
     }
 
-    @GetMapping("/admin/emoji")
-    String emojiPage() {
-        return "admin-emoji";
+    @GetMapping("/pages/admin/emoji")
+    String adminEmoji() {
+        return "admin/emoji";
     }
 
-    @GetMapping("/admin/users")
+    @GetMapping("/pages/admin/users")
     public String adminUsers() {
-        return "admin-users"; // templates/admin-users.html (권한필터 적용)
+        return "admin/users";
+    }
+
+    @GetMapping("/pages/rooms")
+    public String chatRooms() {
+        return "chat/rooms";
     }
 }

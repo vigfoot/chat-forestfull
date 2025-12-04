@@ -27,11 +27,11 @@ public class AuthController {
     @PostMapping("/logout")
     public ResponseEntity<?> logout(HttpServletResponse response) {
         Cookie cookie = new Cookie("JWT", null);
-        cookie.setHttpOnly(true);
+        cookie.setHttpOnly(false);
         cookie.setPath("/");
         cookie.setMaxAge(0); // 즉시 만료
         response.addCookie(cookie);
-        return ResponseEntity.ok(Map.of("message", "로그아웃 성공"));
+        return ResponseEntity.ok(Map.of("message", "logout success"));
     }
 
 }

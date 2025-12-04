@@ -57,7 +57,7 @@ public class CustomLoginFilter extends UsernamePasswordAuthenticationFilter {
         String token = jwtUtil.generateToken(username, roles);
 
         Cookie cookie = new Cookie("JWT", token);
-        cookie.setHttpOnly(true);
+        cookie.setHttpOnly(false);
         cookie.setPath("/");
         cookie.setMaxAge((int)(jwtUtil.getExpireMillis() / 1000));
         res.addCookie(cookie);

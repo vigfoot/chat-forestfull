@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.forestfull.domain.UserMapper">
+    <select id="findByUsername" resultType="com.forestfull.domain.User">
+        SELECT m.id AS id, m.tiktok_user_id AS username, m.password, m.role AS roles
+        FROM chat_forestfull.member m
+        WHERE m.tiktok_user_id = #{username}
+    </select>
+
+    <insert id="save" parameterType="com.forestfull.domain.User" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO chat_forestfull.member (tiktok_user_id, password, role)
+        VALUES (#{username}, #{password}, #{roles})
+    </insert>
+
+    <select id="findAllUsers" resultType="com.forestfull.domain.User">
+        SELECT m.tiktok_user_id AS user_name, role AS roles
+        FROM chat_forestfull.member m
+        ORDER BY m.id DESC
+    </select>
+
+    <update id="updateRoles">
+        UPDATE chat_forestfull.member m
+        SET m.role = #{roles}
+        WHERE m.tiktok_user_id = #{username}
+    </update>
+
+    <delete id="deleteByUsername" parameterType="string">
+        DELETE FROM chat_forestfull.member
+        WHERE tiktok_user_id = #{username}
+    </delete>
+</mapper>

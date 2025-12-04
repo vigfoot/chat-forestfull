@@ -476,20 +476,25 @@
 
         tmpCanvas.toBlob(blob => {
             const formData = new FormData();
-            formData.append('file', blob, uploadedFile.name.replace(/\..+$/, '') + '.png');
-            fetch(`/admin/emoji/${uploadedFile.name}`, {method: 'POST', body: formData})
+            formData.append('file', blob, uploadedFile.name); // 서버 @RequestPart("file")와 동일
+            const safeFileName = encodeURIComponent(uploadedFile.name);
+            fetch(`/admin/emoji/${safeFileName}`, {
+                method: 'POST',
+                body: formData,
+                credentials: 'include' // JWT 쿠키 포함
+            })
                 .then(res => res.json())
                 .then(data => {
                     if (data?.success) {
                         closePopup();
                         fetchEmojiList();
-                    } else alert('업로드 실패');
+                    } else alert(data?.message || '업로드 실패');
                 })
                 .catch(err => {
                     console.error(err);
                     alert('업로드 실패');
                 });
-        }, 'image/png');
+        });
     });
 
     fetchEmojiList();

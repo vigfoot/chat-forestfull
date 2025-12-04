@@ -36,9 +36,9 @@ public class SecurityConfig {
         return http.csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers(staticResources).permitAll()
-                        .requestMatchers("/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/management/**").hasAnyRole("ADMIN", "MANAGER")
-                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers(new String[]{"/admin/**", "/pages/admin/**"}).hasRole("ADMIN")
+                        .requestMatchers(new String[]{"/management/**", "/pages/management/**"}).hasAnyRole("ADMIN", "MANAGER")
+                        .requestMatchers(new String[]{"/pages/**", "/file/**","/api/auth/**"}).permitAll()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(config -> config.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

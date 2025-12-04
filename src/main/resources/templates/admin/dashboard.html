@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Chat Forestfull</title>
+    <link rel="stylesheet" href="/webjars/bootstrap/5.3.8/css/bootstrap.min.css">
+    <script src="/webjars/bootstrap/5.3.8/js/bootstrap.bundle.min.js"></script>
+</head>
+<body class="bg-light">
+
+<div class="container py-5">
+    <h2 class="text-center mb-5">Admin Dashboard</h2>
+
+    <div class="row g-4 justify-content-center">
+
+        <!-- 이모지 관리 -->
+        <div class="col-md-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header text-center">이모지 관리</div>
+                <div class="card-body d-flex flex-column justify-content-center align-items-center">
+                    <p class="text-center">업로드 / 삭제 / 확인 가능한 이모지 관리 페이지</p>
+                    <a href="/pages/admin/emoji" class="btn btn-primary w-100">이모지 관리로 이동</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- 회원 관리 -->
+        <div class="col-md-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header text-center">회원 관리</div>
+                <div class="card-body d-flex flex-column justify-content-center align-items-center">
+                    <p class="text-center">회원 조회 / 역할 변경 / 삭제 가능</p>
+                    <a href="/pages/admin/users" class="btn btn-secondary w-100">회원 관리로 이동</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- 채팅 룸 -->
+        <div class="col-md-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header text-center">채팅 룸</div>
+                <div class="card-body d-flex flex-column justify-content-center align-items-center">
+                    <p class="text-center">일반 회원용 채팅 룸 페이지 접속</p>
+                    <a href="/pages/rooms" class="btn btn-success w-100">채팅 룸으로 이동</a>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- 로그아웃 버튼 -->
+    <div class="row mt-5">
+        <div class="col-md-4 offset-md-4">
+            <button class="btn btn-danger w-100" onclick="logout()">로그아웃</button>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    function logout() {
+        fetch('/api/auth/logout', {
+            method: 'POST',
+            credentials: 'include'
+        })
+            .then(res => res.json())
+            .then(data => {
+                alert(data.message || '로그아웃 되었습니다.');
+                window.location.href = '/';
+            })
+            .catch(err => {
+                console.error(err);
+                alert('로그아웃 중 오류가 발생했습니다.');
+            });
+    }
+</script>
+
+</body>
+</html>

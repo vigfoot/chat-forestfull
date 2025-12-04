@@ -30,7 +30,6 @@ public class CustomUserDetailsService implements UserDetailsService {
     }
 
     public void signup(com.forestfull.domain.User.SignUpRequest request) {
-
         var existingUser = userMapper.findByUsername(request.getUsername());
         if (existingUser != null) {
             throw new RuntimeException("User already exists");
