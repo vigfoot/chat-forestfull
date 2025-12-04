@@ -7,24 +7,16 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.codec.multipart.FilePart;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
 
-@Controller
+@RestController
 @RequiredArgsConstructor
 @RequestMapping("/admin")
 public class AdminController {
 
     private final FileService fileService;
 
-    @GetMapping("/emoji")
-    String emojiPage(){
-        return "admin-emoji";
-    }
-
-    @ResponseBody
     @PostMapping(value = "/emoji/{filename}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public Mono<ResponseEntity<ResponseException>> saveEmoji(
             @RequestPart("file") Mono<FilePart> filePartMono,
@@ -38,7 +30,6 @@ public class AdminController {
         );
     }
 
-    @ResponseBody
     @DeleteMapping("/emoji/{id}")
     Mono<ResponseEntity<ResponseException>> deleteEmoji(@PathVariable Long id) {
         final ResponseException result = fileService.deleteFile(id);

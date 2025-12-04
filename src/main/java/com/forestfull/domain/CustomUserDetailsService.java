@@ -5,6 +5,7 @@ import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -12,6 +13,7 @@ import org.springframework.stereotype.Service;
 public class CustomUserDetailsService implements UserDetailsService {
 
     private final UserMapper userMapper;
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
@@ -25,5 +27,20 @@ public class CustomUserDetailsService implements UserDetailsService {
                 .password(user.getPassword()) // BCrypt
                 .roles(user.getRoles().split(","))
                 .build();
+    }
+
+    public void signup(com.forestfull.domain.User.SignUpRequest request) {
+
+        var existingUser = userMapper.findByUsername(request.getUsername());
+        if (existingUser != null) {
+            throw new RuntimeException("User already exists");
+        }
+
+        var user = new com.forestfull.domain.User();
+        user.setUsername(request.getUsername());
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.setRoles(request.getRoles());
+
+        userMapper.save(user);
     }
 }
