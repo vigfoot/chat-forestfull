@@ -1,4 +1,4 @@
-package com.forestfull.config.jwt;
+package com.forestfull.config;
 
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;

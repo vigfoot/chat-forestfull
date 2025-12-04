@@ -1,4 +1,4 @@
-package com.forestfull.config.jwt;
+package com.forestfull.config;
 
 import com.forestfull.member.MemberDTO;
 import com.forestfull.member.MemberService;

@@ -1,4 +1,4 @@
-package com.forestfull.config.jwt;
+package com.forestfull.config;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
