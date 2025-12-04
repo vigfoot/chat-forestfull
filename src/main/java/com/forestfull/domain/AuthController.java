@@ -1,5 +1,7 @@
 package com.forestfull.domain;
 
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -21,4 +23,15 @@ public class AuthController {
         userService.signup(request);
         return ResponseEntity.ok(Map.of("message", "Signup success"));
     }
+
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout(HttpServletResponse response) {
+        Cookie cookie = new Cookie("JWT", null);
+        cookie.setHttpOnly(true);
+        cookie.setPath("/");
+        cookie.setMaxAge(0); // 즉시 만료
+        response.addCookie(cookie);
+        return ResponseEntity.ok(Map.of("message", "로그아웃 성공"));
+    }
+
 }

@@ -1,71 +1,126 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>Chat Forestfull - TikTok OAuth</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Forestfull Auth & Admin Test</title>
+    <link rel="stylesheet" href="/webjars/bootstrap/5.3.8/css/bootstrap.min.css">
+    <script src="/webjars/bootstrap/5.3.8/js/bootstrap.bundle.min.js"></script>
 </head>
-<body>
-<h2>Forestfull Chat</h2>
-<button id="loginBtn">Login with TikTok</button>
+<body class="bg-light">
 
-<div id="chatContainer" style="display:none;">
-    <h3>Room Chat</h3>
-    <input type="text" id="messageInput" placeholder="Type message"/>
-    <button id="sendBtn">Send</button>
-    <ul id="messages"></ul>
+<div class="container py-5">
+    <h2 class="text-center mb-5">Forestfull 통합 테스트 페이지</h2>
+
+    <div class="row g-4">
+
+        <!-- 회원가입 -->
+        <div class="col-md-6">
+            <div class="card h-100 shadow-sm">
+                <div class="card-header">회원가입</div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label">Username</label>
+                        <input id="register-username" type="text" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Password</label>
+                        <input id="register-password" type="password" class="form-control">
+                    </div>
+                    <button class="btn btn-primary w-100" onclick="registerUser()">회원가입</button>
+                    <pre id="register-result" class="mt-3 bg-dark text-white p-2 rounded" style="font-size:0.85rem;"></pre>
+                </div>
+            </div>
+        </div>
+
+        <!-- 로그인 -->
+        <div class="col-md-6">
+            <div class="card h-100 shadow-sm">
+                <div class="card-header">로그인 & JWT</div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label">Username</label>
+                        <input id="login-username" type="text" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Password</label>
+                        <input id="login-password" type="password" class="form-control">
+                    </div>
+                    <button class="btn btn-success w-100" onclick="loginUser()">로그인</button>
+                    <div class="mt-3">
+                        <label class="form-label fw-bold">JWT 상태</label>
+                        <input id="jwt-token" type="text" class="form-control" readonly value="쿠키에 저장됨">
+                    </div>
+                    <div class="mt-3">
+                        <button class="btn btn-warning w-100" onclick="deleteToken()">JWT 쿠키 삭제</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Admin Users -->
+        <div class="col-md-6">
+            <div class="card h-100 shadow-sm">
+                <div class="card-header">Admin Users</div>
+                <div class="card-body">
+                    <p>관리자용 유저 관리 페이지</p>
+                    <a href="/admin/users" target="_blank" class="btn btn-dark w-100">Open Admin Users</a>
+                </div>
+            </div>
+        </div>
+
+    </div>
 </div>
 
 <script>
-    const clientKey = "YOUR_TIKTOK_CLIENT_KEY";
-    const redirectUri = "http://localhost:8080"; // 실제 서버 주소로 변경
+    async function registerUser() {
+        try {
+            const res = await fetch('/api/auth/signup', {
+                method:'POST',
+                headers:{'Content-Type':'application/json'},
+                body:JSON.stringify({
+                    username: document.getElementById('register-username').value,
+                    password: document.getElementById('register-password').value
+                })
+            });
+            const text = await res.text();
+            let data;
+            try { data = JSON.parse(text); } catch { data = {message: text}; }
+            document.getElementById('register-result').textContent = JSON.stringify(data,null,2);
+        }catch(err){document.getElementById('register-result').textContent = err;}
+    }
 
-    let accessToken = null;
-    let memberId = null;
-    let roomId = "1"; // 테스트용 고정 룸 ID
-    let ws = null;
+    async function loginUser() {
+        try {
+            const res = await fetch('/api/auth/login',{
+                method:'POST',
+                headers:{'Content-Type':'application/json'},
+                body:JSON.stringify({
+                    username: document.getElementById('login-username').value,
+                    password: document.getElementById('login-password').value
+                }),
+                credentials:'include'
+            });
+            const text = await res.text();
+            let data;
+            try { data = JSON.parse(text); } catch { data={message:text||"서버에서 응답 없음"}; }
+            alert(data.message || "로그인 완료");
+            document.getElementById('jwt-token').value = "쿠키에 저장됨";
+        }catch(err){console.error(err); alert("로그인 중 에러 발생");}
+    }
 
-    // 1️⃣ TikTok 로그인 버튼
-    document.getElementById('loginBtn').addEventListener('click', () => {
-        const url = `https://www.tiktok.com/auth/authorize?client_key=${clientKey}&scope=user.info.basic&response_type=code&redirect_uri=${redirectUri}`;
-        window.location.href = url;
-    });
-
-    // 2️⃣ URL에서 code 추출
-    const params = new URLSearchParams(window.location.search);
-    const code = params.get('code');
-    if (code) {
-        fetch('/oauth/callback?code=' + code, { method: 'POST' })
+    function deleteToken(){
+        fetch('/api/auth/logout', {
+            method: 'POST',
+            credentials: 'include'
+        })
             .then(res => res.json())
-            .then(member => {
-                console.log('Member:', member);
-                accessToken = code; // 테스트용. 실제는 server에서 발급된 토큰 사용 가능
-                memberId = member.id;
-                document.getElementById('chatContainer').style.display = 'block';
-                initWebSocket();
-            })
-            .catch(err => console.error(err));
+            .then(data => {
+                alert(data.message);
+                document.getElementById('jwt-token').value = "";
+            });
     }
-
-    // 3️⃣ WebSocket 연결
-    function initWebSocket() {
-        ws = new WebSocket(`ws://localhost:8080/ws/chat?token=${accessToken}&room=${roomId}`);
-        ws.onmessage = (event) => {
-            const li = document.createElement('li');
-            li.textContent = event.data;
-            document.getElementById('messages').appendChild(li);
-        };
-        ws.onopen = () => console.log('WebSocket connected');
-        ws.onclose = () => console.log('WebSocket disconnected');
-    }
-
-    // 4️⃣ 메시지 전송
-    document.getElementById('sendBtn').addEventListener('click', () => {
-        const input = document.getElementById('messageInput');
-        if (input.value && ws) {
-            ws.send(input.value);
-            input.value = '';
-        }
-    });
 </script>
+
 </body>
 </html>

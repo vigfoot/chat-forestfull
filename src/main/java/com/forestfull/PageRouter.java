@@ -19,26 +19,6 @@ public class PageRouter {
         return "admin-emoji";
     }
 
-    @GetMapping("/ui/signup")
-    public String signupPage() {
-        return "signup"; // src/main/resources/templates/signup.html
-    }
-
-    @GetMapping("/ui/login")
-    public String loginPage() {
-        return "login";  // templates/login.html
-    }
-
-    @GetMapping("/ui/token")
-    public String tokenPage() {
-        return "token";  // templates/token.html
-    }
-
-    @GetMapping("/ui/secure")
-    public String securePage() {
-        return "secure"; // templates/secure.html
-    }
-
     @GetMapping("/admin/users")
     public String adminUsers() {
         return "admin-users"; // templates/admin-users.html (권한필터 적용)
