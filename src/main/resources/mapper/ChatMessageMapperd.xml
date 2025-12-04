@@ -2,13 +2,28 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
 <mapper namespace="com.forestfull.chat.ChatMessageMapper">
-    <insert id="insertMessage" parameterType="com.forestfull.chat.ChatMessageDTO$Message">
-        INSERT INTO chat_forestfull.member_room_messages(room_id, member_id, message, created_by, updated_by, sent_at)
-        VALUES(#{roomId}, #{memberId}, #{message}, #{createdBy}, #{updatedBy}, NOW())
+    <select id="findByRoomId" resultType="com.forestfull.chat.ChatDTO$Message">
+        SELECT msg.id
+             ,
+             , msg.room_id
+             , msg.member_id
+             , m.display_name
+             , msg.message
+             , msg.sent_at AS sentAt
+        FROM
+            chat_forestfull.messages msg
+            LEFT JOIN chat_forestfull.member m ON msg.member_id = m.id
+        WHERE msg.room_id = #{roomId}
+            ORDER BY msg.sent_at ASC
+    </select>
+
+    <insert id="insertMessage" parameterType="com.forestfull.chat.ChatDTO$Message">
+        INSERT INTO chat_forestfull.messages(room_id, member_id, message, sent_at)
+        VALUES(#{roomId}, #{memberId}, #{message}, NOW())
     </insert>
 
-    <select id="findRecentMessages" resultType="com.forestfull.chat.ChatMessageDTO$Message">
-        SELECT * FROM chat_forestfull.member_room_messages
+    <select id="findRecentMessages" resultType="com.forestfull.chat.ChatDTO$Message">
+        SELECT * FROM chat_forestfull.messages
         WHERE room_id = #{roomId}
         ORDER BY sent_at DESC
         LIMIT #{limit}

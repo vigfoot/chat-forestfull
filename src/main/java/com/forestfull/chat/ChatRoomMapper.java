@@ -1,12 +1,23 @@
 package com.forestfull.chat;
 
-import com.forestfull.member.MemberDTO;
-import org.apache.ibatis.annotations.Mapper;
-import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.*;
+
+import java.util.List;
 
 @Mapper
 public interface ChatRoomMapper {
-    void joinRoom(MemberDTO.Room memberRoom);
 
-    void leaveRoom(@Param("roomId") Long roomId, @Param("memberId") Long memberId);
+    List<ChatDTO.Room> findAll();
+
+    ChatDTO.Room findById(Long id);
+
+    Boolean existsMemberInRoom(@Param("roomId") Long roomId, @Param("memberId") Long memberId);
+
+    void insertRoom(ChatDTO.Room room);
+
+    void insertMemberRoom(@Param("roomId") Long roomId, @Param("memberId") Long memberId);
+
+    void deleteMemberRoom(@Param("roomId") Long roomId, @Param("memberId") Long memberId);
+
+    List<ChatDTO.Participant> findParticipants(Long roomId);
 }

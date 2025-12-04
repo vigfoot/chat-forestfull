@@ -6,6 +6,9 @@ import java.util.List;
 
 @Mapper
 public interface ChatMessageMapper {
-    void insertMessage(ChatMessageDTO.Message message);
-    List<ChatMessageDTO.Message> findRecentMessages(Long roomId, int limit);
+    List<ChatDTO.Message> findByRoomId(Long roomId);
+
+    void insertMessage(ChatDTO.Message message);
+
+    List<ChatDTO.Message> findRecentMessages(Long roomId, int limit);
 }
