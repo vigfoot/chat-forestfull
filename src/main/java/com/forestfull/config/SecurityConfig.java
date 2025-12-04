@@ -9,7 +9,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -29,17 +28,17 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @RequiredArgsConstructor
 public class SecurityConfig {
 
+    private static final String[] staticResources = {"/", "/css/**", "/js/**", "/images/**", "/webjars/**", "/favicon.ico"};
     private final ObjectMapper objectMapper;
-    private final CustomUserDetailsService customUserDetailsService;
 
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http, JwtUtil jwtUtil, AuthenticationManager manager) throws Exception {
         return http.csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers(staticResources).permitAll()
+                        .requestMatchers("/api/auth/**", "/verify/**").permitAll()
                         .anyRequest().authenticated()
                 )
-                .userDetailsService(customUserDetailsService)
                 .sessionManagement(config -> config.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(new TokenFilter(jwtUtil), UsernamePasswordAuthenticationFilter.class)
                 .addFilterAt(new CustomLoginFilter(manager, jwtUtil, objectMapper), UsernamePasswordAuthenticationFilter.class)
@@ -55,7 +54,7 @@ public class SecurityConfig {
     @Bean
     JwtUtil jwtUtil() {
         String secret = System.getenv().getOrDefault("key", String.valueOf(System.nanoTime()));
-        long expireMillis = 7L * 24 * 60 * 60 * 1000;
+        long expireMillis = 24L * 60 * 60 * 1000;
         return new JwtUtil(secret, expireMillis);
     }
 

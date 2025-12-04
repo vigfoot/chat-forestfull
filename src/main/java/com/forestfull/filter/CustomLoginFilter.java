@@ -33,6 +33,7 @@ public class CustomLoginFilter extends UsernamePasswordAuthenticationFilter {
             Map<String, String> requestMap = objectMapper.readValue(req.getInputStream(), Map.class);
             String username = requestMap.get("username");
             String password = requestMap.get("password");
+            if (username == null || password == null) throw new RuntimeException("username or password is null");
 
             var authToken = new UsernamePasswordAuthenticationToken(username, password);
             return getAuthenticationManager().authenticate(authToken);

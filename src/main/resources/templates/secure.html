@@ -1,0 +1,20 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>Secure</title></head>
+<body>
+<h2>Call Protected API</h2>
+<button id="call">Call /api/secure</button>
+<pre id="output"></pre>
+
+<script>
+  document.getElementById('call').addEventListener('click', async () => {
+    const token = sessionStorage.getItem('accessToken');
+    const res = await fetch('/api/secure', {
+      headers: { Authorization: token ? 'Bearer ' + token : '' }
+    });
+    const txt = await res.text();
+    document.getElementById('output').innerText = txt;
+  });
+</script>
+</body>
+</html>
