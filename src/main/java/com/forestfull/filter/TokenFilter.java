@@ -2,48 +2,48 @@ package com.forestfull.filter;
 
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.forestfull.util.JwtUtil;
+import jakarta.servlet.*;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.context.ReactiveSecurityContextHolder;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.context.SecurityContextImpl;
-import org.springframework.web.server.ServerWebExchange;
-import org.springframework.web.server.WebFilter;
-import org.springframework.web.server.WebFilterChain;
-import reactor.core.publisher.Mono;
+import org.springframework.util.ObjectUtils;
 
+import java.io.IOException;
 import java.util.Arrays;
-import java.util.stream.Collectors;
+import java.util.List;
+import java.util.Optional;
 
-public class TokenFilter implements WebFilter {
+@RequiredArgsConstructor
+public class TokenFilter implements Filter {
 
     private final JwtUtil jwtUtil;
 
-    public TokenFilter(JwtUtil jwtUtil) {
-        this.jwtUtil = jwtUtil;
-    }
-
     @Override
-    public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
-        String token = Arrays.stream(exchange.getRequest().getCookies().getFirst("JWT") != null ?
-                        new String[]{exchange.getRequest().getCookies().getFirst("JWT").getValue()} : new String[]{})
-                .findFirst().orElse(null);
+    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
+        final Cookie[] cookies = ((HttpServletRequest) request).getCookies();
 
-        if (token != null) {
-            try {
-                DecodedJWT jwt = jwtUtil.verifyToken(token);
-                String username = jwt.getSubject();
-                var authorities = Arrays.stream(jwt.getClaim("roles").asArray(String.class))
-                        .map(SimpleGrantedAuthority::new)
-                        .collect(Collectors.toList());
+        if (!ObjectUtils.isEmpty(cookies)) {
+            final Optional<Cookie> optionalJWT = Arrays.stream((cookies))
+                    .filter(cookie -> cookie.getName().equals("JWT"))
+                    .findFirst();
 
-                var auth = new UsernamePasswordAuthenticationToken(username, null, authorities);
-                return chain.filter(exchange)
-                        .contextWrite(ReactiveSecurityContextHolder.withSecurityContext(Mono.just(new SecurityContextImpl(auth))));
-            } catch (Exception e) {
-                // 유효하지 않은 토큰은 무시하고 체인 진행
+            if (optionalJWT.isEmpty()) {
+                chain.doFilter(request, response);
+                return;
             }
-        }
 
-        return chain.filter(exchange);
+            DecodedJWT jwt = jwtUtil.verifyToken(optionalJWT.get().getValue());
+            String username = jwt.getSubject();
+            List<SimpleGrantedAuthority> authorities = Arrays.stream(jwt.getClaim("roles").asArray(String.class))
+                    .map(SimpleGrantedAuthority::new)
+                    .toList();
+
+            SecurityContextHolder.setContext(new SecurityContextImpl(new UsernamePasswordAuthenticationToken(username, null, authorities)));
+        }
+        chain.doFilter(request, response);
     }
 }

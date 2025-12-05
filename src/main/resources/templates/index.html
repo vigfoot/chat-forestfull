@@ -34,66 +34,49 @@
 </div>
 
 <script>
-    function getCookie(name) {
-        const value = `; ${document.cookie}`;
-        const parts = value.split(`; ${name}=`);
-        if (parts.length === 2) return parts.pop().split(';').shift();
-    }
-
-    function parseJwt(token) {
-        try {
-            const payload = token.split('.')[1];
-            return JSON.parse(atob(payload));
-        } catch (e) {
-            return null;
-        }
-    }
-
-    async function loginOrSignup() {
+    function loginOrSignup() {
         const username = document.getElementById('username').value;
         const password = document.getElementById('password').value;
 
-        // 1. 로그인 시도
-        let loginRes = await fetch('/api/auth/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username, password }),
-            credentials: 'include'
-        });
+        // 로그인 시도
+        const xhrLogin = new XMLHttpRequest();
+        xhrLogin.open('POST', '/api/auth/login', true);
+        xhrLogin.withCredentials = true; // 쿠키 전송
+        xhrLogin.setRequestHeader('Content-Type', 'application/json');
+        xhrLogin.onload = function () {
+            if (xhrLogin.status === 200) {
+                const data = JSON.parse(xhrLogin.responseText);
+                document.getElementById('login-result').textContent = "로그인 성공!";
 
-        if (loginRes.ok && getCookie('JWT')) {
-            const data = await loginRes.json();
-            document.getElementById('login-result').textContent = data.message;
-
-            const payload = parseJwt(getCookie('JWT'));
-            if (!payload || !payload.roles) {
-                alert('JWT payload를 읽을 수 없습니다.');
-                return;
-            }
-
-            if (payload.roles.includes('ROLE_ADMIN')) {
-                window.location.href = '/pages/admin/dashboard';
+                // 서버에서 roles를 보내준다고 가정
+                if (data.roles && data.roles.includes('ROLE_ADMIN')) {
+                    window.location.href = '/pages/admin/dashboard';
+                } else {
+                    window.location.href = '/pages/rooms';
+                }
+            } else if (xhrLogin.status === 401) {
+                // 로그인 실패 -> 회원가입 시도
+                const xhrSignup = new XMLHttpRequest();
+                xhrSignup.open('POST', '/api/auth/signup', true);
+                xhrSignup.withCredentials = true;
+                xhrSignup.setRequestHeader('Content-Type', 'application/json');
+                xhrSignup.onload = function () {
+                    if (xhrSignup.status === 200) {
+                        document.getElementById('login-result').textContent = "회원가입 완료. 다시 로그인 해주세요.";
+                        document.getElementById('username').value = '';
+                        document.getElementById('password').value = '';
+                    } else if (xhrSignup.status === 409) {
+                        document.getElementById('login-result').textContent = "사용자가 이미 존재합니다.";
+                    } else {
+                        document.getElementById('login-result').textContent = "회원가입 실패";
+                    }
+                };
+                xhrSignup.send(JSON.stringify({ username, password }));
             } else {
-                window.location.href = '/pages/rooms';
+                document.getElementById('login-result').textContent = "로그인 실패";
             }
-
-        } else {
-            // 2. 로그인 실패 -> 회원가입 시도
-            let signupRes = await fetch('/api/auth/signup', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, password })
-            });
-
-            if (signupRes.ok) {
-                const data = await signupRes.json();
-                document.getElementById('login-result').textContent = "회원가입 완료. 다시 로그인 해주세요.";
-                document.getElementById('username').value = '';
-                document.getElementById('password').value = '';
-            } else {
-                document.getElementById('login-result').textContent = "회원가입 실패";
-            }
-        }
+        };
+        xhrLogin.send(JSON.stringify({ username, password }));
     }
 </script>
 

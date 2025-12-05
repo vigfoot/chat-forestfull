@@ -9,6 +9,7 @@ import lombok.Getter;
 
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class JwtUtil {
 
@@ -36,5 +37,21 @@ public class JwtUtil {
 
     public DecodedJWT verifyToken(String token) throws JWTVerificationException {
         return verifier.verify(token);
+    }
+
+    public static class Refresh {
+        private final ConcurrentHashMap<String, String> store = new ConcurrentHashMap<>();
+
+        public void save(String username, String refreshToken) {
+            store.put(username, refreshToken);
+        }
+
+        public String getToken(String username) {
+            return store.get(username);
+        }
+
+        public void deleteToken(String username) {
+            store.remove(username);
+        }
     }
 }

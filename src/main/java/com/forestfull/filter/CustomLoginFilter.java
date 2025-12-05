@@ -2,62 +2,74 @@ package com.forestfull.filter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.forestfull.util.JwtUtil;
-import org.springframework.http.ResponseCookie;
-import org.springframework.security.authentication.ReactiveAuthenticationManager;
+import jakarta.servlet.*;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.web.server.authentication.AuthenticationWebFilter;
-import reactor.core.publisher.Mono;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
-public class CustomLoginFilter {
+@RequiredArgsConstructor
+public class CustomLoginFilter extends UsernamePasswordAuthenticationFilter {
 
-    public static AuthenticationWebFilter build(ReactiveAuthenticationManager authManager, JwtUtil jwtUtil, ObjectMapper mapper) {
-        AuthenticationWebFilter filter = new AuthenticationWebFilter(authManager);
+    private final JwtUtil jwtUtil;
+    private final JwtUtil.Refresh refreshJwtUtil;
 
-        filter.setServerAuthenticationConverter(exchange -> exchange.getRequest().getBody()
-                .next()
-                .flatMap(dataBuffer -> {
-                    try {
-                        byte[] bytes = new byte[dataBuffer.readableByteCount()];
-                        dataBuffer.read(bytes);
-                        Map<String, String> map = mapper.readValue(bytes, Map.class);
-                        String username = map.get("username");
-                        String password = map.get("password");
-                        return Mono.just(new UsernamePasswordAuthenticationToken(username, password));
-                    } catch (Exception e) {
-                        e.printStackTrace(System.err);
-                        return Mono.error(new RuntimeException("Invalid request"));
-                    }
-                }));
+    @Override
+    public Authentication attemptAuthentication(HttpServletRequest request,
+                                                HttpServletResponse response) throws AuthenticationException {
 
-        filter.setAuthenticationSuccessHandler((webFilterExchange, authentication) -> {
-            Authentication auth = authentication;
-            List<String> roles = auth.getAuthorities().stream().map(a -> a.getAuthority()).toList();
-            String token = jwtUtil.generateToken(auth.getName(), roles);
+        try {
+            Map<String, String> requestBody = new ObjectMapper().readValue(request.getInputStream(), Map.class);
+            String username = requestBody.get("username");
+            String password = requestBody.get("password");
 
-            ResponseCookie cookie = ResponseCookie.from("JWT", token)
-                    .httpOnly(false) // HttpOnly 제거
-                    .path("/")
-                    .maxAge(jwtUtil.getExpireMillis() / 1000)
-                    .build();
+            UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(username, password);
 
-            webFilterExchange.getExchange().getResponse().addCookie(cookie);
-            webFilterExchange.getExchange().getResponse().getHeaders().add("Content-Type", "application/json");
-            byte[] body = "{\"message\":\"success\"}".getBytes();
-            return webFilterExchange.getExchange().getResponse().writeWith(Mono.just(webFilterExchange.getExchange().getResponse().bufferFactory().wrap(body)));
-        });
+            return this.getAuthenticationManager().authenticate(authToken);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
-        filter.setAuthenticationFailureHandler((webFilterExchange, exception) -> {
-            exception.printStackTrace(System.err);
+    @Override
+    protected void successfulAuthentication(HttpServletRequest request,
+                                            HttpServletResponse response,
+                                            FilterChain chain,
+                                            Authentication authResult) throws IOException {
 
-            byte[] body = ("{\"message\":\"failure\"}").getBytes();
-            webFilterExchange.getExchange().getResponse().getHeaders().add("Content-Type", "application/json");
-            return webFilterExchange.getExchange().getResponse().writeWith(Mono.just(webFilterExchange.getExchange().getResponse().bufferFactory().wrap(body)));
-        });
 
-        return filter;
+        String username = authResult.getName();
+        List<String> roles = authResult.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .toList();
+
+        // Access Token과 Refresh Token 생성
+        String accessToken = jwtUtil.generateToken(username, roles);
+        String refreshToken = jwtUtil.generateToken(username, roles); // 간단히 동일 구조 사용
+
+        // Refresh Token 저장
+        refreshJwtUtil.save(username, refreshToken);
+
+        // JSON 응답
+        response.setContentType("application/json");
+        response.getWriter().write(
+                String.format("{\"accessToken\":\"%s\", \"refreshToken\":\"%s\"}", accessToken, refreshToken)
+        );
+    }
+
+    @Override
+    protected void unsuccessfulAuthentication(HttpServletRequest request,
+                                              HttpServletResponse response,
+                                              AuthenticationException failed) throws IOException {
+        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        response.getWriter().write("{\"error\":\"Login failed\"}");
     }
 }

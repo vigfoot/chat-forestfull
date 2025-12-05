@@ -1,47 +1,47 @@
 package com.forestfull.config;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.forestfull.domain.CustomUserDetailsService;
 import com.forestfull.filter.CustomLoginFilter;
+import com.forestfull.filter.JwtAuthenticationFilter;
 import com.forestfull.filter.TokenFilter;
 import com.forestfull.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.authentication.ReactiveAuthenticationManager;
-import org.springframework.security.authentication.UserDetailsRepositoryReactiveAuthenticationManager;
-import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
-import org.springframework.security.config.web.server.SecurityWebFiltersOrder;
-import org.springframework.security.config.web.server.ServerHttpSecurity;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.web.server.SecurityWebFilterChain;
-import org.springframework.security.web.server.context.NoOpServerSecurityContextRepository;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
-@EnableWebFluxSecurity
+@EnableWebSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private final ObjectMapper objectMapper;
+
     private static final String[] staticResources = {"/", "/css/**", "/js/**", "/images/**", "/webjars/**", "/favicon.ico"};
 
     @Bean
-    SecurityWebFilterChain springSecurityFilterChain(ServerHttpSecurity http, ReactiveAuthenticationManager manager, JwtUtil jwtUtil) {
+    SecurityFilterChain securityFilterChain(HttpSecurity http, CustomUserDetailsService customUserDetailsService, JwtUtil jwtUtil, JwtUtil.Refresh jwtUtilRefresh) throws Exception {
         return http
-                .csrf(ServerHttpSecurity.CsrfSpec::disable)
-                .httpBasic(ServerHttpSecurity.HttpBasicSpec::disable)
-                .formLogin(ServerHttpSecurity.FormLoginSpec::disable)
-                .authorizeExchange(ex -> ex
-                        .pathMatchers(staticResources).permitAll()
-                        .pathMatchers("/pages/**", "/api/auth/**").permitAll()
-                        .pathMatchers("/pages/admin/**", "/admin/**").hasRole("ADMIN")
-                        .pathMatchers("/pages/management/**", "/management/**").hasAnyRole("ADMIN", "MANAGER")
-                        .anyExchange().authenticated()
+                .csrf(AbstractHttpConfigurer::disable)
+                .formLogin(AbstractHttpConfigurer::disable)
+                .authorizeHttpRequests(reg -> reg
+                        .requestMatchers(staticResources).permitAll()
+                        .requestMatchers("/pages/**", "/api/auth/**").permitAll()
+                        .requestMatchers("/pages/admin/**", "/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/pages/management/**", "/management/**").hasAnyRole("ADMIN", "MANAGER")
+                        .anyRequest().authenticated()
                 )
-                .addFilterAt(CustomLoginFilter.build(manager, jwtUtil, objectMapper), SecurityWebFiltersOrder.AUTHENTICATION)
-                .addFilterAfter(new TokenFilter(jwtUtil), SecurityWebFiltersOrder.AUTHENTICATION)
-                .securityContextRepository(NoOpServerSecurityContextRepository.getInstance())  // ⬅ Stateless 핵심
+                .userDetailsService(customUserDetailsService)
+                .addFilterAt(new CustomLoginFilter(jwtUtil, jwtUtilRefresh), UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(new TokenFilter(jwtUtil), UsernamePasswordAuthenticationFilter.class)
+                .addFilterAfter(new JwtAuthenticationFilter(jwtUtil), UsernamePasswordAuthenticationFilter.class)
+                .sessionManagement(config -> config.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .build();
     }
 
@@ -58,9 +58,7 @@ public class SecurityConfig {
     }
 
     @Bean
-    ReactiveAuthenticationManager reactiveAuthenticationManager(PasswordEncoder passwordEncoder, CustomUserDetailsService reactiveUserDetailsService) {
-        UserDetailsRepositoryReactiveAuthenticationManager manager = new UserDetailsRepositoryReactiveAuthenticationManager(reactiveUserDetailsService);
-        manager.setPasswordEncoder(passwordEncoder);
-        return manager;
+    JwtUtil.Refresh jwtUtilRefresh() {
+        return new JwtUtil.Refresh();
     }
 }

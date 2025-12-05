@@ -28,47 +28,77 @@
 
 <script>
     function loadUsers() {
-        fetch('/admin/users', { credentials: 'include' })
-            .then(res => res.json())
-            .then(users => {
-                const tbody = document.getElementById('admin-users-tbody');
-                tbody.innerHTML = '';
-                users.forEach(user => {
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `
-                    <td>${user.username}</td>
-                    <td><input type="text" class="form-control" value="${user.roles}" id="roles-${user.username}"></td>
-                    <td>
-                        <button class="btn btn-sm btn-success me-1" onclick="updateRoles('${user.username}')">Update</button>
-                        <button class="btn btn-sm btn-danger" onclick="deleteUser('${user.username}')">Delete</button>
-                    </td>`;
-                    tbody.appendChild(tr);
-                });
-            });
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', '/admin/users', true);
+        xhr.withCredentials = true;
+        xhr.onload = function() {
+            if (xhr.status === 200) {
+                try {
+                    const users = JSON.parse(xhr.responseText);
+                    const tbody = document.getElementById('admin-users-tbody');
+                    tbody.innerHTML = '';
+                    users.forEach(user => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                        <td>${user.username}</td>
+                        <td><input type="text" class="form-control" value="${user.roles}" id="roles-${user.username}"></td>
+                        <td>
+                            <button class="btn btn-sm btn-success me-1" onclick="updateRoles('${user.username}')">Update</button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteUser('${user.username}')">Delete</button>
+                        </td>`;
+                        tbody.appendChild(tr);
+                    });
+                } catch (e) {
+                    console.error('사용자 목록 처리 오류:', e);
+                }
+            } else {
+                alert('사용자 목록을 가져오지 못했습니다.');
+            }
+        };
+        xhr.send();
     }
 
     function updateRoles(username) {
         const roles = document.getElementById(`roles-${username}`).value;
-        fetch(`/admin/users/${username}/roles`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({ roles })
-        })
-            .then(res => res.json())
-            .then(data => alert(data.message));
+        const xhr = new XMLHttpRequest();
+        xhr.open('PUT', `/admin/users/${username}/roles`, true);
+        xhr.withCredentials = true;
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.onload = function() {
+            if (xhr.status === 200) {
+                try {
+                    const data = JSON.parse(xhr.responseText);
+                    alert(data.message || '업데이트 완료');
+                } catch (e) {
+                    console.error('업데이트 처리 오류:', e);
+                    alert('업데이트 실패');
+                }
+            } else {
+                alert('업데이트 실패 (서버 오류)');
+            }
+        };
+        xhr.send(JSON.stringify({ roles }));
     }
 
     function deleteUser(username) {
-        fetch(`/admin/users/${username}`, {
-            method: 'DELETE',
-            credentials: 'include'
-        })
-            .then(res => res.json())
-            .then(data => {
-                alert(data.message);
-                loadUsers();
-            });
+        const xhr = new XMLHttpRequest();
+        xhr.open('DELETE', `/admin/users/${username}`, true);
+        xhr.withCredentials = true;
+        xhr.onload = function() {
+            if (xhr.status === 200) {
+                try {
+                    const data = JSON.parse(xhr.responseText);
+                    alert(data.message || '삭제 완료');
+                    loadUsers();
+                } catch (e) {
+                    console.error('삭제 처리 오류:', e);
+                    alert('삭제 실패');
+                }
+            } else {
+                alert('삭제 실패 (서버 오류)');
+            }
+        };
+        xhr.send();
     }
 
     // 페이지 로드 시 목록 가져오기

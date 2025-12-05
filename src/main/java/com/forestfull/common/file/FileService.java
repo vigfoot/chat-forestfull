@@ -5,10 +5,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
-import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
-import reactor.core.publisher.Mono;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.IOException;
@@ -64,10 +63,6 @@ public class FileService {
         return fileMapper.getFileById(id);
     }
 
-    public List<FileDTO> getEmojiList() {
-        return getEmojiList("");
-    }
-
     public List<FileDTO> getEmojiList(String emojiFileName) {
         return fileMapper.getEmojiList(emojiFileName);
     }
@@ -79,12 +74,12 @@ public class FileService {
      * - basePath.startsWith 체크
      * - 폴더 생성은 Files.createDirectories 사용
      */
-    public Mono<ResponseException> saveFile(FilePart filePart, String type, String fileName) {
+    public ResponseException saveFile(MultipartFile filePart, String type, String fileName) {
         String safeFileName;
         try {
             safeFileName = sanitizeFilename(fileName);
         } catch (IllegalArgumentException ex) {
-            return Mono.just(ResponseException.fail(ex.getMessage()));
+            return ResponseException.fail(ex.getMessage());
         }
 
         final LocalDateTime now = LocalDateTime.now(Clock.systemUTC());
@@ -98,41 +93,31 @@ public class FileService {
                 .resolve(UUID.randomUUID() + "_" + safeFileName);
 
         Path targetPath = basePath.resolve(targetRelative).normalize();
-        if (!targetPath.startsWith(basePath)) {
-            return Mono.just(ResponseException.fail("Invalid file path"));
-        }
+        if (!targetPath.startsWith(basePath)) return ResponseException.fail("Invalid file path");
+
 
         try {
             // 상위 디렉토리 생성
             Files.createDirectories(targetPath.getParent());
+            // 실제 파일로 전송
+            File dest = targetPath.toFile();
+            filePart.transferTo(dest);
+
+            // DB에는 베이스 경로를 제외한 상대 경로를 저장
+            String dbDirectory = basePath.relativize(targetPath).toString().replace('\\', '/');
+            fileMapper.saveFile(
+                    FileDTO.builder()
+                            .type(type)
+                            .name(safeFileName)
+                            .directory(dbDirectory)
+                            .build()
+            );
+            return ResponseException.ok();
         } catch (IOException e) {
-            return Mono.just(ResponseException.fail("Failed to create directories: " + e.getMessage()));
+            return ResponseException.fail("Failed to create directories: " + e.getMessage());
+        } catch (Exception e) {
+            return ResponseException.fail("Failed to save file: " + e.getMessage());
         }
-
-        // 실제 파일로 전송
-        File dest = targetPath.toFile();
-
-        return filePart.transferTo(dest)
-                .then(Mono.fromRunnable(() -> {
-                    // DB에는 베이스 경로를 제외한 상대 경로를 저장
-                    String dbDirectory = basePath.relativize(targetPath).toString().replace('\\', '/');
-                    fileMapper.saveFile(
-                            FileDTO.builder()
-                                    .type(type)
-                                    .name(safeFileName)
-                                    .directory(dbDirectory)
-                                    .build()
-                    );
-                }))
-                .thenReturn(ResponseException.ok())
-                .onErrorResume(throwable -> {
-                    // 전송 중 에러가 나면 파일을 지우는 시도
-                    try {
-                        if (dest.exists()) dest.delete();
-                    } catch (Exception ignored) {
-                    }
-                    return Mono.just(ResponseException.fail("Failed to save file: " + throwable.getMessage()));
-                });
     }
 
     public ResponseException deleteFile(Long id) {
@@ -158,12 +143,13 @@ public class FileService {
 
         return ResponseException.ok();
     }
+
     /**
      * directory 경로를 받아 Resource 반환
      */
     public Resource getFileResource(String directory) {
         // directory 경로가 외부 입력이므로 보안상 경로 검증 필요
-        if(directory.contains("..")) {
+        if (directory.contains("..")) {
             throw new IllegalArgumentException("Invalid directory path");
         }
 
@@ -171,7 +157,7 @@ public class FileService {
         File file = Paths.get(absolutePath, directory).toFile();
 
         // 존재 여부 확인 후 Resource 반환
-        if(file.exists() && file.isFile()){
+        if (file.exists() && file.isFile()) {
             return new FileSystemResource(file);
         } else {
             return null; // 없으면 null 혹은 예외 처리
