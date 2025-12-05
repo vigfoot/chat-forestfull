@@ -1,11 +1,10 @@
 spring:
+  main:
+    web-application-type: reactive
   application:
     name: chat-forestfull
   profiles:
     default: dev
-logging:
-  level:
-    root: INFO
 jasypt:
   encryptor:
     password: ${key}
@@ -33,7 +32,7 @@ spring:
 logging:
   level:
     com.forestfull.chat: DEBUG
-    org.apache.ibatis: INFO
+    org.apache.ibatis: DEBUG
 tiktok:
   client-key: ENC(ttOlI31RZl027PBkYcqbeDKZyfB6gpv/u7wCJ72Q5AI=)
   client-secret: ENC(7k8/DfgRorImyUPfE/9/1Rn4q8cnv7SOjm9AR/Ln1NCW7RvhhZTtyQxxS4j+cQ0i)
@@ -41,7 +40,7 @@ tiktok:
   scope: ENC(RkFhNItvhRZgBIQYg2+65RWzDJAXFuFy)
 file:
   directory:
-    absolute: "C:/Development/test-storage/"
+    absolute: "C:/Development/test-resources/"
 
 
 ---
@@ -68,4 +67,4 @@ tiktok:
   scope: ENC(sK07a57NUiOyrUqKitiDcHRU+CbjdOEv)
 file:
   directory:
-    absolute: "C:/Development/test-storage/"
+    absolute: "/home/vigfoot/Desktop/chat-forestfull/resources"
