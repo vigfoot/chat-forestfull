@@ -2,67 +2,62 @@ package com.forestfull.filter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.forestfull.util.JwtUtil;
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.http.ResponseCookie;
+import org.springframework.security.authentication.ReactiveAuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.server.authentication.AuthenticationWebFilter;
+import reactor.core.publisher.Mono;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
-public class CustomLoginFilter extends UsernamePasswordAuthenticationFilter {
+public class CustomLoginFilter {
 
-    private final JwtUtil jwtUtil;
-    private final ObjectMapper objectMapper;
+    public static AuthenticationWebFilter build(ReactiveAuthenticationManager authManager, JwtUtil jwtUtil, ObjectMapper mapper) {
+        AuthenticationWebFilter filter = new AuthenticationWebFilter(authManager);
 
-    public CustomLoginFilter(AuthenticationManager authenticationManager, JwtUtil jwtUtil, ObjectMapper objectMapper) {
-        super.setAuthenticationManager(authenticationManager);
-        this.jwtUtil = jwtUtil;
-        this.objectMapper = objectMapper;
-        setFilterProcessesUrl("/api/auth/login");
-    }
+        filter.setServerAuthenticationConverter(exchange -> exchange.getRequest().getBody()
+                .next()
+                .flatMap(dataBuffer -> {
+                    try {
+                        byte[] bytes = new byte[dataBuffer.readableByteCount()];
+                        dataBuffer.read(bytes);
+                        Map<String, String> map = mapper.readValue(bytes, Map.class);
+                        String username = map.get("username");
+                        String password = map.get("password");
+                        return Mono.just(new UsernamePasswordAuthenticationToken(username, password));
+                    } catch (Exception e) {
+                        e.printStackTrace(System.err);
+                        return Mono.error(new RuntimeException("Invalid request"));
+                    }
+                }));
 
-    @Override
-    public Authentication attemptAuthentication(HttpServletRequest req,
-                                                HttpServletResponse res) {
-        try {
-            Map<String, String> requestMap = objectMapper.readValue(req.getInputStream(), Map.class);
-            String username = requestMap.get("username");
-            String password = requestMap.get("password");
+        filter.setAuthenticationSuccessHandler((webFilterExchange, authentication) -> {
+            Authentication auth = authentication;
+            List<String> roles = auth.getAuthorities().stream().map(a -> a.getAuthority()).toList();
+            String token = jwtUtil.generateToken(auth.getName(), roles);
 
-            return getAuthenticationManager().authenticate(
-                    new UsernamePasswordAuthenticationToken(username, password)
-            );
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
+            ResponseCookie cookie = ResponseCookie.from("JWT", token)
+                    .httpOnly(false) // HttpOnly 제거
+                    .path("/")
+                    .maxAge(jwtUtil.getExpireMillis() / 1000)
+                    .build();
 
-    @Override
-    protected void successfulAuthentication(HttpServletRequest req,
-                                            HttpServletResponse res,
-                                            FilterChain chain,
-                                            Authentication auth) throws IOException {
-        String username = auth.getName();
-        List<String> roles = auth.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority)
-                .toList();
+            webFilterExchange.getExchange().getResponse().addCookie(cookie);
+            webFilterExchange.getExchange().getResponse().getHeaders().add("Content-Type", "application/json");
+            byte[] body = "{\"message\":\"success\"}".getBytes();
+            return webFilterExchange.getExchange().getResponse().writeWith(Mono.just(webFilterExchange.getExchange().getResponse().bufferFactory().wrap(body)));
+        });
 
-        String token = jwtUtil.generateToken(username, roles);
+        filter.setAuthenticationFailureHandler((webFilterExchange, exception) -> {
+            exception.printStackTrace(System.err);
 
-        Cookie cookie = new Cookie("JWT", token);
-        cookie.setHttpOnly(false);
-        cookie.setPath("/");
-        cookie.setMaxAge((int)(jwtUtil.getExpireMillis() / 1000));
-        res.addCookie(cookie);
+            byte[] body = ("{\"message\":\"failure\"}").getBytes();
+            webFilterExchange.getExchange().getResponse().getHeaders().add("Content-Type", "application/json");
+            return webFilterExchange.getExchange().getResponse().writeWith(Mono.just(webFilterExchange.getExchange().getResponse().bufferFactory().wrap(body)));
+        });
 
-        res.setContentType("application/json");
-        res.getWriter().write("{\"message\":\"success login\"}");
+        return filter;
     }
 }

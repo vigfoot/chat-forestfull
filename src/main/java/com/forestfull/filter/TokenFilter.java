@@ -1,61 +1,49 @@
 package com.forestfull.filter;
 
+import com.auth0.jwt.interfaces.DecodedJWT;
 import com.forestfull.util.JwtUtil;
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.filter.OncePerRequestFilter;
+import org.springframework.security.core.context.ReactiveSecurityContextHolder;
+import org.springframework.security.core.context.SecurityContextImpl;
+import org.springframework.web.server.ServerWebExchange;
+import org.springframework.web.server.WebFilter;
+import org.springframework.web.server.WebFilterChain;
+import reactor.core.publisher.Mono;
 
-import java.io.IOException;
-import java.util.List;
-import java.util.Map;
+import java.util.Arrays;
 import java.util.stream.Collectors;
 
-@RequiredArgsConstructor
-public class TokenFilter extends OncePerRequestFilter {
+public class TokenFilter implements WebFilter {
 
     private final JwtUtil jwtUtil;
 
+    public TokenFilter(JwtUtil jwtUtil) {
+        this.jwtUtil = jwtUtil;
+    }
+
     @Override
-    protected void doFilterInternal(HttpServletRequest request,
-                                    HttpServletResponse response,
-                                    FilterChain filterChain) throws ServletException, IOException {
-
-        String token = null;
-
-        if (request.getCookies() != null) {
-            for (Cookie cookie : request.getCookies()) {
-                if ("JWT".equals(cookie.getName())) {
-                    token = cookie.getValue();
-                }
-            }
-        }
+    public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
+        String token = Arrays.stream(exchange.getRequest().getCookies().getFirst("JWT") != null ?
+                        new String[]{exchange.getRequest().getCookies().getFirst("JWT").getValue()} : new String[]{})
+                .findFirst().orElse(null);
 
         if (token != null) {
             try {
-                Map<String, Object> claims = jwtUtil.verifyAndExtract(token);
-                String username = (String) claims.get("username");
-                List<String> roles = (List<String>) claims.get("roles");
-
-                var authorities = roles.stream()
+                DecodedJWT jwt = jwtUtil.verifyToken(token);
+                String username = jwt.getSubject();
+                var authorities = Arrays.stream(jwt.getClaim("roles").asArray(String.class))
                         .map(SimpleGrantedAuthority::new)
                         .collect(Collectors.toList());
 
-                UsernamePasswordAuthenticationToken auth =
-                        new UsernamePasswordAuthenticationToken(username, null, authorities);
-                SecurityContextHolder.getContext().setAuthentication(auth);
-
+                var auth = new UsernamePasswordAuthenticationToken(username, null, authorities);
+                return chain.filter(exchange)
+                        .contextWrite(ReactiveSecurityContextHolder.withSecurityContext(Mono.just(new SecurityContextImpl(auth))));
             } catch (Exception e) {
-                SecurityContextHolder.clearContext();
+                // 유효하지 않은 토큰은 무시하고 체인 진행
             }
         }
 
-        filterChain.doFilter(request, response);
+        return chain.filter(exchange);
     }
 }

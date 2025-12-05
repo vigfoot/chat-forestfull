@@ -4,8 +4,8 @@ import com.forestfull.domain.User;
 import com.forestfull.domain.UserMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 @Service
 @RequiredArgsConstructor
@@ -13,15 +13,16 @@ public class AdminUserService {
 
     private final UserMapper userMapper;
 
-    public List<User> getAllUsers() {
-        return userMapper.findAllUsers();
+    public Flux<User> getAllUsers() {
+        return Flux.just(userMapper.findAllUsers())
+                .flatMapIterable(users -> users);
     }
 
-    public void updateUserRoles(String username, String roles) {
-        userMapper.updateRoles(username, roles);
+    public Mono<Boolean> updateUserRoles(String username, String roles) {
+        return Mono.just(userMapper.updateRoles(username, roles));
     }
 
-    public void deleteUser(String username) {
-        userMapper.deleteByUsername(username);
+    public Mono<Boolean> deleteUser(String username) {
+        return Mono.just(userMapper.deleteByUsername(username));
     }
 }

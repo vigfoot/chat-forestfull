@@ -61,17 +61,11 @@
             credentials: 'include'
         });
 
-        if (loginRes.ok) {
+        if (loginRes.ok && getCookie('JWT')) {
             const data = await loginRes.json();
             document.getElementById('login-result').textContent = data.message;
 
-            // JWT 읽어서 role 확인
-            const token = getCookie('JWT');
-            if (!token) {
-                alert('로그인 되었지만 JWT가 없습니다.');
-                return;
-            }
-            const payload = parseJwt(token);
+            const payload = parseJwt(getCookie('JWT'));
             if (!payload || !payload.roles) {
                 alert('JWT payload를 읽을 수 없습니다.');
                 return;
@@ -94,7 +88,8 @@
             if (signupRes.ok) {
                 const data = await signupRes.json();
                 document.getElementById('login-result').textContent = "회원가입 완료. 다시 로그인 해주세요.";
-                location.reload();
+                document.getElementById('username').value = '';
+                document.getElementById('password').value = '';
             } else {
                 document.getElementById('login-result').textContent = "회원가입 실패";
             }

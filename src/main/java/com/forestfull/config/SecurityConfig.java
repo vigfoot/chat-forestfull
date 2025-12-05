@@ -8,44 +8,41 @@ import com.forestfull.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
-import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.authentication.ReactiveAuthenticationManager;
+import org.springframework.security.authentication.UserDetailsRepositoryReactiveAuthenticationManager;
+import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
+import org.springframework.security.config.web.server.SecurityWebFiltersOrder;
+import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.server.SecurityWebFilterChain;
+import org.springframework.security.web.server.context.NoOpServerSecurityContextRepository;
 
-/**
- * com.forestfull.config
- *
- * @author vigfoot
- * @version 2025-12-05
- */
 @Configuration
+@EnableWebFluxSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private static final String[] staticResources = {"/", "/css/**", "/js/**", "/images/**", "/webjars/**", "/favicon.ico"};
     private final ObjectMapper objectMapper;
+    private static final String[] staticResources = {"/", "/css/**", "/js/**", "/images/**", "/webjars/**", "/favicon.ico"};
 
     @Bean
-    SecurityFilterChain securityFilterChain(HttpSecurity http, JwtUtil jwtUtil, AuthenticationManager manager) throws Exception {
-        return http.csrf(AbstractHttpConfigurer::disable)
-                .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers(staticResources).permitAll()
-                        .requestMatchers(new String[]{"/admin/**", "/pages/admin/**"}).hasRole("ADMIN")
-                        .requestMatchers(new String[]{"/management/**", "/pages/management/**"}).hasAnyRole("ADMIN", "MANAGER")
-                        .requestMatchers(new String[]{"/pages/**", "/file/**","/api/auth/**"}).permitAll()
-                        .anyRequest().authenticated()
+    SecurityWebFilterChain springSecurityFilterChain(ServerHttpSecurity http, ReactiveAuthenticationManager manager, JwtUtil jwtUtil) {
+        return http
+                .csrf(ServerHttpSecurity.CsrfSpec::disable)
+                .httpBasic(ServerHttpSecurity.HttpBasicSpec::disable)
+                .formLogin(ServerHttpSecurity.FormLoginSpec::disable)
+                .authorizeExchange(ex -> ex
+                        .pathMatchers(staticResources).permitAll()
+                        .pathMatchers("/pages/**", "/api/auth/**").permitAll()
+                        .pathMatchers("/pages/admin/**", "/admin/**").hasRole("ADMIN")
+                        .pathMatchers("/pages/management/**", "/management/**").hasAnyRole("ADMIN", "MANAGER")
+                        .anyExchange().authenticated()
                 )
-                .sessionManagement(config -> config.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .addFilterBefore(new TokenFilter(jwtUtil), UsernamePasswordAuthenticationFilter.class)
-                .addFilterAt(new CustomLoginFilter(manager, jwtUtil, objectMapper), UsernamePasswordAuthenticationFilter.class)
+                .addFilterAt(CustomLoginFilter.build(manager, jwtUtil, objectMapper), SecurityWebFiltersOrder.AUTHENTICATION)
+                .addFilterAfter(new TokenFilter(jwtUtil), SecurityWebFiltersOrder.AUTHENTICATION)
+                .securityContextRepository(NoOpServerSecurityContextRepository.getInstance())  // ⬅ Stateless 핵심
                 .build();
-
     }
 
     @Bean
@@ -61,7 +58,9 @@ public class SecurityConfig {
     }
 
     @Bean
-    AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
-        return config.getAuthenticationManager();
+    ReactiveAuthenticationManager reactiveAuthenticationManager(PasswordEncoder passwordEncoder, CustomUserDetailsService reactiveUserDetailsService) {
+        UserDetailsRepositoryReactiveAuthenticationManager manager = new UserDetailsRepositoryReactiveAuthenticationManager(reactiveUserDetailsService);
+        manager.setPasswordEncoder(passwordEncoder);
+        return manager;
     }
 }

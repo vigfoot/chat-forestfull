@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
@@ -21,29 +22,29 @@ import java.util.Map;
 public class AdminController {
 
     private final FileService fileService;
+
     private final AdminUserService adminUserService;
 
     @GetMapping("/users")
-    public List<User> listUsers() {
+    public Flux<User> listUsers() {
         return adminUserService.getAllUsers();
     }
 
     @PutMapping("/users/{username}/roles")
-    public ResponseEntity<?> updateRoles(@PathVariable String username,
-                                         @RequestBody Map<String, String> body) {
-        String roles = body.get("roles");
-        adminUserService.updateUserRoles(username, roles);
-        return ResponseEntity.ok(Map.of("message", "Roles updated"));
+    Mono<ResponseEntity<?>> updateRoles(@PathVariable String username,
+                                        @RequestBody Map<String, String> body) {
+        return adminUserService.updateUserRoles(username, body.get("roles"))
+                .map(isSuccess -> isSuccess ? ResponseEntity.ok(Map.of("message", "Roles updated")) : ResponseEntity.internalServerError().build());
     }
 
     @DeleteMapping("/users/{username}")
-    public ResponseEntity<?> deleteUser(@PathVariable String username) {
-        adminUserService.deleteUser(username);
-        return ResponseEntity.ok(Map.of("message", "User deleted"));
+    Mono<ResponseEntity<?>> deleteUser(@PathVariable String username) {
+        return adminUserService.deleteUser(username)
+                .map(isSuccess -> isSuccess ? ResponseEntity.ok(Map.of("message", "User deleted")) : ResponseEntity.internalServerError().build());
     }
 
     @PostMapping(value = "/emoji/{filename}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public Mono<ResponseEntity<ResponseException>> saveEmoji(
+    Mono<ResponseEntity<ResponseException>> saveEmoji(
             @RequestPart("file") Mono<FilePart> filePartMono,
             @PathVariable String filename) {
 
