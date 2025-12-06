@@ -100,25 +100,37 @@
     let rotate = 0, flipped=false, brightness=100, contrast=100, saturation=100;
 
     function fetchEmojiList() {
-        get('/file/emoji').then(data => {
-            const list = Array.isArray(data) ? data : (data?.body || []);
-            emojiList.innerHTML = '';
-            list.forEach(item => {
-                const div = document.createElement('div');
-                div.className = 'emoji-item';
-                const image = document.createElement('img');
-                image.src = item.directory ? `/file/emoji/resource/${encodeURIComponent(item.directory)}` : '';
-                div.appendChild(image);
+        get('/file/emoji')
+            .then(resp => resp.json()) // <- 여기서 JSON으로 변환
+            .then(list => {
+                if (!Array.isArray(list)) {
+                    console.error('emoji list가 배열이 아닙니다:', list);
+                    return;
+                }
 
-                const delBtn = document.createElement('button');
-                delBtn.textContent = 'X';
-                delBtn.className = 'delete-btn';
-                delBtn.onclick = () => deleteEmoji(item.id);
-                div.appendChild(delBtn);
+                emojiList.innerHTML = '';
+                list.forEach(item => {
+                    const div = document.createElement('div');
+                    div.className = 'emoji-item';
+                    const image = document.createElement('img');
 
-                emojiList.appendChild(div);
-            });
-        }).catch(err => console.error(err));
+                    // 파일명만 encode, 폴더 구조 유지
+                    const parts = item.directory.split('/');
+                    const encodedPath = parts.map((p, i) => i === parts.length-1 ? encodeURIComponent(p) : p).join('/');
+                    image.src = `/file/emoji/resource/${encodedPath}`;
+
+                    div.appendChild(image);
+
+                    const delBtn = document.createElement('button');
+                    delBtn.textContent = 'X';
+                    delBtn.className = 'delete-btn';
+                    delBtn.onclick = () => deleteEmoji(item.id);
+                    div.appendChild(delBtn);
+
+                    emojiList.appendChild(div);
+                });
+            })
+            .catch(err => console.error('fetchEmojiList 오류:', err));
     }
 
     function deleteEmoji(id) {
@@ -192,7 +204,7 @@
         tmpCanvas.toBlob(blob=>{
             const formData = new FormData();
             formData.append('file', blob, uploadedFile.name);
-            post(`/admin/emoji/${encodeURIComponent(uploadedFile.name)}`, formData, true).then(data=>{
+            httpFileRequest(`/admin/emoji/${encodeURIComponent(uploadedFile.name)}`, formData).then(data=>{
                 if(data?.success){ closePopup(); fetchEmojiList(); }
                 else alert(data?.message || '업로드 실패');
             }).catch(err=>{ console.error(err); alert('업로드 실패 (서버 오류)'); });

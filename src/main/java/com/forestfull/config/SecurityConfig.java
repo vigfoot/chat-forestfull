@@ -24,13 +24,12 @@ import org.springframework.web.cors.CorsConfiguration;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-
     private final TokenFilter tokenFilter;
     private final PasswordEncoder passwordEncoder;
     private final RefreshTokenFilter refreshTokenFilter;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final CustomUserDetailsService customUserDetailsService;
-    private static final String[] staticResources = {"/", "/css/**", "/js/**", "/images/**", "/webjars/**", "/favicon.ico"};
+    public static final String[] staticResources = {"/", "/favicon.ico", "/css/**", "/js/**", "/images/**", "/webjars/**", "/file/**"};
 
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {

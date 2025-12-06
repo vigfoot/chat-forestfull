@@ -26,6 +26,20 @@ async function httpRequest(url, method = 'GET', body = null, headers = {}) {
     }
 }
 
+async function httpFileRequest(url, fileFormData) {
+    try {
+        return await fetch(url, {
+            method: 'POST', // 대부분 업로드는 POST
+            body: fileFormData,
+            credentials: 'include' // 쿠키 전송
+            // headers: Content-Type 지정하지 않음! 브라우저가 자동으로 multipart/form-data 처리
+        });
+    } catch (error) {
+        console.error(`파일 업로드 실패: ${error}`);
+        throw error;
+    }
+}
+
 /**
  * 편리한 GET 요청
  * @param {string} url

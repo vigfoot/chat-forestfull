@@ -27,10 +27,6 @@ spring:
     url: ENC(D7FksKNaRiTUa4BwcImsF6HEHDJkt56FPqERYtMSsPP/eE+IO13MmNkERJEa+ctJ)
     username: ENC(j+pbKxXJNJx1XP3/lYjPiw==)
     password: ENC(S4n1c2JlysEjgHtwhkb1ZRneRh/IGFuK)
-logging:
-  level:
-    com.forestfull.chat: DEBUG
-    org.apache.ibatis: DEBUG
 tiktok:
   client-key: ENC(ttOlI31RZl027PBkYcqbeDKZyfB6gpv/u7wCJ72Q5AI=)
   client-secret: ENC(7k8/DfgRorImyUPfE/9/1Rn4q8cnv7SOjm9AR/Ln1NCW7RvhhZTtyQxxS4j+cQ0i)
@@ -54,10 +50,6 @@ spring:
     url: ENC(YvqJNMByP56n98AhiegK57MxQFP8RfIx1U9fOujlhE0yFopiS0RLfw==)
     username: ENC(ZBZDdAwf0sT/raKt8MfxIw==)
     password: ENC(fhLYXOLuuJKsDhf5TRIfks71Y+AfHgSK)
-logging:
-  level:
-    com.forestfull.chat: INFO
-    org.apache.ibatis: WARN
 tiktok:
   client-key: ENC(WiVfQrnIvUljbrkCVLu+Kv+z8NQPN1f5QcvInHIhBKg=)
   client-secret: ENC(uYKLrBXih3wkmb+7FhLk0sv9P+QMQjbL4YyIqgb4SgCk61XVoSY2Vd401uf68YhK)

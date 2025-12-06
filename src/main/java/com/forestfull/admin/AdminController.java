@@ -40,13 +40,13 @@ public class AdminController {
     }
 
     @PostMapping(value = "/emoji/{filename}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    ResponseEntity<ResponseException> saveEmoji(
-            @RequestPart("file") MultipartFile filePart,
-            @PathVariable String filename) {
+    public ResponseEntity<ResponseException> saveEmoji(@RequestPart("file") MultipartFile filePart, @PathVariable String filename) {
+        if (filePart.isEmpty()) return ResponseEntity.badRequest().body(ResponseException.fail("empty"));
 
         ResponseException responseException = fileService.saveFile(filePart, FILE_TYPE.EMOJI.name(), filename);
-
-        return responseException.isSuccess() ? ResponseEntity.ok(responseException) : ResponseEntity.badRequest().body(responseException);
+        return responseException.isSuccess()
+                ? ResponseEntity.ok(responseException)
+                : ResponseEntity.badRequest().body(responseException);
     }
 
     @DeleteMapping("/emoji/{id}")
