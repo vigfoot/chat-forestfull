@@ -1,6 +1,5 @@
 package com.forestfull.config;
 
-import com.forestfull.common.token.CustomLoginFilter;
 import com.forestfull.common.token.JwtAuthenticationFilter;
 import com.forestfull.common.token.RefreshTokenFilter;
 import com.forestfull.common.token.TokenFilter;
@@ -8,10 +7,14 @@ import com.forestfull.domain.CustomUserDetailsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.ProviderManager;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
@@ -22,11 +25,11 @@ import org.springframework.web.cors.CorsConfiguration;
 public class SecurityConfig {
 
 
-    private final CustomUserDetailsService customUserDetailsService;
     private final TokenFilter tokenFilter;
+    private final PasswordEncoder passwordEncoder;
     private final RefreshTokenFilter refreshTokenFilter;
-    private final CustomLoginFilter customLoginFilter;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final CustomUserDetailsService customUserDetailsService;
     private static final String[] staticResources = {"/", "/css/**", "/js/**", "/images/**", "/webjars/**", "/favicon.ico"};
 
     @Bean
@@ -50,11 +53,16 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 )
                 .userDetailsService(customUserDetailsService)
-                .addFilterBefore(refreshTokenFilter, TokenFilter.class)
-                .addFilterBefore(tokenFilter, CustomLoginFilter.class)
-                .addFilterBefore(customLoginFilter, JwtAuthenticationFilter.class)
-                .addFilterAt(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(refreshTokenFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(tokenFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .sessionManagement(config -> config.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .build();
+    }
+    @Bean
+    public AuthenticationManager authenticationManager() {
+        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider(customUserDetailsService);
+        authProvider.setPasswordEncoder(passwordEncoder);
+        return new ProviderManager(authProvider);
     }
 }

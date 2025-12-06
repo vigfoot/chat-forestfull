@@ -10,6 +10,10 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -28,62 +32,50 @@ public class AuthController {
     private final JwtUtil jwtUtil;
     private final JwtUtil.Refresh refreshJwtUtil;
     private final CustomUserDetailsService userService;
-    private final PasswordEncoder passwordEncoder;
+    private final AuthenticationManager authenticationManager;
 
     @Value("${spring.config.activate.on-profile}")
     private String onProfile;
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody Map<String, String> body, HttpServletResponse response) {
-        String username = body.get("username");
-        String password = body.get("password");
+        try {
+            String username = body.get("username");
+            String password = body.get("password");
 
-        var user = (org.springframework.security.core.userdetails.User) userService.loadUserByUsername(username);
+            Authentication auth = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(username, password)
+            );
 
-        if (!passwordEncoder.matches(password, user.getPassword()))
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Invalid credentials"));
+            List<String> roles = auth.getAuthorities().stream().map(GrantedAuthority::getAuthority).toList();
 
-        List<String> roles = user.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority)
-                .toList();
+            // JWT 발급
+            String accessToken = jwtUtil.generateToken(username, roles);
+            String refreshToken = refreshJwtUtil.generateToken(username);
+            refreshJwtUtil.save(username, refreshToken);
 
-        String accessToken = jwtUtil.generateToken(username, roles);
-        String refreshToken = refreshJwtUtil.generateToken(username);
+            // 쿠키 세팅
+            Cookie accessCookie = new Cookie("JWT", accessToken);
+            accessCookie.setHttpOnly(true);
+            accessCookie.setSecure("prod".equals(onProfile));
+            accessCookie.setPath("/");
+            accessCookie.setMaxAge((int) (JwtUtil.expireMillis / 1000));
+            accessCookie.setAttribute("SameSite", "None");
+            response.addCookie(accessCookie);
 
-        // JWT HttpOnly
-        ResponseCookie jwtCookie = ResponseCookie.from("JWT", accessToken)
-                .httpOnly(true)
-                .secure("prod".equals(onProfile))
-                .path("/")
-                .maxAge(JwtUtil.expireMillis / 1000)
-                .sameSite("None")
-                .build();
+            Cookie refreshCookie = new Cookie("REFRESH", refreshToken);
+            refreshCookie.setHttpOnly(true);
+            refreshCookie.setSecure("prod".equals(onProfile));
+            refreshCookie.setPath("/");
+            refreshCookie.setMaxAge((int) (JwtUtil.refreshExpireMillis / 1000));
+            refreshCookie.setAttribute("SameSite", "None");
+            response.addCookie(refreshCookie);
 
-        // JWT_PAYLOAD (JS 접근용)
-        String[] parts = accessToken.split("\\.");
-        String payload = parts.length > 1 ? parts[1] : "";
-        ResponseCookie payloadCookie = ResponseCookie.from("JWT_PAYLOAD", payload)
-                .httpOnly(false)
-                .secure("prod".equals(onProfile))
-                .path("/")
-                .maxAge(JwtUtil.expireMillis / 1000)
-                .sameSite("None")
-                .build();
+            return ResponseEntity.ok(Map.of("message", "Login successful"));
 
-        // REFRESH 쿠키
-        ResponseCookie refreshCookie = ResponseCookie.from("REFRESH", refreshToken)
-                .httpOnly(true)
-                .secure("prod".equals(onProfile))
-                .path("/")
-                .maxAge(JwtUtil.refreshExpireMillis / 1000)
-                .sameSite("None")
-                .build();
-
-        response.addHeader(HttpHeaders.SET_COOKIE, jwtCookie.toString());
-        response.addHeader(HttpHeaders.SET_COOKIE, payloadCookie.toString());
-        response.addHeader(HttpHeaders.SET_COOKIE, refreshCookie.toString());
-
-        return ResponseEntity.ok(Map.of("roles", roles));
+        } catch (AuthenticationException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Login failed"));
+        }
     }
 
     @PostMapping("/logout")

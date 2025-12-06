@@ -7,18 +7,15 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
-@Component
 public class CustomLoginFilter extends UsernamePasswordAuthenticationFilter {
 
     @Value("${spring.config.activate.on-profile}")
@@ -27,8 +24,7 @@ public class CustomLoginFilter extends UsernamePasswordAuthenticationFilter {
     private final JwtUtil.Refresh refreshJwtUtil;
     private final ObjectMapper objectMapper;
 
-    public CustomLoginFilter(AuthenticationConfiguration authConfig, JwtUtil jwtUtil, JwtUtil.Refresh refreshJwtUtil, ObjectMapper objectMapper) throws Exception {
-        super(authConfig.getAuthenticationManager());
+    public CustomLoginFilter(JwtUtil jwtUtil, JwtUtil.Refresh refreshJwtUtil, ObjectMapper objectMapper) {
         this.jwtUtil = jwtUtil;
         this.refreshJwtUtil = refreshJwtUtil;
         this.objectMapper = objectMapper;
