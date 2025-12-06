@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
@@ -22,10 +23,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtUtil jwtUtil;
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+    protected void doFilterInternal(HttpServletRequest request,
+                                    HttpServletResponse response,
+                                    FilterChain filterChain) throws ServletException, IOException {
 
-        // JWT 쿠키 가져오기
         String token = null;
+
+        // 쿠키에서 JWT만 확인
         if (request.getCookies() != null) {
             for (Cookie cookie : request.getCookies()) {
                 if ("JWT".equals(cookie.getName())) {
@@ -38,20 +42,21 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (token != null) {
             try {
                 DecodedJWT decodedJWT = jwtUtil.verifyToken(token);
-
                 String username = decodedJWT.getSubject();
                 List<String> roles = decodedJWT.getClaim("roles").asList(String.class);
 
                 UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
                         username,
                         null,
-                        roles.stream().map(SimpleGrantedAuthority::new).toList()
+                        roles.stream()
+                                .map(SimpleGrantedAuthority::new)
+                                .toList()
                 );
+                auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(auth);
 
             } catch (JWTVerificationException e) {
-                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                return;
+                SecurityContextHolder.clearContext(); // 유효하지 않은 토큰이면 인증 제거
             }
         }
 
