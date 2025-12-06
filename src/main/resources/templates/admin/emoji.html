@@ -4,141 +4,31 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Emoji 관리</title>
+    <link rel="stylesheet" href="/webjars/bootstrap/5.3.8/css/bootstrap.min.css">
+    <script src="/webjars/bootstrap/5.3.8/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/script.js"></script> <!-- 공통 fetch 함수 로드 -->
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            padding: 20px;
-            background: #f5f5f5;
-        }
-
-        h1 {
-            text-align: center;
-        }
-
-        #emoji-list {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-top: 20px;
-            justify-content: center;
-        }
-
-        .emoji-item {
-            position: relative;
-            width: 100px;
-            height: 100px;
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: #fff;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-
-        .emoji-item img {
-            max-width: 90%;
-            max-height: 90%;
-            border-radius: 4px;
-        }
-
-        .delete-btn {
-            position: absolute;
-            top: 2px;
-            right: 2px;
-            background: red;
-            color: #fff;
-            border: none;
-            border-radius: 50%;
-            width: 20px;
-            height: 20px;
-            cursor: pointer;
-            font-weight: bold;
-            line-height: 18px;
-        }
-
-        #drop-zone {
-            border: 2px dashed #aaa;
-            padding: 20px;
-            text-align: center;
-            cursor: pointer;
-            border-radius: 8px;
-            background: #fff;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-
-        #drop-zone.hover {
-            border-color: #333;
-        }
-
-        #canvas-popup {
-            display: none;
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: #fff;
-            padding: 20px;
-            z-index: 1001;
-            border-radius: 10px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-        }
-
-        #popup-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 1000;
-        }
-
-        canvas {
-            border: 1px solid #ccc;
-            touch-action: none;
-            display: block;
-            margin: auto;
-        }
-
-        .control-panel {
-            margin-top: 10px;
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-
-        .control-panel label {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            font-size: 12px;
-        }
-
-        .control-panel input[type="color"], .control-panel input[type="range"] {
-            margin-top: 5px;
-        }
-
-        .template-btn {
-            background: #007bff;
-            color: #fff;
-            border: none;
-            padding: 5px 10px;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-
-        .template-btn:hover {
-            background: #0056b3;
-        }
+        body { font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5; }
+        h1 { text-align: center; }
+        #emoji-list { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; justify-content: center; }
+        .emoji-item { position: relative; width: 100px; height: 100px; border: 1px solid #ccc; border-radius: 8px; display: flex; align-items: center; justify-content: center; background: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .emoji-item img { max-width: 90%; max-height: 90%; border-radius: 4px; }
+        .delete-btn { position: absolute; top: 2px; right: 2px; background: red; color: #fff; border: none; border-radius: 50%; width: 20px; height: 20px; cursor: pointer; font-weight: bold; line-height: 18px; }
+        #drop-zone { border: 2px dashed #aaa; padding: 20px; text-align: center; cursor: pointer; border-radius: 8px; background: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        #drop-zone.hover { border-color: #333; }
+        #canvas-popup { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #fff; padding: 20px; z-index: 1001; border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
+        #popup-overlay { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.5); z-index:1000; }
+        canvas { border: 1px solid #ccc; touch-action: none; display:block; margin:auto; }
+        .control-panel { margin-top: 10px; display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
+        .control-panel label { display:flex; flex-direction:column; align-items:center; font-size:12px; }
+        .control-panel input[type="color"], .control-panel input[type="range"] { margin-top:5px; }
+        .template-btn { background:#007bff; color:#fff; border:none; padding:5px 10px; border-radius:4px; cursor:pointer; }
+        .template-btn:hover { background:#0056b3; }
     </style>
 </head>
 <body>
 
 <h1>Emoji 관리</h1>
-
 <div id="drop-zone">여기에 이미지 드래그 또는 클릭하여 업로드</div>
 <div id="emoji-list"></div>
 
@@ -146,28 +36,20 @@
 <div id="canvas-popup">
     <canvas id="emoji-canvas" width="512" height="512"></canvas>
     <div class="control-panel">
-
-        <label>
-            배경 처리
+        <label>배경 처리
             <div style="display:flex; gap:5px; margin-top:5px;">
                 <label><input type="radio" name="bgOption" value="transparent" checked> 투명</label>
                 <label><input type="radio" name="bgOption" value="color"> 색상</label>
             </div>
             <input type="color" id="bg-color" value="#ffffff" disabled>
         </label>
-
         <label>회전<input type="range" id="rotate" min="0" max="360" value="0"></label>
-        <label>좌우반전
-            <button id="flip">↔</button>
-        </label>
+        <label>좌우반전<button id="flip">↔</button></label>
         <label>밝기<input type="range" id="brightness" min="0" max="200" value="100"></label>
         <label>대비<input type="range" id="contrast" min="0" max="200" value="100"></label>
         <label>채도<input type="range" id="saturation" min="0" max="200" value="100"></label>
-        <label>템플릿
-            <button class="template-btn" id="template-256">256px</button>
-        </label>
+        <label>템플릿<button class="template-btn" id="template-256">256px</button></label>
     </div>
-
     <div style="margin-top:10px; display:flex; gap:10px; justify-content:center;">
         <button id="confirm-btn">확인</button>
         <button id="cancel-btn">취소</button>
@@ -187,7 +69,6 @@
 
     const confirmBtn = document.getElementById('confirm-btn');
     const cancelBtn = document.getElementById('cancel-btn');
-
     const bgColorInput = document.getElementById('bg-color');
     const bgOption = document.getElementsByName('bgOption');
     const rotateInput = document.getElementById('rotate');
@@ -202,205 +83,125 @@
 
     bgOption.forEach(option => {
         option.addEventListener("change", () => {
-            if (option.value === "transparent") {
-                backgroundTransparent = true;
-                bgColorInput.disabled = true;
-            } else {
-                backgroundTransparent = false;
-                bgColorInput.disabled = false;
-            }
+            backgroundTransparent = option.value === "transparent";
+            bgColorInput.disabled = backgroundTransparent;
             drawCanvas();
         });
     });
-
-    bgColorInput.addEventListener("input", (e) => {
+    bgColorInput.addEventListener("input", e => {
         backgroundColor = e.target.value;
-        if (!backgroundTransparent) drawCanvas();
+        if(!backgroundTransparent) drawCanvas();
     });
 
     let uploadedFile = null;
     let img = new Image();
     let imgLoaded = false;
-    let selection = {x: 0, y: 0, size: 256};
-    let dragging = false;
-    let resizing = false;
-    let currentHandle = null;
-    let startPos = {x: 0, y: 0};
-    let rotate = 0, flipped = false, brightness = 100, contrast = 100, saturation = 100;
+    let selection = {x:0, y:0, size:256};
+    let rotate = 0, flipped=false, brightness=100, contrast=100, saturation=100;
 
     function fetchEmojiList() {
-        const xhr = new XMLHttpRequest();
-        xhr.open('GET', '/file/emoji', true);
-        xhr.withCredentials = true;
-        xhr.onload = function() {
-            if (xhr.status === 200) {
-                try {
-                    const data = JSON.parse(xhr.responseText);
-                    const list = Array.isArray(data) ? data : (data?.body || []);
-                    emojiList.innerHTML = '';
-                    list.forEach(item => {
-                        const div = document.createElement('div');
-                        div.className = 'emoji-item';
-                        const image = document.createElement('img');
-                        image.src = item.directory ? `/file/emoji/resource/${encodeURIComponent(item.directory)}` : '';
-                        div.appendChild(image);
+        get('/file/emoji').then(data => {
+            const list = Array.isArray(data) ? data : (data?.body || []);
+            emojiList.innerHTML = '';
+            list.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'emoji-item';
+                const image = document.createElement('img');
+                image.src = item.directory ? `/file/emoji/resource/${encodeURIComponent(item.directory)}` : '';
+                div.appendChild(image);
 
-                        const delBtn = document.createElement('button');
-                        delBtn.textContent = 'X';
-                        delBtn.className = 'delete-btn';
-                        delBtn.onclick = () => deleteEmoji(item.id);
-                        div.appendChild(delBtn);
+                const delBtn = document.createElement('button');
+                delBtn.textContent = 'X';
+                delBtn.className = 'delete-btn';
+                delBtn.onclick = () => deleteEmoji(item.id);
+                div.appendChild(delBtn);
 
-                        emojiList.appendChild(div);
-                    });
-                } catch (e) {
-                    console.error(e);
-                }
-            }
-        };
-        xhr.send();
+                emojiList.appendChild(div);
+            });
+        }).catch(err => console.error(err));
     }
 
     function deleteEmoji(id) {
-        const xhr = new XMLHttpRequest();
-        xhr.open('DELETE', `/admin/emoji/${id}`, true);
-        xhr.withCredentials = true;
-        xhr.onload = function() {
-            if (xhr.status === 200) {
-                try {
-                    const data = JSON.parse(xhr.responseText);
-                    if (data?.success) fetchEmojiList(); else alert(data?.message || '삭제 실패');
-                } catch (e) {
-                    console.error(e);
-                    alert('삭제 실패 (응답 처리 오류)');
-                }
-            } else alert('삭제 실패 (서버 오류)');
-        };
-        xhr.send();
+        del(`/admin/emoji/${id}`).then(data => {
+            if(data?.success) fetchEmojiList();
+            else alert(data?.message || '삭제 실패');
+        }).catch(err => { console.error(err); alert('삭제 실패 (서버 오류)'); });
     }
 
-    dropZone.addEventListener('click', () => fileInput.click());
-    dropZone.addEventListener('dragover', e => {
-        e.preventDefault();
-        dropZone.classList.add('hover');
-    });
-    dropZone.addEventListener('dragleave', e => {
-        e.preventDefault();
-        dropZone.classList.remove('hover');
-    });
-    dropZone.addEventListener('drop', e => {
-        e.preventDefault();
-        dropZone.classList.remove('hover');
-        handleFile(e.dataTransfer.files[0]);
-    });
-    fileInput.addEventListener('change', e => handleFile(e.target.files[0]));
+    dropZone.addEventListener('click', ()=>fileInput.click());
+    dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('hover'); });
+    dropZone.addEventListener('dragleave', e => { e.preventDefault(); dropZone.classList.remove('hover'); });
+    dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('hover'); handleFile(e.dataTransfer.files[0]); });
+    fileInput.addEventListener('change', e=>handleFile(e.target.files[0]));
 
-    function handleFile(file) {
-        if (!file) return;
+    function handleFile(file){
+        if(!file) return;
         uploadedFile = file;
-
         const imgURL = URL.createObjectURL(file);
         img.onload = () => {
             imgLoaded = true;
-            selection.size = Math.min(img.width, img.height, 256);
-            selection.x = 0;
-            selection.y = 0;
+            selection.size = Math.min(img.width,img.height,256);
+            selection.x = 0; selection.y =0;
             drawCanvas();
-            overlay.style.display = 'block';
-            popup.style.display = 'block';
-        }
+            overlay.style.display = 'block'; popup.style.display='block';
+        };
         img.src = imgURL;
     }
 
-    function drawCanvas() {
-        if (!imgLoaded) return;
-
-        if (backgroundTransparent) {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-        } else {
-            ctx.fillStyle = backgroundColor;
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-        }
+    function drawCanvas(){
+        if(!imgLoaded) return;
+        if(backgroundTransparent) ctx.clearRect(0,0,canvas.width,canvas.height);
+        else { ctx.fillStyle = backgroundColor; ctx.fillRect(0,0,canvas.width,canvas.height); }
 
         ctx.save();
         ctx.filter = `brightness(${brightnessInput.value}%) contrast(${contrastInput.value}%) saturate(${saturationInput.value}%)`;
-        ctx.translate(canvas.width / 2, canvas.height / 2);
+        ctx.translate(canvas.width/2, canvas.height/2);
         ctx.rotate(rotateInput.value * Math.PI / 180);
-        ctx.scale(flipped ? -1 : 1, 1);
-        ctx.drawImage(img, -canvas.width / 2, -canvas.height / 2, canvas.width, canvas.height);
+        ctx.scale(flipped?-1:1,1);
+        ctx.drawImage(img, -canvas.width/2, -canvas.height/2, canvas.width, canvas.height);
         ctx.restore();
 
         ctx.strokeStyle = 'red';
-        ctx.setLineDash([5, 3]);
+        ctx.setLineDash([5,3]);
         ctx.strokeRect(selection.x, selection.y, selection.size, selection.size);
         ctx.setLineDash([]);
     }
 
-    // 나머지 이벤트 처리: 드래그, 회전, 필터 등 동일
-
-    confirmBtn.addEventListener('click', () => {
-        if (!uploadedFile || !imgLoaded) return;
-
+    confirmBtn.addEventListener('click', ()=>{
+        if(!uploadedFile || !imgLoaded) return;
         const tmpCanvas = document.createElement('canvas');
-        tmpCanvas.width = selection.size;
-        tmpCanvas.height = selection.size;
+        tmpCanvas.width = selection.size; tmpCanvas.height = selection.size;
         const tmpCtx = tmpCanvas.getContext('2d');
+        const scaleX = img.width/canvas.width;
+        const scaleY = img.height/canvas.height;
 
-        const scaleX = img.width / canvas.width;
-        const scaleY = img.height / canvas.height;
-
-        if (backgroundTransparent) {
-            tmpCtx.clearRect(0, 0, tmpCanvas.width, tmpCanvas.height);
-        } else {
-            tmpCtx.fillStyle = backgroundColor;
-            tmpCtx.fillRect(0, 0, tmpCanvas.width, tmpCanvas.height);
-        }
+        if(backgroundTransparent) tmpCtx.clearRect(0,0,tmpCanvas.width,tmpCanvas.height);
+        else { tmpCtx.fillStyle = backgroundColor; tmpCtx.fillRect(0,0,tmpCanvas.width,tmpCanvas.height); }
 
         tmpCtx.save();
         tmpCtx.filter = `brightness(${brightnessInput.value}%) contrast(${contrastInput.value}%) saturate(${saturationInput.value}%)`;
-        tmpCtx.translate(tmpCanvas.width / 2, tmpCanvas.height / 2);
+        tmpCtx.translate(tmpCanvas.width/2,tmpCanvas.height/2);
         tmpCtx.rotate(rotateInput.value * Math.PI / 180);
-        tmpCtx.scale(flipped ? -1 : 1, 1);
+        tmpCtx.scale(flipped?-1:1,1);
         tmpCtx.drawImage(img,
-            selection.x * scaleX,
-            selection.y * scaleY,
-            selection.size * scaleX,
-            selection.size * scaleY,
-            -tmpCanvas.width / 2,
-            -tmpCanvas.height / 2,
-            tmpCanvas.width,
-            tmpCanvas.height
+            selection.x*scaleX, selection.y*scaleY, selection.size*scaleX, selection.size*scaleY,
+            -tmpCanvas.width/2, -tmpCanvas.height/2, tmpCanvas.width, tmpCanvas.height
         );
         tmpCtx.restore();
 
-        tmpCanvas.toBlob(blob => {
+        tmpCanvas.toBlob(blob=>{
             const formData = new FormData();
             formData.append('file', blob, uploadedFile.name);
-
-            const xhr = new XMLHttpRequest();
-            xhr.open('POST', `/admin/emoji/${encodeURIComponent(uploadedFile.name)}`, true);
-            xhr.withCredentials = true;
-            xhr.onload = function() {
-                if (xhr.status === 200) {
-                    try {
-                        const data = JSON.parse(xhr.responseText);
-                        if (data?.success) {
-                            closePopup();
-                            fetchEmojiList();
-                        } else alert(data?.message || '업로드 실패');
-                    } catch (e) {
-                        console.error(e);
-                        alert('업로드 실패 (응답 처리 오류)');
-                    }
-                } else alert('업로드 실패 (서버 오류)');
-            };
-            xhr.send(formData);
+            post(`/admin/emoji/${encodeURIComponent(uploadedFile.name)}`, formData, true).then(data=>{
+                if(data?.success){ closePopup(); fetchEmojiList(); }
+                else alert(data?.message || '업로드 실패');
+            }).catch(err=>{ console.error(err); alert('업로드 실패 (서버 오류)'); });
         });
     });
 
-    function closePopup() {
-        overlay.style.display = 'none';
-        popup.style.display = 'none';
+    function closePopup(){
+        overlay.style.display='none';
+        popup.style.display='none';
         fileInput.value = '';
         uploadedFile = null;
         imgLoaded = false;

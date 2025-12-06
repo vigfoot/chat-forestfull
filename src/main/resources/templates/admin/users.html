@@ -6,6 +6,7 @@
     <title>Admin Users Management</title>
     <link rel="stylesheet" href="/webjars/bootstrap/5.3.8/css/bootstrap.min.css">
     <script src="/webjars/bootstrap/5.3.8/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/script.js"></script> <!-- 공통 fetch 함수 로드 -->
 </head>
 <body class="bg-light">
 
@@ -28,77 +29,45 @@
 
 <script>
     function loadUsers() {
-        const xhr = new XMLHttpRequest();
-        xhr.open('GET', '/admin/users', true);
-        xhr.withCredentials = true;
-        xhr.onload = function() {
-            if (xhr.status === 200) {
-                try {
-                    const users = JSON.parse(xhr.responseText);
-                    const tbody = document.getElementById('admin-users-tbody');
-                    tbody.innerHTML = '';
-                    users.forEach(user => {
-                        const tr = document.createElement('tr');
-                        tr.innerHTML = `
-                        <td>${user.username}</td>
-                        <td><input type="text" class="form-control" value="${user.roles}" id="roles-${user.username}"></td>
-                        <td>
-                            <button class="btn btn-sm btn-success me-1" onclick="updateRoles('${user.username}')">Update</button>
-                            <button class="btn btn-sm btn-danger" onclick="deleteUser('${user.username}')">Delete</button>
-                        </td>`;
-                        tbody.appendChild(tr);
-                    });
-                } catch (e) {
-                    console.error('사용자 목록 처리 오류:', e);
-                }
-            } else {
-                alert('사용자 목록을 가져오지 못했습니다.');
-            }
-        };
-        xhr.send();
+        get('/admin/users').then(users => {
+            const tbody = document.getElementById('admin-users-tbody');
+            tbody.innerHTML = '';
+            users.forEach(user => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                <td>${user.username}</td>
+                <td><input type="text" class="form-control" value="${user.roles}" id="roles-${user.username}"></td>
+                <td>
+                    <button class="btn btn-sm btn-success me-1" onclick="updateRoles('${user.username}')">Update</button>
+                    <button class="btn btn-sm btn-danger" onclick="deleteUser('${user.username}')">Delete</button>
+                </td>
+            `;
+                tbody.appendChild(tr);
+            });
+        }).catch(err => {
+            console.error('사용자 목록 처리 오류:', err);
+            alert('사용자 목록을 가져오지 못했습니다.');
+        });
     }
 
     function updateRoles(username) {
         const roles = document.getElementById(`roles-${username}`).value;
-        const xhr = new XMLHttpRequest();
-        xhr.open('PUT', `/admin/users/${username}/roles`, true);
-        xhr.withCredentials = true;
-        xhr.setRequestHeader('Content-Type', 'application/json');
-        xhr.onload = function() {
-            if (xhr.status === 200) {
-                try {
-                    const data = JSON.parse(xhr.responseText);
-                    alert(data.message || '업데이트 완료');
-                } catch (e) {
-                    console.error('업데이트 처리 오류:', e);
-                    alert('업데이트 실패');
-                }
-            } else {
-                alert('업데이트 실패 (서버 오류)');
-            }
-        };
-        xhr.send(JSON.stringify({ roles }));
+        put(`/admin/users/${username}/roles`, { roles }).then(data => {
+            alert(data.message || '업데이트 완료');
+        }).catch(err => {
+            console.error('업데이트 처리 오류:', err);
+            alert('업데이트 실패 (서버 오류)');
+        });
     }
 
     function deleteUser(username) {
-        const xhr = new XMLHttpRequest();
-        xhr.open('DELETE', `/admin/users/${username}`, true);
-        xhr.withCredentials = true;
-        xhr.onload = function() {
-            if (xhr.status === 200) {
-                try {
-                    const data = JSON.parse(xhr.responseText);
-                    alert(data.message || '삭제 완료');
-                    loadUsers();
-                } catch (e) {
-                    console.error('삭제 처리 오류:', e);
-                    alert('삭제 실패');
-                }
-            } else {
-                alert('삭제 실패 (서버 오류)');
-            }
-        };
-        xhr.send();
+        del(`/admin/users/${username}`).then(data => {
+            alert(data.message || '삭제 완료');
+            loadUsers();
+        }).catch(err => {
+            console.error('삭제 처리 오류:', err);
+            alert('삭제 실패 (서버 오류)');
+        });
     }
 
     // 페이지 로드 시 목록 가져오기

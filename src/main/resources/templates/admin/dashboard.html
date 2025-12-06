@@ -6,6 +6,7 @@
     <title>Admin Dashboard - Chat Forestfull</title>
     <link rel="stylesheet" href="/webjars/bootstrap/5.3.8/css/bootstrap.min.css">
     <script src="/webjars/bootstrap/5.3.8/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/script.js"></script> <!-- 공통함수 로드 -->
 </head>
 <body class="bg-light">
 
@@ -52,29 +53,28 @@
     <!-- 로그아웃 버튼 -->
     <div class="row mt-5">
         <div class="col-md-4 offset-md-4">
-            <button class="btn btn-danger w-100" onclick="logout()">로그아웃</button>
+            <button class="btn btn-danger w-100" onclick="handleLogout()">로그아웃</button>
         </div>
     </div>
 
 </div>
 
 <script>
-    function logout() {
-        var xhr = new XMLHttpRequest();
-        xhr.open('POST', '/api/auth/logout', true);
-        xhr.withCredentials = true; // 쿠키 포함
-        xhr.onreadystatechange = function() {
-            if (xhr.readyState === XMLHttpRequest.DONE) {
-                if (xhr.status === 200) {
-                    alert('로그아웃 되었습니다.');
-                    window.location.href = '/';
-                } else {
-                    alert('로그아웃 중 오류 발생');
-                }
+    async function handleLogout() {
+        try {
+            const response = await post('/api/auth/logout', null); // POST body 없음
+            if (response.ok) {
+                alert('로그아웃 되었습니다.');
+                window.location.href = '/';
+            } else {
+                alert('로그아웃 중 오류 발생');
             }
-        };
-        xhr.send();
+        } catch (err) {
+            console.error(err);
+            alert('서버와 통신 중 오류 발생');
+        }
     }
 </script>
+
 </body>
 </html>

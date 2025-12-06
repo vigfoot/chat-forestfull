@@ -19,14 +19,13 @@
     <script src="/webjars/sockjs-client/1.5.2/sockjs.min.js"></script>
     <script src="/webjars/stomp-websocket/2.3.3/stomp.min.js"></script>
 
-    <!-- Optional: format time -->
+    <!-- 공통 fetch 함수 -->
+    <script src="/js/script.js"></script>
+
     <script>
         function fmtTime(ts) {
-            try {
-                return new Date(ts).toLocaleString();
-            } catch (e) {
-                return ts;
-            }
+            try { return new Date(ts).toLocaleString(); }
+            catch (e) { return ts; }
         }
     </script>
 </head>
@@ -40,7 +39,6 @@
     <div class="row g-3">
         <div class="col-md-9">
             <div id="chatWindow" class="chat-window shadow-sm" aria-live="polite"></div>
-
             <div class="input-group mt-3">
                 <input id="msgInput" type="text" class="form-control" placeholder="메시지를 입력하세요" autocomplete="off">
                 <button id="sendBtn" class="btn btn-primary">전송</button>
@@ -50,8 +48,7 @@
         <div class="col-md-3">
             <div class="card">
                 <div class="card-header">참여자</div>
-                <ul id="participants" class="list-group list-group-flush participants">
-                </ul>
+                <ul id="participants" class="list-group list-group-flush participants"></ul>
             </div>
         </div>
     </div>
@@ -73,7 +70,6 @@
 
         let stompClient = null;
         let connected = false;
-        const accessToken = localStorage.getItem('accessToken');
         const myId = localStorage.getItem('memberId');
 
         function appendMessage(msg, opt = {}) {
@@ -110,11 +106,9 @@
         }
 
         function loadHistory() {
-            fetch(`/api/chat/rooms/${roomId}/messages?limit=100`)
-                .then(res => res.json())
-                .then(json => {
-                    json.forEach(m => appendMessage(m, { isMe: isMyMessage(m) }));
-                });
+            get(`/api/chat/rooms/${roomId}/messages?limit=100`)
+                .then(json => json.forEach(m => appendMessage(m, { isMe: isMyMessage(m) })))
+                .catch(err => console.error('메시지 로드 오류:', err));
         }
 
         function connect() {
@@ -122,9 +116,7 @@
             stompClient = Stomp.over(socket);
             stompClient.debug = null;
 
-            const headers = accessToken ? { 'Authorization': 'Bearer ' + accessToken } : {};
-
-            stompClient.connect(headers, function() {
+            stompClient.connect({}, function() {
                 connected = true;
 
                 stompClient.subscribe('/sub/chat/room/' + roomId, function(res) {
@@ -145,10 +137,9 @@
         }
 
         function sendMessage() {
-            const text = msgInput.value && msgInput.value.trim();
+            const text = msgInput.value?.trim();
             if (!text || !connected) return;
-            const payload = { roomId: roomId, message: text };
-            stompClient.send('/pub/chat/message', {}, JSON.stringify(payload));
+            stompClient.send('/pub/chat/message', {}, JSON.stringify({ roomId, message: text }));
             msgInput.value = '';
         }
 
