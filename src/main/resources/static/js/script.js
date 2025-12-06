@@ -76,7 +76,8 @@ async function del(url, body = null, headers = {}) {
  * @returns {Object|null}
  */
 function getJwtPayload(cookieName = 'JWT_PAYLOAD') {
-    const match = document.cookie.match(new RegExp('(^| )' + cookieName + '=([^;]+)'));
+    let cookie = document.cookie;
+    const match = cookie.match(new RegExp('(^| )' + cookieName + '=([^;]+)'));
     if (match) {
         try {
             const payloadBase64 = match[2];

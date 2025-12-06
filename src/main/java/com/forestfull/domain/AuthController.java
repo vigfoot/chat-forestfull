@@ -61,6 +61,17 @@ public class AuthController {
             accessCookie.setAttribute("SameSite", "None");
             response.addCookie(accessCookie);
 
+            // JWT_PAYLOAD 쿠키 (JS 접근 가능)
+            String[] parts = accessToken.split("\\.");
+            String payload = parts.length > 1 ? parts[1] : "";
+            Cookie payloadCookie = new Cookie("JWT_PAYLOAD", payload);
+            payloadCookie.setHttpOnly(false);
+            payloadCookie.setSecure("prod".equals(onProfile));
+            payloadCookie.setPath("/");
+            payloadCookie.setMaxAge((int) (JwtUtil.expireMillis / 1000));
+            payloadCookie.setAttribute("SameSite", "Lax");
+            response.addCookie(payloadCookie);
+
             Cookie refreshCookie = new Cookie("REFRESH", refreshToken);
             refreshCookie.setHttpOnly(true);
             refreshCookie.setSecure("prod".equals(onProfile));
@@ -105,7 +116,7 @@ public class AuthController {
             c.setSecure("prod".equals(onProfile));
             c.setPath("/");
             c.setMaxAge(0);
-            c.setAttribute("SameSite", "None");
+            c.setAttribute("SameSite", name.equals("JWT_PAYLOAD") ? "Lax" : "None");
             response.addCookie(c);
         }
 
@@ -151,7 +162,7 @@ public class AuthController {
                 .secure("prod".equals(onProfile))
                 .path("/")
                 .maxAge(JwtUtil.expireMillis / 1000)
-                .sameSite("None")
+                .sameSite("Lax")
                 .build();
 
         // 쿠키 헤더에 추가
