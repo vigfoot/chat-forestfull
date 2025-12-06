@@ -1,7 +1,6 @@
-package com.forestfull.filter;
+package com.forestfull.common.token;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.forestfull.util.JwtUtil;
 import jakarta.servlet.*;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;

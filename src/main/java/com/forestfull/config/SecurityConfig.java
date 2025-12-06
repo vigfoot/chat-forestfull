@@ -1,10 +1,8 @@
 package com.forestfull.config;
 
+import com.forestfull.common.token.*;
 import com.forestfull.domain.CustomUserDetailsService;
-import com.forestfull.filter.CustomLoginFilter;
-import com.forestfull.filter.TokenFilter;
-import com.forestfull.filter.RefreshTokenFilter;
-import com.forestfull.util.JwtUtil;
+import com.forestfull.member.MemberMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -49,8 +47,9 @@ public class SecurityConfig {
                 )
                 .userDetailsService(customUserDetailsService)
                 .addFilterBefore(new RefreshTokenFilter(jwtUtil, refreshJwtUtil), TokenFilter.class)
-                .addFilterBefore(new TokenFilter(jwtUtil, refreshJwtUtil, customUserDetailsService), UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(new TokenFilter(jwtUtil, refreshJwtUtil), UsernamePasswordAuthenticationFilter.class)
                 .addFilterAt(new CustomLoginFilter(jwtUtil, refreshJwtUtil), UsernamePasswordAuthenticationFilter.class)
+                .addFilterAfter(new JwtAuthorizationFilter(jwtUtil, refreshJwtUtil, customUserDetailsService),CustomLoginFilter.class)
                 .sessionManagement(config -> config.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .build();
     }
@@ -60,16 +59,15 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
-    @Value("${key}")
-    private String secretKey;
-
     @Bean
-    JwtUtil jwtUtil() {
+    JwtUtil jwtUtil(@Value("${key}") String secretKey) {
         return new JwtUtil(secretKey);
     }
 
     @Bean
-    JwtUtil.Refresh jwtUtilRefresh() {
-        return new JwtUtil.Refresh(secretKey);
+    JwtUtil.Refresh jwtUtilRefresh(@Value("${key}") String secretKey,
+                                   RefreshTokenMapper refreshTokenMapper,
+                                   MemberMapper memberMapper) {
+        return new JwtUtil.Refresh(secretKey, refreshTokenMapper, memberMapper);
     }
 }

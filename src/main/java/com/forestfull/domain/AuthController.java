@@ -1,6 +1,6 @@
 package com.forestfull.domain;
 
-import com.forestfull.util.JwtUtil;
+import com.forestfull.common.token.JwtUtil;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -58,8 +58,7 @@ public class AuthController {
                 .map(GrantedAuthority::getAuthority)
                 .toList();
         String accessToken = jwtUtil.generateToken(username, roles);
-        String refreshToken = jwtUtil.generateToken(username, roles);
-        refreshJwtUtil.save(username, refreshToken);
+        String refreshToken = refreshJwtUtil.generateToken(username);
 
         return ResponseEntity.ok(Map.of(
                 "accessToken", accessToken,
@@ -92,7 +91,7 @@ public class AuthController {
         if (token != null) {
             try {
                 String username = jwtUtil.verifyToken(token).getSubject();
-                refreshJwtUtil.deleteToken(username);
+                refreshJwtUtil.deleteTokenByUsername(username);
             } catch (Exception e) {
                 // JWT 파싱 실패 시 무시
             }

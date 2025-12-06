@@ -1,0 +1,138 @@
+package com.forestfull.common.token;
+
+import com.auth0.jwt.JWT;
+import com.auth0.jwt.algorithms.Algorithm;
+import com.auth0.jwt.exceptions.JWTVerificationException;
+import com.auth0.jwt.interfaces.DecodedJWT;
+import com.auth0.jwt.interfaces.JWTVerifier;
+import com.forestfull.member.MemberMapper;
+import lombok.Getter;
+
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.Date;
+import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+
+public class JwtUtil {
+
+    @Getter
+    private static final long expireMillis = 24 * 60 * 60 * 1000;
+    private static final long refreshExpireMillis = 7L * 24 * 60 * 60 * 1000;  // 7일 유지
+    private final Algorithm algorithm;
+    private final JWTVerifier verifier;
+
+    // Access Token 발급기
+    public JwtUtil(String secret) {
+        this.algorithm = Algorithm.HMAC256(secret);
+        this.verifier = JWT.require(algorithm).build();
+    }
+
+    // Access Token 생성
+    public String generateToken(String username, List<String> roles) {
+        Date now = new Date();
+        Date exp = new Date(now.getTime() + expireMillis);
+        return JWT.create()
+                .withSubject(username)
+                .withClaim("roles", roles)
+                .withIssuedAt(now)
+                .withExpiresAt(exp)
+                .sign(algorithm);
+    }
+
+    // Access Token 검증
+    public DecodedJWT verifyToken(String token) throws JWTVerificationException {
+        return verifier.verify(token);
+    }
+
+    /**
+     * Refresh Token 관리 (Static Inner Class)
+     * - 역할 분리 : Access Token과 따로 만료시간 다르게
+     * - 서버 저장소(메모리) 기반: 이후 DB 연결로 확장 가능
+     */
+    public static class Refresh {
+
+        private final Algorithm algorithm;
+        private final JWTVerifier verifier;
+        private final RefreshTokenMapper refreshTokenMapper;
+        private final MemberMapper memberMapper;
+
+        public Refresh(String secret, RefreshTokenMapper refreshTokenMapper, MemberMapper memberMapper) {
+            this.algorithm = Algorithm.HMAC256(secret);
+            this.verifier = JWT.require(algorithm).build();
+            this.refreshTokenMapper = refreshTokenMapper;
+            this.memberMapper = memberMapper;
+        }
+
+        // Refresh Token 생성
+        public String generateToken(String username) {
+            Date now = new Date();
+            Date exp = new Date(now.getTime() + refreshExpireMillis);
+
+            String token = JWT.create()
+                    .withSubject(username)
+                    .withIssuedAt(now)
+                    .withExpiresAt(exp)
+                    .sign(algorithm);
+
+            // username -> member_id
+            Long memberId = memberMapper.findIdByUsername(username);
+            if (memberId == null) {
+                throw new IllegalStateException("member not found for username: " + username);
+            }
+
+            // expiry_date: LocalDateTime 변환
+            LocalDateTime expiryDate = LocalDateTime.ofInstant(exp.toInstant(), ZoneId.systemDefault());
+
+            refreshTokenMapper.save(memberId, token, expiryDate);
+            return token;
+        }
+
+        // 토큰을 저장(이미 다른 로직에서 생성했을 때 사용)
+        public void save(String username, String refreshToken) {
+            Long memberId = memberMapper.findIdByUsername(username);
+            if (memberId == null) {
+                throw new IllegalStateException("member not found for username: " + username);
+            }
+            // 토큰 만료시간 파싱
+            DecodedJWT decoded = verifier.verify(refreshToken);
+            LocalDateTime expiryDate = LocalDateTime.ofInstant(decoded.getExpiresAt().toInstant(), ZoneId.systemDefault());
+            refreshTokenMapper.save(memberId, refreshToken, expiryDate);
+        }
+
+        // username 기준으로 DB에서 유효한 토큰 조회
+        public String getToken(String username) {
+            Long memberId = memberMapper.findIdByUsername(username);
+            if (memberId == null) {
+                return null;
+            }
+            return refreshTokenMapper.findValidTokenByMemberId(memberId);
+        }
+
+        // token으로 member_id 조회 (optional)
+        public Long getMemberIdByToken(String token) {
+            return refreshTokenMapper.findMemberIdByToken(token);
+        }
+
+        // 사용자 로그아웃 등에서 토큰 폐기
+        public void deleteTokenByUsername(String username) {
+            Long memberId = memberMapper.findIdByUsername(username);
+            if (memberId == null) return;
+            refreshTokenMapper.revokeByMemberId(memberId);
+        }
+
+        public void deleteTokenByMemberId(Long memberId) {
+            refreshTokenMapper.revokeByMemberId(memberId);
+        }
+
+        // 검증: token 자체를 검증하고 username 반환 (null = invalid)
+        public String getUsername(String refreshToken) {
+            try {
+                DecodedJWT jwt = verifier.verify(refreshToken);
+                return jwt.getSubject();
+            } catch (JWTVerificationException e) {
+                return null;
+            }
+        }
+    }
+}

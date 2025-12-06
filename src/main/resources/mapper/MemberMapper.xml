@@ -3,11 +3,11 @@
 
 <mapper namespace="com.forestfull.member.MemberMapper">
     <insert id="saveMember" parameterType="com.forestfull.member.MemberDTO$Member" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO chat_forestfull.member(tiktok_user_id, display_name, profile_image, created_by, updated_by)
+        INSERT INTO chat_forestfull.member(member_id, display_name, profile_image, created_by, updated_by)
         VALUES(#{tiktokUserId}, #{displayName}, #{profileImage}, #{createdBy}, #{updatedBy})
     </insert>
 
     <select id="findByTikTokUserId" parameterType="string" resultType="com.forestfull.member.MemberDTO$Member">
-        SELECT * FROM chat_forestfull.member WHERE tiktok_user_id = #{tiktokUserId}
+        SELECT * FROM chat_forestfull.member WHERE member_id = #{tiktokUserId}
     </select>
 </mapper>

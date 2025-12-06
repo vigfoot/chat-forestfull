@@ -2,6 +2,7 @@ package com.forestfull.member;
 
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Select;
 
 @Mapper
 public interface MemberMapper {
@@ -10,4 +11,6 @@ public interface MemberMapper {
 
     MemberDTO.Member findByTikTokUserId(@Param("tiktokUserId") String tiktokUserId);
 
+    @Select("SELECT id FROM chat_forestfull.member WHERE member.member_id = #{username} LIMIT 1")
+    Long findIdByUsername(String username);
 }

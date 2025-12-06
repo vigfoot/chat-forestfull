@@ -1,7 +1,6 @@
-package com.forestfull.filter;
+package com.forestfull.common.token;
 
 import com.auth0.jwt.interfaces.DecodedJWT;
-import com.forestfull.util.JwtUtil;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
