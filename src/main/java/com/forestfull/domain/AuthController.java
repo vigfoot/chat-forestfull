@@ -13,10 +13,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -123,21 +125,27 @@ public class AuthController {
     @PostMapping("/refresh")
     public ResponseEntity<?> refreshToken(@CookieValue(value = "REFRESH", required = false) String refreshToken,
                                           HttpServletResponse response) {
-        if (refreshToken == null || refreshToken.isBlank())
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "No refresh token"));
+        if (!StringUtils.hasText(refreshToken))
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("No refresh token");
 
         String username = refreshJwtUtil.getUsername(refreshToken);
-        if (username == null || !refreshToken.equals(refreshJwtUtil.getToken(username)))
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Invalid refresh token"));
+        if (username == null)
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid refresh token");
 
+        if (!Objects.equals(refreshToken, refreshJwtUtil.getToken(username)))
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token mismatch");
+
+        // DB에서 권한 조회
         UserDetails userDetails = userService.loadUserByUsername(username);
         List<String> roles = userDetails.getAuthorities().stream()
                 .map(a -> a.getAuthority().replace("ROLE_", ""))
                 .toList();
 
+        // 새 Access Token 생성
         String newAccess = jwtUtil.generateToken(username, roles);
 
-        ResponseCookie jwtCookie = ResponseCookie.from("JWT", newAccess)
+        // JWT 쿠키 (HttpOnly)
+        ResponseCookie accessCookie = ResponseCookie.from("JWT", newAccess)
                 .httpOnly(true)
                 .secure("prod".equals(onProfile))
                 .path("/")
@@ -145,6 +153,7 @@ public class AuthController {
                 .sameSite("None")
                 .build();
 
+        // JWT_PAYLOAD 쿠키 (JS 접근 가능)
         String[] parts = newAccess.split("\\.");
         String payload = parts.length > 1 ? parts[1] : "";
         ResponseCookie payloadCookie = ResponseCookie.from("JWT_PAYLOAD", payload)
@@ -155,7 +164,8 @@ public class AuthController {
                 .sameSite("None")
                 .build();
 
-        response.addHeader(HttpHeaders.SET_COOKIE, jwtCookie.toString());
+        // 쿠키 헤더에 추가
+        response.addHeader(HttpHeaders.SET_COOKIE, accessCookie.toString());
         response.addHeader(HttpHeaders.SET_COOKIE, payloadCookie.toString());
 
         return ResponseEntity.ok(Map.of("message", "token refreshed"));
