@@ -66,71 +66,35 @@ public class AuthController {
                 "roles", roles
         ));
     }
-
-    @PostMapping("/logout")
-    public String logout(HttpServletRequest request, HttpServletResponse response) {
-
-        // 1. Authorization 헤더 또는 JWT 쿠키 확인
-        String token = null;
-        String authHeader = request.getHeader("Authorization");
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            token = authHeader.substring(7);
-        } else {
-            // 쿠키에서 가져오기
-            if (request.getCookies() != null) {
-                for (Cookie cookie : request.getCookies()) {
-                    if ("JWT".equals(cookie.getName())) {
-                        token = cookie.getValue();
-                        break;
-                    }
-                }
-            }
-        }
-
-        // 2. username 추출 후 Refresh Token 삭제
-        if (token != null) {
-            try {
-                String username = jwtUtil.verifyToken(token).getSubject();
-                refreshJwtUtil.deleteTokenByUsername(username);
-            } catch (Exception e) {
-                // JWT 파싱 실패 시 무시
-            }
-        }
-
-        // 3. JWT 쿠키 삭제
-        Cookie deleteCookie = new Cookie("JWT", null);
-        deleteCookie.setHttpOnly(true);
-        deleteCookie.setPath("/");
-        deleteCookie.setMaxAge(0);
-        response.addCookie(deleteCookie);
-
-        return "{\"message\":\"로그아웃 되었습니다.\"}";
-    }
-
     @PostMapping("/refresh")
-    public ResponseEntity<?> refreshToken(@CookieValue(value = "REFRESH") String refreshToken) {
-        if (!StringUtils.hasText(refreshToken))
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("No refresh token");
+    public ResponseEntity<?> refreshToken(@CookieValue(value = "REFRESH", required = false) String refreshToken) {
+        if (!StringUtils.hasText(refreshToken)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "No refresh token"));
+        }
 
+        // 1️⃣ Refresh Token 검증 및 username 확인
         String username = refreshJwtUtil.getUsername(refreshToken);
+        if (!StringUtils.hasText(username)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Invalid refresh token"));
+        }
 
-        if (!StringUtils.hasText(username))
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid refresh token");
+        // 2️⃣ DB에 저장된 토큰과 비교
+        String savedToken = refreshJwtUtil.getToken(username);
+        if (!refreshToken.equals(savedToken)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Token mismatch"));
+        }
 
-        if (!Objects.equals(refreshToken, refreshJwtUtil.getToken(username)))
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token mismatch");
-
-        // DB에서 사용자 권한(roles) 조회
+        // 3️⃣ 사용자 권한 조회 (roles)
         UserDetails userDetails = userService.loadUserByUsername(username);
         List<String> roles = userDetails.getAuthorities().stream()
-                .map(a -> a.getAuthority().replace("ROLE_", "")) // Jwt는 roles 그대로 저장하도록
-                .collect(Collectors.toList());
+                .map(a -> a.getAuthority().replace("ROLE_", "")) // Jwt roles는 그대로 저장
+                .toList();
 
-        // 새 Access Token 생성
-        String newAccess = jwtUtil.generateToken(username, roles);
+        // 4️⃣ 새 Access Token 생성
+        String newAccessToken = jwtUtil.generateToken(username, roles);
 
-        // 쿠키 생성: JWT (HttpOnly) + JWT_PAYLOAD (JS 사용 가능)
-        ResponseCookie accessCookie = ResponseCookie.from("JWT", newAccess)
+        // 5️⃣ JWT 쿠키 생성
+        ResponseCookie accessCookie = ResponseCookie.from("JWT", newAccessToken)
                 .httpOnly(true)
                 .secure("prod".equals(onProfile))
                 .path("/")
@@ -138,8 +102,8 @@ public class AuthController {
                 .sameSite("None")
                 .build();
 
-        // payload (base64 payload part) — JS에서 디코딩 가능하도록 non-HttpOnly
-        String[] parts = newAccess.split("\\.");
+        // 6️⃣ JWT_PAYLOAD 쿠키 생성 (JS에서 읽도록)
+        String[] parts = newAccessToken.split("\\.");
         String payload = parts.length > 1 ? parts[1] : "";
         ResponseCookie payloadCookie = ResponseCookie.from("JWT_PAYLOAD", payload)
                 .httpOnly(false)
@@ -149,9 +113,66 @@ public class AuthController {
                 .sameSite("None")
                 .build();
 
+        // 7️⃣ Response
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, accessCookie.toString())
                 .header(HttpHeaders.SET_COOKIE, payloadCookie.toString())
-                .body("{\"message\":\"token refreshed\"}");
+                .body(Map.of("message", "Access token refreshed"));
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout(HttpServletRequest request, HttpServletResponse response) {
+
+        // 1️⃣ JWT 확인 (Authorization 헤더 또는 쿠키)
+        String token = null;
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            token = authHeader.substring(7);
+        } else if (request.getCookies() != null) {
+            for (Cookie cookie : request.getCookies()) {
+                if ("JWT".equals(cookie.getName())) {
+                    token = cookie.getValue();
+                }
+            }
+        }
+
+        // 2️⃣ Refresh Token DB에서 폐기
+        if (token != null) {
+            try {
+                String username = jwtUtil.verifyToken(token).getSubject();
+                refreshJwtUtil.deleteTokenByUsername(username);
+            } catch (Exception e) {
+                // 토큰이 유효하지 않으면 무시
+            }
+        }
+
+        // 3️⃣ JWT 쿠키 삭제
+        Cookie deleteJwt = new Cookie("JWT", null);
+        deleteJwt.setHttpOnly(true);
+        deleteJwt.setSecure("prod".equals(onProfile));
+        deleteJwt.setPath("/");
+        deleteJwt.setMaxAge(0);
+        deleteJwt.setAttribute("SameSite", "None");
+        response.addCookie(deleteJwt);
+
+        // 4️⃣ Payload 쿠키 삭제
+        Cookie deletePayload = new Cookie("JWT_PAYLOAD", null);
+        deletePayload.setHttpOnly(false);
+        deletePayload.setSecure("prod".equals(onProfile));
+        deletePayload.setPath("/");
+        deletePayload.setMaxAge(0);
+        deletePayload.setAttribute("SameSite", "None");
+        response.addCookie(deletePayload);
+
+        // 5️⃣ Refresh Token 쿠키 삭제
+        Cookie deleteRefresh = new Cookie("REFRESH", null);
+        deleteRefresh.setHttpOnly(true);
+        deleteRefresh.setSecure("prod".equals(onProfile));
+        deleteRefresh.setPath("/");
+        deleteRefresh.setMaxAge(0);
+        deleteRefresh.setAttribute("SameSite", "None");
+        response.addCookie(deleteRefresh);
+
+        return ResponseEntity.ok(Map.of("message", "로그아웃 완료"));
     }
 }

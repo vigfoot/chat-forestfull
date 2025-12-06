@@ -1,12 +1,19 @@
 package com.forestfull.domain;
 
+import com.forestfull.member.MemberDTO;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Getter
 @Service
@@ -16,26 +23,36 @@ public class CustomUserDetailsService implements UserDetailsService {
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
 
-    public boolean signup(com.forestfull.domain.User.SignUpRequest request) {
-        if (userMapper.findByUsername(request.getUsername()) != null) throw new RuntimeException("User already exists");
-
-        com.forestfull.domain.User user = new com.forestfull.domain.User();
-        user.setUsername(request.getUsername());
-        user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setRoles(request.getRoles());
-
-        return userMapper.save(user);
-    }
-
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        com.forestfull.domain.User user = userMapper.findByUsername(username);
-        if (user == null) throw new UsernameNotFoundException("User not found");
+        MemberDTO.Member member = userMapper.findByUsername(username);
+        if (member == null)
+            throw new UsernameNotFoundException("User not found: " + username);
+
+        // DB에서 role 컬럼은 문자열로 "ROLE_USER"처럼 저장
+        List<GrantedAuthority> authorities = Arrays.stream(member.getRole().split(","))
+                .map(SimpleGrantedAuthority::new)
+                .collect(Collectors.toList());
 
         return org.springframework.security.core.userdetails.User.builder()
-                .username(user.getUsername())
-                .password(user.getPassword())
-                .authorities(user.getRoles().split(","))
+                .username(member.getName())
+                .password(member.getPassword()) // BCrypt 인코딩 되어 있다고 가정
+                .authorities(authorities)
+                .accountExpired(false)
+                .accountLocked(false)
+                .credentialsExpired(false)
+                .disabled(false)
                 .build();
+    }
+
+    public boolean signup(User.SignUpRequest request) {
+        // 중복 체크
+        if (userMapper.findByUsername(request.getUsername()) != null)
+            return false;
+
+        // 비밀번호 인코딩
+        request.setPassword(passwordEncoder.encode(request.getPassword()));
+        userMapper.save(request);
+        return true;
     }
 }

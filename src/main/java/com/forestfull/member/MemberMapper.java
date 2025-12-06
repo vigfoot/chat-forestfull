@@ -10,7 +10,4 @@ public interface MemberMapper {
     void saveMember(MemberDTO.Member member);
 
     MemberDTO.Member findByTikTokUserId(@Param("tiktokUserId") String tiktokUserId);
-
-    @Select("SELECT id FROM chat_forestfull.member WHERE member.member_id = #{username} LIMIT 1")
-    Long findIdByUsername(String username);
 }

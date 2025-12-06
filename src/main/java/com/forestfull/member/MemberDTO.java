@@ -9,11 +9,13 @@ public class MemberDTO {
     @Data
     public static class Member {
         private Long id;
-        private String tiktokUserId; // OAuth openId
+        private String name; // OAuth openId
+        private String password;
         private String displayName;
         private String profileImage;
         private LocalDateTime createdAt;
         private LocalDateTime updatedAt;
+        private String role;
         private String createdBy;
         private String updatedBy;
     }

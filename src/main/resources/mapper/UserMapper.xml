@@ -2,31 +2,51 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
 <mapper namespace="com.forestfull.domain.UserMapper">
-    <select id="findByUsername" resultType="com.forestfull.domain.User">
-        SELECT m.id AS id, m.member_id AS username, m.password, m.role AS roles
-        FROM chat_forestfull.member m
-        WHERE m.member_id = #{username}
+    <!-- 회원 조회 by username -->
+    <select id="findByUsername" resultMap="com.forestfull.member.MemberDTO$Member" parameterType="String">
+        SELECT *
+        FROM chat_forestfull.member
+        WHERE name = #{username}
     </select>
 
+    <!-- 회원 ID 조회 by username -->
+    <select id="findIdByUsername" resultType="long" parameterType="String">
+        SELECT id
+        FROM chat_forestfull.member
+        WHERE name = #{username}
+    </select>
+
+    <!-- 회원 생성 -->
     <insert id="save" parameterType="com.forestfull.domain.User" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO chat_forestfull.member (member_id, password, role)
-        VALUES (#{username}, #{password}, #{roles})
+        INSERT INTO chat_forestfull.member (name, password, role, display_name, profile_image, created_by, updated_by)
+        VALUES (#{username}, #{password}, #{roles}, #{displayName}, #{profileImage}, #{createdBy}, #{updatedBy})
     </insert>
 
-    <select id="findAllUsers" resultType="com.forestfull.domain.User">
-        SELECT m.member_id AS user_name, role AS roles
-        FROM chat_forestfull.member m
-        ORDER BY m.id DESC
+    <!-- 모든 회원 조회 -->
+    <select id="findAll" resultMap="com.forestfull.member.MemberDTO$Member">
+        SELECT *
+        FROM chat_forestfull.member
     </select>
 
-    <update id="updateRoles">
-        UPDATE chat_forestfull.member m
-        SET m.role = #{roles}
-        WHERE m.member_id = #{username}
+    <!-- 회원 권한만 조회 -->
+    <select id="findRolesByUsername" resultType="String" parameterType="String">
+        SELECT role
+        FROM chat_forestfull.member
+        WHERE name = #{username}
+    </select>
+
+    <!-- 회원 비밀번호 업데이트 -->
+    <update id="updatePassword" parameterType="com.forestfull.domain.User">
+        UPDATE chat_forestfull.member
+        SET password = #{password},
+            updated_at = CURRENT_TIMESTAMP,
+            updated_by = #{updatedBy}
+        WHERE id = #{id}
     </update>
 
-    <delete id="deleteByUsername" parameterType="string">
+    <!-- 회원 삭제 -->
+    <delete id="deleteById" parameterType="long">
         DELETE FROM chat_forestfull.member
-        WHERE member_id = #{username}
+        WHERE id = #{id}
     </delete>
 </mapper>

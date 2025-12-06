@@ -134,5 +134,31 @@ public class JwtUtil {
                 return null;
             }
         }
+
+        // Refresh Token 유효성 검증 + DB 저장 여부 확인
+        public String validateAndGetUsername(String refreshToken) {
+            try {
+                // 1️⃣ JWT 자체 검증 (서명, 만료)
+                DecodedJWT jwt = verifier.verify(refreshToken);
+                String username = jwt.getSubject();
+
+                if (username == null) return null;
+
+                // 2️⃣ DB에 저장된 토큰과 비교 (DB에 없으면 무효)
+                Long memberId = memberMapper.findIdByUsername(username);
+                if (memberId == null) return null;
+
+                String tokenInDb = refreshTokenMapper.findValidTokenByMemberId(memberId);
+                if (tokenInDb == null) return null;
+
+                if (!tokenInDb.equals(refreshToken)) {
+                    return null; // 다른 Refresh 토큰이면 무효
+                }
+
+                return username;
+            } catch (Exception e) {
+                return null; // JWT 서명/만료 오류 → 무효 토큰
+            }
+        }
     }
 }
