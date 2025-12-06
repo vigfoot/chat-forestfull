@@ -11,10 +11,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 
 @RequiredArgsConstructor
@@ -23,41 +23,43 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtUtil jwtUtil;
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request,
-                                    HttpServletResponse response,
-                                    FilterChain filterChain) throws ServletException, IOException {
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+            throws ServletException, IOException {
 
-        String token = null;
-
-        // 쿠키에서 JWT만 확인
-        if (request.getCookies() != null) {
-            for (Cookie cookie : request.getCookies()) {
-                if ("JWT".equals(cookie.getName())) {
-                    token = cookie.getValue();
-                    break;
-                }
-            }
+        // 1. 쿠키에서 JWT 읽기
+        String jwtToken = null;
+        Cookie[] cookies = request.getCookies();
+        if (cookies != null) {
+            jwtToken = Arrays.stream(cookies)
+                    .filter(cookie -> "JWT".equals(cookie.getName()))
+                    .map(Cookie::getValue)
+                    .findFirst()
+                    .orElse(null);
         }
 
-        if (token != null) {
-            try {
-                DecodedJWT decodedJWT = jwtUtil.verifyToken(token);
-                String username = decodedJWT.getSubject();
-                List<String> roles = decodedJWT.getClaim("roles").asList(String.class);
+        // 2. JWT가 없으면 필터 체인 진행
+        if (jwtToken == null) {
+            filterChain.doFilter(request, response);
+            return;
+        }
 
-                UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
-                        username,
-                        null,
-                        roles.stream()
-                                .map(SimpleGrantedAuthority::new)
-                                .toList()
-                );
-                auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                SecurityContextHolder.getContext().setAuthentication(auth);
+        try {
+            // 3. JWT 검증
+            DecodedJWT decodedJWT = jwtUtil.verifyToken(jwtToken);
+            String username = decodedJWT.getSubject();
+            List<String> roles = decodedJWT.getClaim("roles").asList(String.class);
 
-            } catch (JWTVerificationException e) {
-                SecurityContextHolder.clearContext(); // 유효하지 않은 토큰이면 인증 제거
-            }
+            // 4. Spring SecurityContext 세팅
+            UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                    username,
+                    null,
+                    roles.stream().map(SimpleGrantedAuthority::new).toList()
+            );
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+
+        } catch (JWTVerificationException e) {
+            // JWT가 유효하지 않으면 인증 무시 (필요시 401 처리)
+            SecurityContextHolder.clearContext();
         }
 
         filterChain.doFilter(request, response);
