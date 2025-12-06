@@ -2,6 +2,7 @@ package com.forestfull.admin;
 
 import com.forestfull.domain.User;
 import com.forestfull.domain.UserMapper;
+import com.forestfull.member.MemberDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -13,7 +14,7 @@ public class AdminUserService {
 
     private final UserMapper userMapper;
 
-    public List<User> getAllUsers() {
+    public List<MemberDTO.Member> getAllUsers() {
         return userMapper.findAllUsers();
     }
 

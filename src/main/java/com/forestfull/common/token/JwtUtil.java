@@ -6,23 +6,24 @@ import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.auth0.jwt.interfaces.JWTVerifier;
 import com.forestfull.domain.UserMapper;
-import com.forestfull.member.MemberMapper;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Date;
 import java.util.List;
 
+@Component
 public class JwtUtil {
-
     public static final long expireMillis = 24 * 60 * 60 * 1000;
     public static final long refreshExpireMillis = 7L * 24 * 60 * 60 * 1000;  // 7일 유지
+
     private final Algorithm algorithm;
     private final JWTVerifier verifier;
 
-    // Access Token 발급기
-    public JwtUtil(String secret) {
-        this.algorithm = Algorithm.HMAC256(secret);
+    public JwtUtil(@Value("${key}") String secretKey) {
+        this.algorithm = Algorithm.HMAC256(secretKey);
         this.verifier = JWT.require(algorithm).build();
     }
 
@@ -48,16 +49,19 @@ public class JwtUtil {
      * - 역할 분리 : Access Token과 따로 만료시간 다르게
      * - 서버 저장소(메모리) 기반: 이후 DB 연결로 확장 가능
      */
+    @Component
     public static class Refresh {
 
         private final Algorithm algorithm;
         private final JWTVerifier verifier;
+        ;
         private final RefreshTokenMapper refreshTokenMapper;
         private final UserMapper userMapper;
 
-        public Refresh(String secret, RefreshTokenMapper refreshTokenMapper, UserMapper userMapper) {
-            this.algorithm = Algorithm.HMAC256(secret);
+        public Refresh(@Value("${key}") String secretKey, RefreshTokenMapper refreshTokenMapper, UserMapper userMapper) {
+            this.algorithm = Algorithm.HMAC256(secretKey);
             this.verifier = JWT.require(algorithm).build();
+            ;
             this.refreshTokenMapper = refreshTokenMapper;
             this.userMapper = userMapper;
         }
@@ -157,6 +161,10 @@ public class JwtUtil {
             } catch (Exception e) {
                 return null; // JWT 서명/만료 오류 → 무효 토큰
             }
+        }
+
+        public DecodedJWT verify(String refreshToken) {
+            return verifier.verify(refreshToken);
         }
     }
 }

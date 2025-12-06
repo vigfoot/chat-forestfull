@@ -11,9 +11,7 @@
 
     <!-- 회원 ID 조회 by username -->
     <select id="findIdByUsername" resultType="long" parameterType="String">
-        SELECT id
-        FROM chat_forestfull.member
-        WHERE name = #{username}
+        SELECT id FROM chat_forestfull.member WHERE member.name = #{username} LIMIT 1
     </select>
 
     <!-- 회원 생성 -->

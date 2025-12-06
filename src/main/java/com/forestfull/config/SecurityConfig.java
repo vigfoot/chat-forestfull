@@ -1,19 +1,17 @@
 package com.forestfull.config;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.forestfull.common.token.*;
+import com.forestfull.common.token.CustomLoginFilter;
+import com.forestfull.common.token.JwtAuthenticationFilter;
+import com.forestfull.common.token.RefreshTokenFilter;
+import com.forestfull.common.token.TokenFilter;
 import com.forestfull.domain.CustomUserDetailsService;
-import com.forestfull.domain.UserMapper;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
@@ -24,16 +22,15 @@ import org.springframework.web.cors.CorsConfiguration;
 public class SecurityConfig {
 
 
+    private final CustomUserDetailsService customUserDetailsService;
+    private final TokenFilter tokenFilter;
+    private final RefreshTokenFilter refreshTokenFilter;
+    private final CustomLoginFilter customLoginFilter;
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private static final String[] staticResources = {"/", "/css/**", "/js/**", "/images/**", "/webjars/**", "/favicon.ico"};
 
     @Bean
-    SecurityFilterChain securityFilterChain(
-            HttpSecurity http
-            , CustomUserDetailsService customUserDetailsService
-            , JwtUtil jwtUtil
-            , JwtUtil.Refresh refreshJwtUtil
-            , ObjectMapper objectMapper
-    ) throws Exception {
+    SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
                 .cors(cors -> cors.configurationSource(request -> {
                     CorsConfiguration config = new CorsConfiguration();
@@ -53,28 +50,11 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 )
                 .userDetailsService(customUserDetailsService)
-                .addFilterBefore(new RefreshTokenFilter(jwtUtil, refreshJwtUtil), TokenFilter.class)
-                .addFilterBefore(new TokenFilter(jwtUtil, refreshJwtUtil), UsernamePasswordAuthenticationFilter.class)
-                .addFilterAt(new CustomLoginFilter(jwtUtil, refreshJwtUtil, objectMapper), UsernamePasswordAuthenticationFilter.class)
-                .addFilterAfter(new JwtAuthenticationFilter(jwtUtil), CustomLoginFilter.class)
+                .addFilterBefore(refreshTokenFilter, TokenFilter.class)
+                .addFilterBefore(tokenFilter, CustomLoginFilter.class)
+                .addFilterBefore(customLoginFilter, JwtAuthenticationFilter.class)
+                .addFilterAt(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .sessionManagement(config -> config.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .build();
-    }
-
-    @Bean
-    PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
-
-    @Bean
-    JwtUtil jwtUtil(@Value("${key}") String secretKey) {
-        return new JwtUtil(secretKey);
-    }
-
-    @Bean
-    JwtUtil.Refresh jwtUtilRefresh(@Value("${key}") String secretKey,
-                                   RefreshTokenMapper refreshTokenMapper,
-                                   UserMapper userMapper) {
-        return new JwtUtil.Refresh(secretKey, refreshTokenMapper, userMapper);
     }
 }

@@ -12,17 +12,7 @@ public class MemberService {
     private final MemberMapper memberMapper;
 
     private MemberDTO.Member saveOrUpdateMember(MemberDTO.Member user, String accessToken) {
-        MemberDTO.Member existing = memberMapper.findByTikTokUserId(user.getTiktokUserId());
-        if (existing != null) {
-            existing.setDisplayName(user.getDisplayName());
-            existing.setProfileImage(user.getProfileImage());
-            memberMapper.saveMember(existing); // 필요시 update 쿼리로 교체
-            return existing;
-        } else {
-            user.setTiktokUserId(accessToken); // WebSocket token용
-            memberMapper.saveMember(user);
-            return user;
-        }
+        return null;
     }
 
     private String extractAccessToken(String json) {
