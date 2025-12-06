@@ -3,10 +3,14 @@
 
 <mapper namespace="com.forestfull.domain.UserMapper">
     <!-- 회원 조회 by username -->
-    <select id="findByUsername" resultMap="com.forestfull.member.MemberDTO$Member" parameterType="String">
-        SELECT *
-        FROM chat_forestfull.member
-        WHERE name = #{username}
+    <select id="findByUsername" resultType="com.forestfull.domain.User" parameterType="String">
+        SELECT
+            m.id
+            , m.name AS username
+            , m.password
+            , m.role AS roles
+        FROM chat_forestfull.member m
+        WHERE m.name = #{username}
     </select>
 
     <!-- 회원 ID 조회 by username -->
@@ -15,13 +19,13 @@
     </select>
 
     <!-- 회원 생성 -->
-    <insert id="save" parameterType="com.forestfull.domain.User" useGeneratedKeys="true" keyProperty="id">
+    <insert id="save" parameterType="com.forestfull.member.MemberDTO$Member" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO chat_forestfull.member (name, password, role, display_name, profile_image, created_by, updated_by)
-        VALUES (#{username}, #{password}, #{roles}, #{displayName}, #{profileImage}, #{createdBy}, #{updatedBy})
+        VALUES (#{name}, #{password}, #{roles}, #{displayName}, #{profileImage}, #{createdBy}, #{updatedBy})
     </insert>
 
     <!-- 모든 회원 조회 -->
-    <select id="findAll" resultMap="com.forestfull.member.MemberDTO$Member">
+    <select id="findAll" resultType="com.forestfull.member.MemberDTO$Member">
         SELECT *
         FROM chat_forestfull.member
     </select>

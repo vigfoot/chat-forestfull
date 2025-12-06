@@ -43,9 +43,7 @@ public class AuthController {
             String username = body.get("username");
             String password = body.get("password");
 
-            Authentication auth = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(username, password)
-            );
+            Authentication auth = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(username, password));
 
             List<String> roles = auth.getAuthorities().stream().map(GrantedAuthority::getAuthority).toList();
 

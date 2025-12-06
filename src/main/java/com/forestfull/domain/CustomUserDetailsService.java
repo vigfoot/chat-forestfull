@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
@@ -20,21 +21,22 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        var user = userMapper.findByUsername(username);
+        final User user = userMapper.findByUsername(username);
         if (user == null) throw new UsernameNotFoundException("User not found: " + username);
 
         return new org.springframework.security.core.userdetails.User(
-                user.getName(),
+                user.getUsername(),
                 user.getPassword(),
-                getAuthorities(user.getRole())
+                getAuthorities(user.getRoles())
         );
     }
 
     private Collection<? extends GrantedAuthority> getAuthorities(String roles) {
-        return Arrays.stream(roles.split(","))
+        List<SimpleGrantedAuthority> role = Arrays.stream(roles.split(","))
                 .map(r -> r.startsWith("ROLE_") ? r : "ROLE_" + r)
                 .map(SimpleGrantedAuthority::new)
                 .collect(Collectors.toList());
+        return role;
     }
 
     public boolean signup(User.SignUpRequest request) {

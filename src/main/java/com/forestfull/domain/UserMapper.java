@@ -9,7 +9,7 @@ import java.util.List;
 @Mapper
 public interface UserMapper {
 
-    MemberDTO.Member findByUsername(String username);
+    User findByUsername(String username);
 
     Long findIdByUsername(String username);
 
