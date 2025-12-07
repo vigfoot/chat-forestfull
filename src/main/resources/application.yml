@@ -34,7 +34,7 @@ tiktok:
   scope: ENC(RkFhNItvhRZgBIQYg2+65RWzDJAXFuFy)
 file:
   directory:
-    absolute: "C:/Development/test-resources/"
+    absolute: "C:/Development/test-resources"
 
 
 ---

@@ -28,7 +28,7 @@ public class SecurityConfig {
     private final TokenFilter tokenFilter;
     private final PasswordEncoder passwordEncoder;
     private final CustomUserDetailsService customUserDetailsService;
-    private static final String[] PUBLIC_RESOURCES = {"/", "/favicon.ico", "/css/**", "/js/**", "/images/**", "/webjars/**", "/file/**", "/pages/**", "/api/auth/**"};
+    private static final String[] PUBLIC_RESOURCES = {"/", "/favicon.ico", "/css/**", "/js/**", "/images/**", "/webjars/**", "/pages/**"};
 
     public static boolean isPublicResource(HttpServletRequest request) {
         return isPublicResource(request.getRequestURI());
@@ -46,6 +46,7 @@ public class SecurityConfig {
                 .formLogin(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(reg -> reg
                         .requestMatchers(PUBLIC_RESOURCES).permitAll()
+                        .requestMatchers("/file/**", "/api/auth/**").permitAll()
                         .requestMatchers("/pages/admin/**", "/admin/**").hasRole("ADMIN")
                         .requestMatchers("/pages/management/**", "/management/**").hasAnyRole("ADMIN", "MANAGER")
                         .anyRequest().authenticated()
