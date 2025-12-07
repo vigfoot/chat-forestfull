@@ -12,17 +12,7 @@ import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @Configuration
-public class CommonConfig implements WebMvcConfigurer {
-
-    @Value("${file.directory.absolute}")
-    private String absolutePath;
-
-    @Override
-    public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        registry.addResourceHandler("/file/emoji/resource/**")
-                .addResourceLocations("file:" + absolutePath) // 실제 디렉토리 절대 경로
-                .setCachePeriod(3600); // 선택: 캐시 1시간
-    }
+public class CommonConfig {
 
     @Bean
     ObjectMapper objectMapper() {

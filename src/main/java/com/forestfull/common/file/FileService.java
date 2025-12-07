@@ -3,11 +3,13 @@ package com.forestfull.common.file;
 import com.forestfull.common.ResponseException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
-import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import java.io.File;
 import java.io.IOException;
@@ -20,14 +22,21 @@ import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
-@Service
+@Configuration
 @RequiredArgsConstructor
-public class FileService {
+public class FileService implements WebMvcConfigurer {
 
     @Value("${file.directory.absolute}")
     private String absolutePath;
 
     private final FileMapper fileMapper;
+
+    @Override
+    public void addResourceHandlers(ResourceHandlerRegistry registry) {
+        registry.addResourceHandler("/file/**")
+                .addResourceLocations("file:" + absolutePath) // 실제 디렉토리 절대 경로
+                .setCachePeriod(3600); // 선택: 캐시 1시간
+    }
 
     /**
      * 엄격한 파일명 검증: 허용되는 문자만, 경로 관련 문자 차단
@@ -142,25 +151,5 @@ public class FileService {
         }
 
         return ResponseException.ok();
-    }
-
-    /**
-     * directory 경로를 받아 Resource 반환
-     */
-    public Resource getFileResource(String directory) {
-        // directory 경로가 외부 입력이므로 보안상 경로 검증 필요
-        if (directory.contains("..")) {
-            throw new IllegalArgumentException("Invalid directory path");
-        }
-
-        // 실제 파일 경로 생성
-        File file = Paths.get(absolutePath, directory).toFile();
-
-        // 존재 여부 확인 후 Resource 반환
-        if (file.exists() && file.isFile()) {
-            return new FileSystemResource(file);
-        } else {
-            return null; // 없으면 null 혹은 예외 처리
-        }
     }
 }
