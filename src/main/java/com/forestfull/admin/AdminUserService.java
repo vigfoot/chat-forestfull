@@ -18,11 +18,11 @@ public class AdminUserService {
         return userMapper.findAllUsers();
     }
 
-    public boolean updateUserRoles(String username, String roles) {
-        return userMapper.updateRoles(username, roles);
+    public boolean updateUserRoles(Long id, String roles) {
+        return userMapper.updateRoles(id, roles);
     }
 
-    public boolean deleteUser(String username) {
-        return userMapper.deleteByUsername(username);
+    public boolean deleteUser(Long id) {
+        return userMapper.deleteById(id);
     }
 }

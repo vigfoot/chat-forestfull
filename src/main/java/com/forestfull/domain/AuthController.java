@@ -57,7 +57,7 @@ public class AuthController {
             accessCookie.setSecure("prod".equals(onProfile));
             accessCookie.setPath("/");
             accessCookie.setMaxAge((int) (JwtUtil.expireMillis / 1000));
-            accessCookie.setAttribute("SameSite", "None");
+            accessCookie.setAttribute("SameSite", "prod".equals(onProfile)? "None" : "Lax");
             response.addCookie(accessCookie);
 
             // JWT_PAYLOAD 쿠키 (JS 접근 가능)
@@ -76,7 +76,7 @@ public class AuthController {
             refreshCookie.setSecure("prod".equals(onProfile));
             refreshCookie.setPath("/");
             refreshCookie.setMaxAge((int) (JwtUtil.refreshExpireMillis / 1000));
-            refreshCookie.setAttribute("SameSite", "None");
+            refreshCookie.setAttribute("SameSite", "prod".equals(onProfile)? "None" : "Lax");
             response.addCookie(refreshCookie);
 
             return ResponseEntity.ok(Map.of("message", "Login successful"));
@@ -150,7 +150,7 @@ public class AuthController {
                 .secure("prod".equals(onProfile))
                 .path("/")
                 .maxAge(JwtUtil.expireMillis / 1000)
-                .sameSite("None")
+                .sameSite("prod".equals(onProfile)? "None" : "Lax")
                 .build();
 
         // JWT_PAYLOAD 쿠키 (JS 접근 가능)

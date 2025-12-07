@@ -29,30 +29,32 @@
 
 <script>
     function loadUsers() {
-        get('/admin/users').then(users => {
-            const tbody = document.getElementById('admin-users-tbody');
-            tbody.innerHTML = '';
-            users.forEach(user => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                <td>${user.username}</td>
-                <td><input type="text" class="form-control" value="${user.roles}" id="roles-${user.username}"></td>
+        get('/admin/users')
+            .then(res => res.json())
+            .then(users => {
+                const tbody = document.getElementById('admin-users-tbody');
+                tbody.innerHTML = '';
+                users.forEach(user => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                <td>${user.name}</td>
+                <td><input type="text" class="form-control" value="${user.role}" id="roles-${user.id}"></td>
                 <td>
-                    <button class="btn btn-sm btn-success me-1" onclick="updateRoles('${user.username}')">Update</button>
-                    <button class="btn btn-sm btn-danger" onclick="deleteUser('${user.username}')">Delete</button>
+                    <button class="btn btn-sm btn-success me-1" onclick="updateRoles('${user.id}')">Update</button>
+                    <button class="btn btn-sm btn-danger" onclick="deleteUser('${user.id}')">Delete</button>
                 </td>
             `;
-                tbody.appendChild(tr);
-            });
-        }).catch(err => {
+                    tbody.appendChild(tr);
+                });
+            }).catch(err => {
             console.error('사용자 목록 처리 오류:', err);
             alert('사용자 목록을 가져오지 못했습니다.');
         });
     }
 
-    function updateRoles(username) {
-        const roles = document.getElementById(`roles-${username}`).value;
-        put(`/admin/users/${username}/roles`, { roles }).then(data => {
+    function updateRoles(id) {
+        const roles = document.getElementById(`roles-${id}`).value;
+        put(`/admin/users/${id}/roles`, {roles}).then(data => {
             alert(data.message || '업데이트 완료');
         }).catch(err => {
             console.error('업데이트 처리 오류:', err);
@@ -60,8 +62,8 @@
         });
     }
 
-    function deleteUser(username) {
-        del(`/admin/users/${username}`).then(data => {
+    function deleteUser(id) {
+        del(`/admin/users/${id}`).then(data => {
             alert(data.message || '삭제 완료');
             loadUsers();
         }).catch(err => {

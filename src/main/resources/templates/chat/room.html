@@ -107,6 +107,7 @@
 
         function loadHistory() {
             get(`/api/chat/rooms/${roomId}/messages?limit=100`)
+                .then(res => res.json())
                 .then(json => json.forEach(m => appendMessage(m, { isMe: isMyMessage(m) })))
                 .catch(err => console.error('메시지 로드 오류:', err));
         }

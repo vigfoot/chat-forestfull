@@ -18,8 +18,7 @@ async function httpRequest(url, method = 'GET', body = null, headers = {}) {
     }
 
     try {
-        const response = await fetch(url, options);
-        return response; // response.json() 등은 호출하는 곳에서 처리
+        return await fetch(url, options);
     } catch (error) {
         console.error(`HTTP 요청 실패: ${error}`);
         throw error;

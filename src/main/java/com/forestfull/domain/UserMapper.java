@@ -2,6 +2,7 @@ package com.forestfull.domain;
 
 import com.forestfull.member.MemberDTO;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 
 import java.util.List;
@@ -17,7 +18,7 @@ public interface UserMapper {
 
     List<MemberDTO.Member> findAllUsers();
 
-    Boolean updateRoles(String username, String roles);
+    Boolean updateRoles(@Param("id") Long id, @Param("roles") String roles);
 
-    Boolean deleteByUsername(String username);
+    Boolean deleteById(Long userId);
 }

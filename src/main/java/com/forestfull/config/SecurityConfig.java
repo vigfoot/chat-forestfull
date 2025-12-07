@@ -1,9 +1,8 @@
 package com.forestfull.config;
 
-import com.forestfull.common.token.JwtAuthenticationFilter;
-import com.forestfull.common.token.RefreshTokenFilter;
 import com.forestfull.common.token.TokenFilter;
 import com.forestfull.domain.CustomUserDetailsService;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -17,6 +16,9 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.util.AntPathMatcher;
+
+import java.util.Arrays;
 
 @Configuration
 @EnableWebSecurity
@@ -25,10 +27,17 @@ public class SecurityConfig {
 
     private final TokenFilter tokenFilter;
     private final PasswordEncoder passwordEncoder;
-    private final RefreshTokenFilter refreshTokenFilter;
-    private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final CustomUserDetailsService customUserDetailsService;
-    public static final String[] staticResources = {"/", "/favicon.ico", "/css/**", "/js/**", "/images/**", "/webjars/**", "/file/**"};
+    private static final String[] PUBLIC_RESOURCES = {"/", "/favicon.ico", "/css/**", "/js/**", "/images/**", "/webjars/**", "/file/**", "/pages/**", "/api/auth/**"};
+
+    public static boolean isPublicResource(HttpServletRequest request) {
+        return isPublicResource(request.getRequestURI());
+    }
+
+    public static boolean isPublicResource(String path) {
+        AntPathMatcher matcher = new AntPathMatcher();
+        return Arrays.stream(PUBLIC_RESOURCES).anyMatch(uri -> matcher.match(uri, path));
+    }
 
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -36,16 +45,13 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .formLogin(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(reg -> reg
-                        .requestMatchers(staticResources).permitAll()
-                        .requestMatchers("/pages/**", "/api/auth/**").permitAll()
+                        .requestMatchers(PUBLIC_RESOURCES).permitAll()
                         .requestMatchers("/pages/admin/**", "/admin/**").hasRole("ADMIN")
                         .requestMatchers("/pages/management/**", "/management/**").hasAnyRole("ADMIN", "MANAGER")
                         .anyRequest().authenticated()
                 )
                 .userDetailsService(customUserDetailsService)
-                .addFilterBefore(refreshTokenFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(tokenFilter, UsernamePasswordAuthenticationFilter.class)
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .sessionManagement(config -> config.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .build();
     }

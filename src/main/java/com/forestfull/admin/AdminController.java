@@ -28,15 +28,15 @@ public class AdminController {
         return adminUserService.getAllUsers();
     }
 
-    @PutMapping("/users/{username}/roles")
-    ResponseEntity<?> updateRoles(@PathVariable String username,
+    @PutMapping("/users/{id}/roles")
+    ResponseEntity<?> updateRoles(@PathVariable Long id,
                                   @RequestBody Map<String, String> body) {
-        return adminUserService.updateUserRoles(username, body.get("roles")) ? ResponseEntity.ok(Map.of("message", "Roles updated")) : ResponseEntity.internalServerError().build();
+        return adminUserService.updateUserRoles(id, body.get("roles")) ? ResponseEntity.ok(Map.of("message", "Roles updated")) : ResponseEntity.internalServerError().build();
     }
 
-    @DeleteMapping("/users/{username}")
-    ResponseEntity<?> deleteUser(@PathVariable String username) {
-        return adminUserService.deleteUser(username) ? ResponseEntity.ok(Map.of("message", "User deleted")) : ResponseEntity.internalServerError().build();
+    @DeleteMapping("/users/{id}")
+    ResponseEntity<?> deleteUser(@PathVariable Long id) {
+        return adminUserService.deleteUser(id) ? ResponseEntity.ok(Map.of("message", "User deleted")) : ResponseEntity.internalServerError().build();
     }
 
     @PostMapping(value = "/emoji/{filename}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

@@ -1,13 +1,14 @@
 package com.forestfull.common.token;
 
-import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.interfaces.DecodedJWT;
+import com.forestfull.config.SecurityConfig;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -18,71 +19,78 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 @Component
 @RequiredArgsConstructor
 public class TokenFilter extends OncePerRequestFilter {
 
+    @Value("${spring.config.activate.on-profile}")
+    private String onProfile;
+
     private final JwtUtil jwtUtil;
-    private final JwtUtil.Refresh refreshUtil;
+    private final JwtUtil.Refresh refreshTokenUtil;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
+        // 이미 SecurityContext에 인증 정보가 있으면 바로 진행
+        if (SecurityContextHolder.getContext().getAuthentication() != null) {
+            filterChain.doFilter(request, response);
+            return;
+        }
 
         Cookie[] cookies = request.getCookies();
+
+        // JWT 확인
         if (cookies == null) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        Cookie jwtCookie = Arrays.stream(cookies)
+        Optional<Cookie> optionalJWT = Arrays.stream(cookies)
                 .filter(c -> "JWT".equals(c.getName()))
-                .findFirst()
-                .orElse(null);
+                .findFirst();
 
-        if (jwtCookie != null) {
-            String accessToken = jwtCookie.getValue();
-            try {
-                DecodedJWT decodedJWT = jwtUtil.verifyToken(accessToken);
-                setAuthentication(decodedJWT, request);
-                filterChain.doFilter(request, response);
-                return;
-            } catch (JWTVerificationException ex) {
-                // Access Token 만료 또는 무효 → Refresh Token 처리
-            }
-        }
+        if (optionalJWT.isPresent()) {
+            DecodedJWT decodedJWT = jwtUtil.verifyToken(optionalJWT.get().getValue());
+            setAuthentication(decodedJWT, request);
 
-        // Refresh Token 확인
-        Cookie refreshCookie = Arrays.stream(cookies)
-                .filter(c -> "REFRESH".equals(c.getName()))
-                .findFirst()
-                .orElse(null);
+        } else {
+            Arrays.stream(cookies)
+                    .filter(c -> "REFRESH".equals(c.getName()))
+                    .findFirst().ifPresent(cookie -> {
+                        String username = refreshTokenUtil.validateAndGetUsername(cookie.getValue());
 
-        if (refreshCookie != null) {
-            String refreshToken = refreshCookie.getValue();
-            // validateAndGetUsername 안에서 DB 저장 여부까지 확인
-            String username = refreshUtil.validateAndGetUsername(refreshToken);
+                        if (username == null) return;
 
-            if (username != null) {
-                // DecodedJWT로 roles 추출
-                DecodedJWT decodedJWT = refreshUtil.verify(refreshToken);
-                List<String> roles = decodedJWT.getClaim("roles").asList(String.class);
+                        DecodedJWT decodedJWT = refreshTokenUtil.verify(cookie.getValue());
+                        List<String> roles = decodedJWT.getClaim("roles").asList(String.class);
 
-                // 새로운 Access Token 발급
-                String newAccessToken = jwtUtil.generateToken(username, roles);
+                        // 새 JWT 발급
+                        String newAccessToken = jwtUtil.generateToken(username, roles);
+                        Cookie newJwtCookie = new Cookie("JWT", newAccessToken);
+                        newJwtCookie.setHttpOnly(true);
+                        newJwtCookie.setSecure("prod".equals(onProfile));
+                        newJwtCookie.setPath("/");
+                        newJwtCookie.setMaxAge((int) (JwtUtil.expireMillis / 1000));
+                        newJwtCookie.setAttribute("SameSite", "prod".equals(onProfile) ? "None" : "Lax");
+                        response.addCookie(newJwtCookie);
 
-                Cookie newCookie = new Cookie("JWT", newAccessToken);
-                newCookie.setPath("/");
-                newCookie.setMaxAge((int) (JwtUtil.expireMillis / 1000));
-                newCookie.setSecure(true);
-                newCookie.setHttpOnly(false); // 프론트 접근 가능
-                newCookie.setAttribute("SameSite", "None");
-                response.addCookie(newCookie);
+                        // JWT_PAYLOAD 쿠키 (JS 접근 가능)
+                        String[] parts = newAccessToken.split("\\.");
+                        String payload = parts.length > 1 ? parts[1] : "";
+                        Cookie payloadCookie = new Cookie("JWT_PAYLOAD", payload);
+                        payloadCookie.setHttpOnly(false);
+                        payloadCookie.setSecure("prod".equals(onProfile));
+                        payloadCookie.setPath("/");
+                        payloadCookie.setMaxAge((int) (JwtUtil.expireMillis / 1000));
+                        payloadCookie.setAttribute("SameSite", "Lax");
+                        response.addCookie(payloadCookie);
 
-                setAuthentication(jwtUtil.verifyToken(newAccessToken), request);
-            }
+                        setAuthentication(jwtUtil.verifyToken(newAccessToken), request);
+                    });
         }
 
         filterChain.doFilter(request, response);

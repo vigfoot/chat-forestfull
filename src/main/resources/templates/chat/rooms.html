@@ -35,7 +35,7 @@
 <script>
   async function loadRooms() {
     try {
-      const rooms = await get('/api/chat/rooms');
+      const rooms = await get('/api/chat/rooms').then(res => res.json());
       const tbody = document.getElementById('room-tbody');
       tbody.innerHTML = '';
       rooms.forEach(room => {
