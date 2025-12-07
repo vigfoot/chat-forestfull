@@ -35,6 +35,19 @@
 </div>
 
 <script>
+    document.addEventListener("DOMContentLoaded", () => {
+        // JWT Payload 쿠키 검사
+        const payload = getJwtPayload();
+        if (!payload) return; // 로그인 안 된 상태 → 그냥 로그인 화면 보여줌
+
+        // 이미 로그인 상태 → 권한에 따라 페이지 이동
+        if (payload.roles?.includes("ROLE_ADMIN")) {
+            window.location.replace("/pages/admin/dashboard");
+        } else {
+            window.location.replace("/pages/rooms");
+        }
+    });
+
     async function loginOrSignup() {
         const username = document.getElementById('username').value.trim();
         const password = document.getElementById('password').value.trim();
