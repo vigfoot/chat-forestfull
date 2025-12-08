@@ -111,19 +111,10 @@ public class JwtUtil {
             return refreshTokenMapper.findValidTokenByMemberId(memberId);
         }
 
-        // token으로 member_id 조회 (optional)
-        public Long getMemberIdByToken(String token) {
-            return refreshTokenMapper.findMemberIdByToken(token);
-        }
-
         // 사용자 로그아웃 등에서 토큰 폐기
         public void deleteTokenByUsername(String username) {
             Long memberId = userMapper.findIdByUsername(username);
             if (memberId == null) return;
-            refreshTokenMapper.revokeByMemberId(memberId);
-        }
-
-        public void deleteTokenByMemberId(Long memberId) {
             refreshTokenMapper.revokeByMemberId(memberId);
         }
 

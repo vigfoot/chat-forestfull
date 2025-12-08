@@ -37,9 +37,9 @@ public interface RefreshTokenMapper {
     @Update("""
         UPDATE chat_forestfull.refresh_token
         SET is_revoked = 1
-        WHERE member_id = #{memberId}
+        WHERE member_id = #{id}
     """)
-    int revokeByMemberId(@Param("memberId") Long memberId);
+    int revokeByMemberId(@Param("id") Long id);
 
     @Delete("""
         DELETE FROM chat_forestfull.refresh_token
