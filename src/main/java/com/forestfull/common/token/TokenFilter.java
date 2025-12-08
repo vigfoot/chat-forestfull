@@ -61,15 +61,15 @@ public class TokenFilter extends OncePerRequestFilter {
                     .filter(c -> "REFRESH".equals(c.getName()))
                     .findFirst().ifPresent(cookie -> {
                         String oldRefreshToken = cookie.getValue();
-                        String username = refreshTokenUtil.validateAndGetUsername(oldRefreshToken);
+                        String name = refreshTokenUtil.validateAndGetUsername(oldRefreshToken);
 
-                        if (username == null) return;
+                        if (name == null) return;
 
                         // 기존 Refresh 무효화
-                        refreshTokenUtil.deleteTokenByUsername(username);
+                        refreshTokenUtil.deleteTokenByUsername(name);
 
                         // 새 Refresh 토큰 생성 + DB 저장
-                        String newRefreshToken = refreshTokenUtil.generateToken(username);
+                        String newRefreshToken = refreshTokenUtil.generateToken(name);
                         Cookie refreshCookie = new Cookie("REFRESH", newRefreshToken);
                         refreshCookie.setHttpOnly(true);
                         refreshCookie.setSecure("prod".equals(onProfile));
@@ -81,7 +81,7 @@ public class TokenFilter extends OncePerRequestFilter {
                         // 기존 로직: Access Token 새로 발급
                         DecodedJWT decodedJWT = refreshTokenUtil.verify(newRefreshToken);
                         List<String> roles = decodedJWT.getClaim("roles").asList(String.class);
-                        String newAccessToken = jwtUtil.generateToken(username, roles);
+                        String newAccessToken = jwtUtil.generateToken(name, roles);
 
                         Cookie newJwtCookie = new Cookie("JWT", newAccessToken);
                         newJwtCookie.setHttpOnly(true);
@@ -110,10 +110,10 @@ public class TokenFilter extends OncePerRequestFilter {
     }
 
     private void setAuthentication(DecodedJWT jwt, HttpServletRequest request) {
-        final String username = jwt.getSubject();
+        final String name = jwt.getSubject();
         final List<String> roles = jwt.getClaim("roles").asList(String.class);
 
-        final UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(username, null, roles.stream().map(SimpleGrantedAuthority::new).toList());
+        final UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(name, null, roles.stream().map(SimpleGrantedAuthority::new).toList());
         auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
         SecurityContextHolder.getContext().setAuthentication(auth);
     }

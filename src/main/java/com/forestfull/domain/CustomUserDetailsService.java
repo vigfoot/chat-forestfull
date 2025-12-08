@@ -21,9 +21,9 @@ public class CustomUserDetailsService implements UserDetailsService {
     private final PasswordEncoder passwordEncoder;
 
     @Override
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        final User user = userMapper.findByUsername(username);
-        if (user == null) throw new UsernameNotFoundException("User not found: " + username);
+    public UserDetails loadUserByUsername(String name) throws UsernameNotFoundException {
+        final User user = userMapper.findByUsername(name);
+        if (user == null) throw new UsernameNotFoundException("User not found: " + name);
 
         return new org.springframework.security.core.userdetails.User(
                 user.getName(),

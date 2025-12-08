@@ -28,11 +28,11 @@ public class JwtUtil {
     }
 
     // Access Token 생성
-    public String generateToken(String username, List<String> roles) {
+    public String generateToken(String name, List<String> roles) {
         Date now = new Date();
         Date exp = new Date(now.getTime() + expireMillis);
         return JWT.create()
-                .withSubject(username)
+                .withSubject(name)
                 .withClaim("roles", roles)
                 .withIssuedAt(now)
                 .withExpiresAt(exp)
@@ -67,20 +67,19 @@ public class JwtUtil {
         }
 
         // Refresh Token 생성
-        public String generateToken(String username) {
+        public String generateToken(String name) {
             Date now = new Date();
             Date exp = new Date(now.getTime() + refreshExpireMillis);
 
             String token = JWT.create()
-                    .withSubject(username)
+                    .withSubject(name)
                     .withIssuedAt(now)
                     .withExpiresAt(exp)
                     .sign(algorithm);
 
-            // username -> member_id
-            Long memberId = userMapper.findIdByUsername(username);
+            Long memberId = userMapper.findIdByUsername(name);
             if (memberId == null) {
-                throw new IllegalStateException("member not found for username: " + username);
+                throw new IllegalStateException("member not found for username: " + name);
             }
 
             // expiry_date: LocalDateTime 변환
@@ -91,10 +90,10 @@ public class JwtUtil {
         }
 
         // 토큰을 저장(이미 다른 로직에서 생성했을 때 사용)
-        public void save(String username, String refreshToken) {
-            Long memberId = userMapper.findIdByUsername(username);
+        public void save(String name, String refreshToken) {
+            Long memberId = userMapper.findIdByUsername(name);
             if (memberId == null) {
-                throw new IllegalStateException("member not found for username: " + username);
+                throw new IllegalStateException("member not found for username: " + name);
             }
             // 토큰 만료시간 파싱
             DecodedJWT decoded = verifier.verify(refreshToken);
@@ -102,9 +101,9 @@ public class JwtUtil {
             refreshTokenMapper.save(memberId, refreshToken, expiryDate);
         }
 
-        // username 기준으로 DB에서 유효한 토큰 조회
-        public String getToken(String username) {
-            Long memberId = userMapper.findIdByUsername(username);
+        // name 기준으로 DB에서 유효한 토큰 조회
+        public String getToken(String name) {
+            Long memberId = userMapper.findIdByUsername(name);
             if (memberId == null) {
                 return null;
             }
@@ -112,13 +111,13 @@ public class JwtUtil {
         }
 
         // 사용자 로그아웃 등에서 토큰 폐기
-        public void deleteTokenByUsername(String username) {
-            Long memberId = userMapper.findIdByUsername(username);
+        public void deleteTokenByUsername(String name) {
+            Long memberId = userMapper.findIdByUsername(name);
             if (memberId == null) return;
             refreshTokenMapper.revokeByMemberId(memberId);
         }
 
-        // 검증: token 자체를 검증하고 username 반환 (null = invalid)
+        // 검증: token 자체를 검증하고 name 반환 (null = invalid)
         public String getUsername(String refreshToken) {
             try {
                 DecodedJWT jwt = verifier.verify(refreshToken);
@@ -133,12 +132,12 @@ public class JwtUtil {
             try {
                 // 1️⃣ JWT 자체 검증 (서명, 만료)
                 DecodedJWT jwt = verifier.verify(refreshToken);
-                String username = jwt.getSubject();
+                String name = jwt.getSubject();
 
-                if (username == null) return null;
+                if (name == null) return null;
 
                 // 2️⃣ DB에 저장된 토큰과 비교 (DB에 없으면 무효)
-                Long memberId = userMapper.findIdByUsername(username);
+                Long memberId = userMapper.findIdByUsername(name);
                 if (memberId == null) return null;
 
                 String tokenInDb = refreshTokenMapper.findValidTokenByMemberId(memberId);
@@ -148,7 +147,7 @@ public class JwtUtil {
                     return null; // 다른 Refresh 토큰이면 무효
                 }
 
-                return username;
+                return name;
             } catch (Exception e) {
                 return null; // JWT 서명/만료 오류 → 무효 토큰
             }

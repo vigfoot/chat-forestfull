@@ -41,17 +41,17 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody Map<String, String> body, HttpServletResponse response) {
         try {
-            String username = body.get("username");
+            String name = body.get("username");
             String password = body.get("password");
 
-            Authentication auth = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(username, password));
+            Authentication auth = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(name, password));
 
             List<String> roles = auth.getAuthorities().stream().map(GrantedAuthority::getAuthority).toList();
 
             // JWT 발급
-            String accessToken = jwtUtil.generateToken(username, roles);
-            String refreshToken = refreshJwtUtil.generateToken(username);
-            refreshJwtUtil.save(username, refreshToken);
+            String accessToken = jwtUtil.generateToken(name, roles);
+            String refreshToken = refreshJwtUtil.generateToken(name);
+            refreshJwtUtil.save(name, refreshToken);
 
             // 쿠키 세팅
             Cookie accessCookie = new Cookie("JWT", accessToken);
@@ -103,8 +103,8 @@ public class AuthController {
 
         if (token != null) {
             try {
-                String username = jwtUtil.verifyToken(token).getSubject();
-                refreshJwtUtil.deleteTokenByUsername(username);
+                String name = jwtUtil.verifyToken(token).getSubject();
+                refreshJwtUtil.deleteTokenByUsername(name);
             } catch (Exception e) {
             }
         }
@@ -130,21 +130,21 @@ public class AuthController {
         if (!StringUtils.hasText(refreshToken))
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("No refresh token");
 
-        String username = refreshJwtUtil.getUsername(refreshToken);
-        if (username == null)
+        String name = refreshJwtUtil.getUsername(refreshToken);
+        if (name == null)
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid refresh token");
 
-        if (!Objects.equals(refreshToken, refreshJwtUtil.getToken(username)))
+        if (!Objects.equals(refreshToken, refreshJwtUtil.getToken(name)))
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token mismatch");
 
         // DB에서 권한 조회
-        UserDetails userDetails = userService.loadUserByUsername(username);
+        UserDetails userDetails = userService.loadUserByUsername(name);
         List<String> roles = userDetails.getAuthorities().stream()
                 .map(a -> a.getAuthority().replace("ROLE_", ""))
                 .toList();
 
         // 새 Access Token 생성
-        String newAccess = jwtUtil.generateToken(username, roles);
+        String newAccess = jwtUtil.generateToken(name, roles);
 
         // JWT 쿠키 (HttpOnly)
         ResponseCookie accessCookie = ResponseCookie.from("JWT", newAccess)

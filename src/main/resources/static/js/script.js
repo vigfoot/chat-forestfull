@@ -137,7 +137,7 @@ function redirectToLogin() {
     deleteCookie('JWT');
     deleteCookie('JWT_PAYLOAD');
     deleteCookie('REFRESH');
-    window.location.href = '/pages/login';
+    window.location.href = '/';
 }
 
 /**
