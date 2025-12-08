@@ -21,6 +21,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -54,18 +55,18 @@ public class AuthController {
             refreshJwtUtil.save(name, refreshToken);
 
             // 쿠키 세팅
-            Cookie accessCookie = new Cookie("JWT", accessToken);
+            Cookie accessCookie = new Cookie(JwtUtil.TOKEN_TYPE.JWT.name(), accessToken);
             accessCookie.setHttpOnly(true);
             accessCookie.setSecure("prod".equals(onProfile));
             accessCookie.setPath("/");
             accessCookie.setMaxAge((int) (JwtUtil.expireMillis / 1000));
-            accessCookie.setAttribute("SameSite", "prod".equals(onProfile)? "None" : "Lax");
+            accessCookie.setAttribute("SameSite", "prod".equals(onProfile) ? "None" : "Lax");
             response.addCookie(accessCookie);
 
             // JWT_PAYLOAD 쿠키 (JS 접근 가능)
             String[] parts = accessToken.split("\\.");
             String payload = parts.length > 1 ? parts[1] : "";
-            Cookie payloadCookie = new Cookie("JWT_PAYLOAD", payload);
+            Cookie payloadCookie = new Cookie(JwtUtil.TOKEN_TYPE.JWT_PAYLOAD.name(), payload);
             payloadCookie.setHttpOnly(false);
             payloadCookie.setSecure("prod".equals(onProfile));
             payloadCookie.setPath("/");
@@ -73,12 +74,12 @@ public class AuthController {
             payloadCookie.setAttribute("SameSite", "Lax");
             response.addCookie(payloadCookie);
 
-            Cookie refreshCookie = new Cookie("REFRESH", refreshToken);
+            Cookie refreshCookie = new Cookie(JwtUtil.TOKEN_TYPE.REFRESH.name(), refreshToken);
             refreshCookie.setHttpOnly(true);
             refreshCookie.setSecure("prod".equals(onProfile));
             refreshCookie.setPath("/");
             refreshCookie.setMaxAge((int) (JwtUtil.refreshExpireMillis / 1000));
-            refreshCookie.setAttribute("SameSite", "prod".equals(onProfile)? "None" : "Lax");
+            refreshCookie.setAttribute("SameSite", "prod".equals(onProfile) ? "None" : "Lax");
             response.addCookie(refreshCookie);
 
             return ResponseEntity.ok(Map.of("message", "Login successful"));
@@ -94,7 +95,7 @@ public class AuthController {
         String token = null;
         if (request.getCookies() != null) {
             for (Cookie cookie : request.getCookies()) {
-                if ("JWT".equals(cookie.getName())) {
+                if (JwtUtil.TOKEN_TYPE.JWT.name().equals(cookie.getName())) {
                     token = cookie.getValue();
                     break;
                 }
@@ -110,16 +111,17 @@ public class AuthController {
         }
 
         // 쿠키 삭제
-        List<String> cookiesToDelete = List.of("JWT", "JWT_PAYLOAD", "REFRESH");
-        for (String name : cookiesToDelete) {
-            Cookie c = new Cookie(name, null);
-            c.setHttpOnly("JWT".equals(name) || "REFRESH".equals(name));
-            c.setSecure("prod".equals(onProfile));
-            c.setPath("/");
-            c.setMaxAge(0);
-            c.setAttribute("SameSite", name.equals("JWT_PAYLOAD") ? "Lax" : "None");
-            response.addCookie(c);
-        }
+        Arrays.stream(JwtUtil.TOKEN_TYPE.values())
+                .map(Enum::name)
+                .forEach(name -> {
+                    Cookie c = new Cookie(name, null);
+                    c.setHttpOnly(JwtUtil.TOKEN_TYPE.JWT.name().equals(name) || JwtUtil.TOKEN_TYPE.REFRESH.name().equals(name));
+                    c.setSecure("prod".equals(onProfile));
+                    c.setPath("/");
+                    c.setMaxAge(0);
+                    c.setAttribute("SameSite", name.equals(JwtUtil.TOKEN_TYPE.JWT_PAYLOAD.name()) ? "Lax" : "None");
+                    response.addCookie(c);
+                });
 
         return ResponseEntity.ok(Map.of("message", "로그아웃 되었습니다."));
     }
@@ -147,18 +149,18 @@ public class AuthController {
         String newAccess = jwtUtil.generateToken(name, roles);
 
         // JWT 쿠키 (HttpOnly)
-        ResponseCookie accessCookie = ResponseCookie.from("JWT", newAccess)
+        ResponseCookie accessCookie = ResponseCookie.from(JwtUtil.TOKEN_TYPE.JWT.name(), newAccess)
                 .httpOnly(true)
                 .secure("prod".equals(onProfile))
                 .path("/")
                 .maxAge(JwtUtil.expireMillis / 1000)
-                .sameSite("prod".equals(onProfile)? "None" : "Lax")
+                .sameSite("prod".equals(onProfile) ? "None" : "Lax")
                 .build();
 
         // JWT_PAYLOAD 쿠키 (JS 접근 가능)
         String[] parts = newAccess.split("\\.");
         String payload = parts.length > 1 ? parts[1] : "";
-        ResponseCookie payloadCookie = ResponseCookie.from("JWT_PAYLOAD", payload)
+        ResponseCookie payloadCookie = ResponseCookie.from(JwtUtil.TOKEN_TYPE.JWT_PAYLOAD.name(), payload)
                 .httpOnly(false)
                 .secure("prod".equals(onProfile))
                 .path("/")

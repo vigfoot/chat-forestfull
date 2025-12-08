@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.List;
 
@@ -18,6 +19,10 @@ import java.util.List;
 public class JwtUtil {
     public static final long expireMillis = 24 * 60 * 60 * 1000;
     public static final long refreshExpireMillis = 7L * 24 * 60 * 60 * 1000;  // 7일 유지
+
+    public enum TOKEN_TYPE {
+        JWT, JWT_PAYLOAD, REFRESH
+    }
 
     private final Algorithm algorithm;
     private final JWTVerifier verifier;
