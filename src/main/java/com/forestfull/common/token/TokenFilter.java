@@ -61,15 +61,29 @@ public class TokenFilter extends OncePerRequestFilter {
             Arrays.stream(cookies)
                     .filter(c -> "REFRESH".equals(c.getName()))
                     .findFirst().ifPresent(cookie -> {
-                        String username = refreshTokenUtil.validateAndGetUsername(cookie.getValue());
+                        String oldRefreshToken = cookie.getValue();
+                        String username = refreshTokenUtil.validateAndGetUsername(oldRefreshToken);
 
                         if (username == null) return;
 
-                        DecodedJWT decodedJWT = refreshTokenUtil.verify(cookie.getValue());
-                        List<String> roles = decodedJWT.getClaim("roles").asList(String.class);
+                        // 기존 Refresh 무효화
+                        refreshTokenUtil.deleteTokenByUsername(username);
 
-                        // 새 JWT 발급
+                        // 새 Refresh 토큰 생성 + DB 저장
+                        String newRefreshToken = refreshTokenUtil.generateToken(username);
+                        Cookie refreshCookie = new Cookie("REFRESH", newRefreshToken);
+                        refreshCookie.setHttpOnly(true);
+                        refreshCookie.setSecure("prod".equals(onProfile));
+                        refreshCookie.setPath("/");
+                        refreshCookie.setMaxAge((int) (JwtUtil.refreshExpireMillis / 1000));
+                        refreshCookie.setAttribute("SameSite", "prod".equals(onProfile) ? "None" : "Lax");
+                        response.addCookie(refreshCookie);
+
+                        // 기존 로직: Access Token 새로 발급
+                        DecodedJWT decodedJWT = refreshTokenUtil.verify(newRefreshToken);
+                        List<String> roles = decodedJWT.getClaim("roles").asList(String.class);
                         String newAccessToken = jwtUtil.generateToken(username, roles);
+
                         Cookie newJwtCookie = new Cookie("JWT", newAccessToken);
                         newJwtCookie.setHttpOnly(true);
                         newJwtCookie.setSecure("prod".equals(onProfile));
@@ -78,7 +92,7 @@ public class TokenFilter extends OncePerRequestFilter {
                         newJwtCookie.setAttribute("SameSite", "prod".equals(onProfile) ? "None" : "Lax");
                         response.addCookie(newJwtCookie);
 
-                        // JWT_PAYLOAD 쿠키 (JS 접근 가능)
+                        // 페이로드 쿠키
                         String[] parts = newAccessToken.split("\\.");
                         String payload = parts.length > 1 ? parts[1] : "";
                         Cookie payloadCookie = new Cookie("JWT_PAYLOAD", payload);
