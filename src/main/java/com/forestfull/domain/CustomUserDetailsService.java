@@ -1,5 +1,6 @@
 package com.forestfull.domain;
 
+import com.forestfull.member.MemberDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -38,7 +39,7 @@ public class CustomUserDetailsService implements UserDetailsService {
                 .collect(Collectors.toList());
     }
 
-    public boolean signup(User.SignUpRequest request) {
+    public boolean signup(MemberDTO.Member request) {
         request.setPassword(passwordEncoder.encode(request.getPassword()));
         return userMapper.save(request);
     }

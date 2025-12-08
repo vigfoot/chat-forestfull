@@ -1,21 +1,21 @@
 package com.forestfull.member;
 
+import com.forestfull.domain.User;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import java.time.LocalDateTime;
 
 public class MemberDTO {
 
     @Data
-    public static class Member {
-        private Long id;
-        private String name; // OAuth openId
-        private String password;
+    @EqualsAndHashCode(callSuper = true)
+    public static class Member extends User {
+        private String roles = "ROLE_USER";
         private String displayName;
         private String profileImage;
         private LocalDateTime createdAt;
         private LocalDateTime updatedAt;
-        private String roles;
         private String createdBy;
         private String updatedBy;
     }

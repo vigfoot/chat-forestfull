@@ -14,7 +14,7 @@ public interface UserMapper {
 
     Long findIdByUsername(String username);
 
-    Boolean save(User user);
+    Boolean save(MemberDTO.Member member);
 
     List<MemberDTO.Member> findAllUsers();
 
