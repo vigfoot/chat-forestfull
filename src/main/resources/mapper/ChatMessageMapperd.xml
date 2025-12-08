@@ -4,7 +4,6 @@
 <mapper namespace="com.forestfull.chat.ChatMessageMapper">
     <select id="findByRoomId" resultType="com.forestfull.chat.ChatDTO$Message">
         SELECT msg.id
-             ,
              , msg.room_id
              , msg.member_id
              , m.display_name
