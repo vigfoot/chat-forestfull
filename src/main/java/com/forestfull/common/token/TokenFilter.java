@@ -1,7 +1,6 @@
 package com.forestfull.common.token;
 
 import com.auth0.jwt.interfaces.DecodedJWT;
-import com.forestfull.config.SecurityConfig;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
@@ -41,7 +40,7 @@ public class TokenFilter extends OncePerRequestFilter {
             return;
         }
 
-        Cookie[] cookies = request.getCookies();
+        final Cookie[] cookies = request.getCookies();
 
         // JWT 확인
         if (cookies == null) {
@@ -49,12 +48,12 @@ public class TokenFilter extends OncePerRequestFilter {
             return;
         }
 
-        Optional<Cookie> optionalJWT = Arrays.stream(cookies)
+        final Optional<Cookie> optionalJWT = Arrays.stream(cookies)
                 .filter(c -> "JWT".equals(c.getName()))
                 .findFirst();
 
         if (optionalJWT.isPresent()) {
-            DecodedJWT decodedJWT = jwtUtil.verifyToken(optionalJWT.get().getValue());
+            final DecodedJWT decodedJWT = jwtUtil.verifyToken(optionalJWT.get().getValue());
             setAuthentication(decodedJWT, request);
 
         } else {
@@ -111,15 +110,10 @@ public class TokenFilter extends OncePerRequestFilter {
     }
 
     private void setAuthentication(DecodedJWT jwt, HttpServletRequest request) {
-        String username = jwt.getSubject();
-        List<String> roles = jwt.getClaim("roles").asList(String.class);
+        final String username = jwt.getSubject();
+        final List<String> roles = jwt.getClaim("roles").asList(String.class);
 
-        UsernamePasswordAuthenticationToken auth =
-                new UsernamePasswordAuthenticationToken(
-                        username,
-                        null,
-                        roles.stream().map(SimpleGrantedAuthority::new).toList()
-                );
+        final UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(username, null, roles.stream().map(SimpleGrantedAuthority::new).toList());
         auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
         SecurityContextHolder.getContext().setAuthentication(auth);
     }
