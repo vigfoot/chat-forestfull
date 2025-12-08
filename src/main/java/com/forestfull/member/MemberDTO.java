@@ -15,7 +15,7 @@ public class MemberDTO {
         private String profileImage;
         private LocalDateTime createdAt;
         private LocalDateTime updatedAt;
-        private String role;
+        private String roles;
         private String createdBy;
         private String updatedBy;
     }

@@ -2,6 +2,7 @@ package com.forestfull.member;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.forestfull.common.ResponseException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

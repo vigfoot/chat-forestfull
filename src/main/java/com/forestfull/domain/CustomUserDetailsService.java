@@ -25,22 +25,20 @@ public class CustomUserDetailsService implements UserDetailsService {
         if (user == null) throw new UsernameNotFoundException("User not found: " + username);
 
         return new org.springframework.security.core.userdetails.User(
-                user.getUsername(),
+                user.getName(),
                 user.getPassword(),
                 getAuthorities(user.getRoles())
         );
     }
 
     private Collection<? extends GrantedAuthority> getAuthorities(String roles) {
-        List<SimpleGrantedAuthority> role = Arrays.stream(roles.split(","))
+        return Arrays.stream(roles.split(","))
                 .map(r -> r.startsWith("ROLE_") ? r : "ROLE_" + r)
                 .map(SimpleGrantedAuthority::new)
                 .collect(Collectors.toList());
-        return role;
     }
 
     public boolean signup(User.SignUpRequest request) {
-        // 비밀번호 암호화
         request.setPassword(passwordEncoder.encode(request.getPassword()));
         return userMapper.save(request);
     }

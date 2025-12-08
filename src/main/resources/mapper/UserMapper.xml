@@ -8,7 +8,7 @@
             m.id
             , m.name AS username
             , m.password
-            , m.role AS roles
+            , m.roles
         FROM chat_forestfull.member m
         WHERE m.name = #{username}
     </select>
@@ -20,7 +20,7 @@
 
     <!-- 회원 생성 -->
     <insert id="save" parameterType="com.forestfull.member.MemberDTO$Member" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO chat_forestfull.member (name, password, role, display_name, profile_image, created_by, updated_by)
+        INSERT INTO chat_forestfull.member (name, password, roles, display_name, profile_image, created_by, updated_by)
         VALUES (#{name}, #{password}, #{roles}, #{displayName}, #{profileImage}, #{createdBy}, #{updatedBy})
     </insert>
 
@@ -32,7 +32,7 @@
 
     <!-- 회원 권한만 조회 -->
     <select id="findRolesByUsername" resultType="String" parameterType="String">
-        SELECT role
+        SELECT roles
         FROM chat_forestfull.member
         WHERE name = #{username}
     </select>
@@ -49,7 +49,7 @@
     <!-- 회원 비밀번호 업데이트 -->
     <update id="updateRoles">
         UPDATE chat_forestfull.member
-        SET role = #{roles}
+        SET roles = #{roles}
         WHERE id = #{id}
     </update>
 

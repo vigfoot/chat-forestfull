@@ -7,13 +7,13 @@ import lombok.Setter;
 @Data
 public class User {
     private Long id;
-    private String username;
+    private String name;
     private String password;
     private String roles;
 
+    @Setter
     @Getter
-    public static class SignUpRequest extends User{
+    public static class SignUpRequest extends User {
         private final String roles = "ROLE_USER";
     }
-
 }

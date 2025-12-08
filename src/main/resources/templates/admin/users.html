@@ -38,7 +38,7 @@
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
                 <td>${user.name}</td>
-                <td><input type="text" class="form-control" value="${user.role}" id="roles-${user.id}"></td>
+                <td><input type="text" class="form-control" value="${user.roles}" id="roles-${user.id}"></td>
                 <td>
                     <button class="btn btn-sm btn-success me-1" onclick="updateRoles('${user.id}')">Update</button>
                     <button class="btn btn-sm btn-danger" onclick="deleteUser('${user.id}')">Delete</button>

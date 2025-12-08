@@ -7,7 +7,5 @@ import org.apache.ibatis.annotations.Select;
 @Mapper
 public interface MemberMapper {
 
-    void saveMember(MemberDTO.Member member);
-
     MemberDTO.Member findByTikTokUserId(@Param("tiktokUserId") String tiktokUserId);
 }

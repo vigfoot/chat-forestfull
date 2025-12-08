@@ -33,7 +33,6 @@ async function httpRequest(url, method = 'GET', body = null, headers = {}, retry
                 redirectToLogin();
             }
         }
-
         return response;
     } catch (error) {
         console.error(`HTTP 요청 실패: ${error}`);

@@ -60,7 +60,7 @@
 
         try {
             // 로그인 시도
-            const loginResp = await post('/api/auth/login', { username, password });
+            const loginResp = await post('/api/auth/login', {username, password});
             if (loginResp.ok) {
                 resultEl.textContent = "로그인 성공!";
 
@@ -71,7 +71,7 @@
                     return;
                 }
 
-                // 역할(role) 기반 페이지 이동
+                // 역할(roles) 기반 페이지 이동
                 if (payload.roles?.includes('ROLE_ADMIN')) {
                     window.location.href = '/pages/admin/dashboard';
                 } else {
@@ -80,7 +80,7 @@
 
             } else if (loginResp.status === 401) {
                 // 로그인 실패 → 회원가입 시도
-                const signupResp = await post('/api/auth/signup', { username, password });
+                const signupResp = await post('/api/auth/signup', {name: username, password: password});
                 if (signupResp.ok) {
                     resultEl.textContent = "회원가입 완료. 다시 로그인 해주세요.";
                     document.getElementById('username').value = '';

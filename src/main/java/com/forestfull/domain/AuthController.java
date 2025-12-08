@@ -1,6 +1,8 @@
 package com.forestfull.domain;
 
+import com.forestfull.common.ResponseException;
 import com.forestfull.common.token.JwtUtil;
+import com.forestfull.member.MemberDTO;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -169,5 +171,10 @@ public class AuthController {
         response.addHeader(HttpHeaders.SET_COOKIE, payloadCookie.toString());
 
         return ResponseEntity.ok(Map.of("message", "token refreshed"));
+    }
+
+    @PostMapping("/signup")
+    ResponseEntity<?> signup(@RequestBody User.SignUpRequest user) {
+        return userService.signup(user) ? ResponseEntity.ok().build() : ResponseEntity.badRequest().build();
     }
 }
