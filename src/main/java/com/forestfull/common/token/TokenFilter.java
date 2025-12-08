@@ -34,12 +34,6 @@ public class TokenFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
-        // 이미 SecurityContext에 인증 정보가 있으면 바로 진행
-        if (SecurityContextHolder.getContext().getAuthentication() != null) {
-            filterChain.doFilter(request, response);
-            return;
-        }
-
         final Cookie[] cookies = request.getCookies();
 
         // JWT 확인
