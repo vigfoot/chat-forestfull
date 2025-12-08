@@ -5,11 +5,11 @@
  * - JSON body 자동 처리
  * - Promise 반환
  */
-async function httpRequest(url, method = 'GET', body = null, headers = {}) {
+async function httpRequest(url, method = 'GET', body = null, headers = {}, retry = true) {
     const options = {
         method,
         headers: { ...headers },
-        credentials: 'include' // 쿠키 전송
+        credentials: 'include'
     };
 
     if (body) {
@@ -18,10 +18,40 @@ async function httpRequest(url, method = 'GET', body = null, headers = {}) {
     }
 
     try {
-        return await fetch(url, options);
+        const response = await fetch(url, options);
+
+        // Access Token 만료 → refresh 시도
+        if (response.status === 401 && retry) {
+            console.warn("Access Token expired → Refresh Token 시도");
+
+            const refreshed = await refreshTokens();
+            if (refreshed) {
+                console.warn("재발급 완료 → 원래 요청 재시도");
+                return httpRequest(url, method, body, headers, false);
+            } else {
+                console.warn("Refresh Token 실패 → 로그인 필요");
+                redirectToLogin();
+            }
+        }
+
+        return response;
     } catch (error) {
         console.error(`HTTP 요청 실패: ${error}`);
         throw error;
+    }
+}
+
+async function refreshTokens() {
+    try {
+        const response = await fetch('/api/auth/refresh', {
+            method: 'POST',
+            credentials: 'include'
+        });
+
+        return response.ok;
+    } catch (e) {
+        console.error("Refresh 요청 실패:", e);
+        return false;
     }
 }
 
@@ -102,6 +132,13 @@ function getJwtPayload(cookieName = 'JWT_PAYLOAD') {
         }
     }
     return null;
+}
+
+function redirectToLogin() {
+    deleteCookie('JWT');
+    deleteCookie('JWT_PAYLOAD');
+    deleteCookie('REFRESH');
+    window.location.href = '/pages/login';
 }
 
 /**
