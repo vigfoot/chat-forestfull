@@ -1,21 +1,29 @@
 package com.forestfull.chat;
 
 import lombok.Data;
-
 import java.time.LocalDateTime;
 
 public class ChatDTO {
 
     @Data
     public static class Message {
-        private Long id;
+
+        public enum MessageType {
+            ENTER, TALK, LEAVE
+        }
+
+        private Long id;            // DB 저장용
         private Long roomId;
         private Long memberId;
-        private Long memberName;
+
+        // 🔥 WebSocket 실시간 처리용 필드
+        private MessageType type;
+        private String sender;      // username(=memberName 대신)
         private String message;
-        private String createdBy;
-        private String updatedBy;
         private LocalDateTime sentAt;
+
+        private String createdBy;   // DB 저장용
+        private String updatedBy;
     }
 
     @Data

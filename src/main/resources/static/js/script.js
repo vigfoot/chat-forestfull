@@ -1,3 +1,32 @@
+let stompClient = null;
+let connectedRoomId = null;
+
+/** WebSocket 연결 */
+function connectWebSocket(callback) {
+    if (stompClient !== null && stompClient.connected) {
+        if (callback) callback();
+        return;
+    }
+
+    const socket = new SockJS("/ws-chat");
+    stompClient = Stomp.over(socket);
+    stompClient.debug = null; // 콘솔 로그 제거
+
+    stompClient.connect({}, () => {
+        console.log("WebSocket Connected");
+        if (callback) callback();
+    });
+}
+
+/** WebSocket 연결 종료 */
+function disconnectWebSocket() {
+    if (stompClient !== null) {
+        stompClient.disconnect(() => {
+            console.log("WebSocket Disconnected");
+        });
+    }
+}
+
 /**
  * 공통 HTTP 요청 함수
  * - 모든 요청에 쿠키 포함
