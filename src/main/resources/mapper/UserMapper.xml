@@ -4,32 +4,35 @@
 <mapper namespace="com.forestfull.domain.UserMapper">
     <!-- 회원 조회 by username -->
     <select id="findByUsername" resultType="com.forestfull.domain.User" parameterType="String">
-        SELECT
-            m.id
-            , m.name
-            , m.password
-            , m.roles
+        SELECT m.id
+             , m.name
+             , m.password
+             , m.roles
+             , m.display_name
+             , m.profile_image
         FROM chat_forestfull.member m
         WHERE m.name = #{name}
     </select>
 
     <select id="findByUserId" resultType="com.forestfull.domain.User" parameterType="long">
-        SELECT
-            m.id
-            , m.name
-            , m.roles
-            , m.display_name
-            , m.profile_image
-            , m.created_at
-            , m.created_by
-            , m.updated_at
-            , m.updated_by
+        SELECT m.id
+             , m.name
+             , m.roles
+             , m.display_name
+             , m.profile_image
+             , m.created_at
+             , m.created_by
+             , m.updated_at
+             , m.updated_by
         FROM chat_forestfull.member m
         WHERE m.id = #{userId}
     </select>
 
     <select id="findUserIdById" resultType="long" parameterType="long">
-        SELECT id FROM chat_forestfull.member WHERE member.id = #{id} LIMIT 1
+        SELECT id
+        FROM chat_forestfull.member
+        WHERE member.id = #{id}
+        LIMIT 1
     </select>
 
     <!-- 회원 생성 -->
@@ -40,7 +43,15 @@
 
     <!-- 모든 회원 조회 -->
     <select id="findAllUsers" resultType="com.forestfull.domain.User">
-        SELECT m.id, name, roles, display_name, profile_image, created_at, updated_at, created_by, updated_by
+        SELECT m.id,
+               name,
+               roles,
+               display_name,
+               profile_image,
+               created_at,
+               updated_at,
+               created_by,
+               updated_by
         FROM chat_forestfull.member m
     </select>
 
@@ -54,7 +65,7 @@
     <!-- 회원 비밀번호 업데이트 -->
     <update id="updatePassword" parameterType="com.forestfull.domain.User">
         UPDATE chat_forestfull.member
-        SET password = #{password},
+        SET password   = #{password},
             updated_at = CURRENT_TIMESTAMP,
             updated_by = #{updatedBy}
         WHERE id = #{id}
@@ -69,11 +80,14 @@
 
     <!-- 회원 삭제 -->
     <delete id="deleteById" parameterType="long">
-        DELETE FROM chat_forestfull.member
+        DELETE
+        FROM chat_forestfull.member
         WHERE id = #{id}
     </delete>
 
     <select id="getRolesByUserId" parameterType="long" resultType="long">
-        SELECT roles FROM chat_forestfull.member WHERE id = #{id}
+        SELECT roles
+        FROM chat_forestfull.member
+        WHERE id = #{id}
     </select>
 </mapper>

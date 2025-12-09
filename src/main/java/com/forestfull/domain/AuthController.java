@@ -15,7 +15,6 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -27,7 +26,7 @@ public class AuthController {
     private final JwtUtil jwtUtil;
     private final JwtUtil.Refresh refreshJwtUtil;
     private final CookieUtil cookieUtil;
-    private final CustomUserDetailsService userService;
+    private final CustomUserDetailsService customUserService;
     private final AuthenticationManager authenticationManager;
 
     @PostMapping("/login")
@@ -40,8 +39,8 @@ public class AuthController {
             final User user = (User) auth.getPrincipal();
 
             // JWT 발급
-            final String accessToken = jwtUtil.generateToken(user.getId(), user.getRoleList());
-            final String refreshToken = refreshJwtUtil.generateToken(user.getId(), user.getRoleList());
+            final String accessToken = jwtUtil.generateToken(user);
+            final String refreshToken = refreshJwtUtil.generateToken(user);
             refreshJwtUtil.save(user.getId(), refreshToken);
 
             cookieUtil.addAccessToken(response, accessToken);
@@ -78,8 +77,7 @@ public class AuthController {
     }
 
     @PostMapping("/refresh")
-    public ResponseEntity<?> refreshToken(@CookieValue(value = "REFRESH", required = false) String refreshToken,
-                                          HttpServletResponse response) {
+    public ResponseEntity<?> refreshToken(@CookieValue(value = "REFRESH", required = false) String refreshToken, HttpServletResponse response) {
         if (!StringUtils.hasText(refreshToken))
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("No refresh token");
 
@@ -90,11 +88,10 @@ public class AuthController {
         if (!Objects.equals(refreshToken, refreshJwtUtil.getToken(userId)))
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token mismatch");
 
-        // DB에서 권한 조회
-        List<String> roles = userService.getRoles(userId);
+        final User user = customUserService.loadUserByUserId(userId);
 
         // 새 Access Token 생성
-        String newAccess = jwtUtil.generateToken(userId, roles);
+        final String newAccess = jwtUtil.generateToken(user);
         cookieUtil.addAccessToken(response, newAccess);
 
         // JWT_PAYLOAD 쿠키 (JS 접근 가능)
@@ -105,6 +102,6 @@ public class AuthController {
 
     @PostMapping("/signup")
     ResponseEntity<?> signup(@RequestBody User member) {
-        return userService.signup(member) ? ResponseEntity.ok().build() : ResponseEntity.badRequest().build();
+        return customUserService.signup(member) ? ResponseEntity.ok().build() : ResponseEntity.badRequest().build();
     }
 }

@@ -1,8 +1,11 @@
 package com.forestfull.chat.config;
 
+import com.auth0.jwt.interfaces.DecodedJWT;
 import com.forestfull.common.token.JwtUtil;
 import com.forestfull.domain.CustomUserDetailsService;
+import com.forestfull.domain.User;
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.configurationprocessor.json.JSONObject;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
@@ -11,6 +14,8 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
+import java.nio.file.attribute.UserPrincipal;
+import java.util.Base64;
 import java.util.Map;
 
 @Component
@@ -18,22 +23,29 @@ import java.util.Map;
 public class TokenChannelInterceptor implements ChannelInterceptor {
 
     private final JwtUtil jwtUtil;
-    private final CustomUserDetailsService customUserDetailsService;
 
     @Override
     public Message<?> preSend(Message<?> message, MessageChannel channel) {
         StompHeaderAccessor accessor = StompHeaderAccessor.wrap(message);
-        Map<String, Object> sessionAttributes = accessor.getSessionAttributes();
-        Object tokenObj = sessionAttributes.get(JwtUtil.TOKEN_TYPE.JWT.name());
+        Object tokenPayloadObject = accessor.getSessionAttributes().get(JwtUtil.TOKEN_TYPE.JWT_PAYLOAD.name());
 
-        if (tokenObj != null) {
-            String token = tokenObj.toString();
+        if (tokenPayloadObject != null) {
+            String payload = tokenPayloadObject.toString();
             try {
-                Long userId = Long.valueOf(jwtUtil.verifyToken(token).getSubject());
-                var userDetails = customUserDetailsService.loadUserByUserId(userId);
-                var auth = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-                accessor.setUser(auth);
-                SecurityContextHolder.getContext().setAuthentication(auth);
+                jwtUtil.verifyToken(payload);
+                String json = new String(Base64.getDecoder().decode(payload));
+                JSONObject obj = new JSONObject(json);
+
+                String username = obj.getString("username");
+                String displayName = obj.optString("displayName", username);
+                String profileImage = obj.optString("profileImage", null);
+
+                accessor.setUser(User.builder()
+                        .id(Long.parseLong(obj.getString("sub")))
+                        .name(username)
+                        .displayName(displayName)
+                        .profileImage(profileImage)
+                        .build());
 
             } catch (Exception ignored) {
             }

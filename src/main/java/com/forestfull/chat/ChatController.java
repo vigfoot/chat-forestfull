@@ -2,9 +2,12 @@ package com.forestfull.chat;
 
 import com.forestfull.chat.message.ChatMessageService;
 import com.forestfull.chat.room.ChatRoomService;
+import com.forestfull.domain.User;
 import lombok.RequiredArgsConstructor;
-import org.springframework.messaging.handler.annotation.*;
+import org.springframework.messaging.handler.annotation.MessageMapping;
+import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 
@@ -20,9 +23,16 @@ public class ChatController {
     private final ChatRoomService chatRoomService;
     private final SimpMessagingTemplate simpMessagingTemplate;
 
-    // 메시지 수신 → 저장 → 방에 브로드캐스트
+    // 채팅 메시지 전송
     @MessageMapping("/chat.sendMessage")
-    public void sendMessage(@Payload ChatDTO.Message message) {
+    public void sendMessage(@Payload ChatDTO.Message message, Principal principal) {
+        if (!(principal instanceof User)) return;
+
+        User user = (User) principal;
+        message.setUser(user);
+        message.setType(ChatDTO.Message.MessageType.TALK);
+        message.setCreatedBy(user.getUsername());
+
         ChatDTO.Message saved = chatMessageService.saveMessage(message);
         simpMessagingTemplate.convertAndSend(
                 "/topic/rooms/" + saved.getRoomId(),
@@ -30,9 +40,26 @@ public class ChatController {
         );
     }
 
+    // 입장 이벤트
     @MessageMapping("/chat.enter")
     public void enterRoom(@Payload ChatDTO.Participant participant, Principal principal) {
-        chatRoomService.enterRoom(participant.getRoomId(), Long.valueOf(principal.getName()));
+        if (!(principal instanceof UsernamePasswordAuthenticationToken token)) return;
+
+        Object userDetails = token.getPrincipal();
+        if (!(userDetails instanceof User user)) return;
+
+        chatRoomService.enterRoom(participant.getRoomId(), user.getId());
+
+        ChatDTO.Message enterMsg = new ChatDTO.Message();
+        enterMsg.setRoomId(participant.getRoomId());
+        enterMsg.setType(ChatDTO.Message.MessageType.ENTER);
+        enterMsg.setUser(user);
+        enterMsg.setMessage(user.getDisplayName() + "님이 입장했습니다");
+
+        simpMessagingTemplate.convertAndSend(
+                "/topic/rooms/" + participant.getRoomId(),
+                enterMsg
+        );
 
         List<ChatDTO.Participant> updated = chatRoomService.getParticipants(participant.getRoomId());
         simpMessagingTemplate.convertAndSend(
@@ -41,9 +68,26 @@ public class ChatController {
         );
     }
 
+    // 퇴장 이벤트
     @MessageMapping("/chat.leave")
     public void leaveRoom(@Payload ChatDTO.Participant participant, Principal principal) {
-        chatRoomService.leaveRoom(participant.getRoomId(), Long.valueOf(principal.getName()));
+        if (!(principal instanceof UsernamePasswordAuthenticationToken token)) return;
+
+        Object userDetails = token.getPrincipal();
+        if (!(userDetails instanceof User user)) return;
+
+        chatRoomService.leaveRoom(participant.getRoomId(), user.getId());
+
+        ChatDTO.Message leaveMsg = new ChatDTO.Message();
+        leaveMsg.setRoomId(participant.getRoomId());
+        leaveMsg.setType(ChatDTO.Message.MessageType.LEAVE);
+        leaveMsg.setUser(user);
+        leaveMsg.setMessage(user.getDisplayName() + "님이 퇴장했습니다");
+
+        simpMessagingTemplate.convertAndSend(
+                "/topic/rooms/" + participant.getRoomId(),
+                leaveMsg
+        );
 
         List<ChatDTO.Participant> updated = chatRoomService.getParticipants(participant.getRoomId());
         simpMessagingTemplate.convertAndSend(
@@ -51,5 +95,4 @@ public class ChatController {
                 updated
         );
     }
-
 }

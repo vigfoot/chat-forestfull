@@ -3,6 +3,7 @@ package com.forestfull.common.token;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.forestfull.config.SecurityConfig;
+import com.forestfull.domain.User;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
@@ -20,6 +21,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 @Component
 @RequiredArgsConstructor
@@ -46,12 +48,19 @@ public class TokenFilter extends OncePerRequestFilter {
                     .filter(c -> JwtUtil.TOKEN_TYPE.JWT.name().equals(c.getName()))
                     .findFirst()
                     .ifPresent(cookie -> {
-                        DecodedJWT decodedJWT = jwtUtil.verifyToken(cookie.getValue());
+                        final DecodedJWT decodedJWT = jwtUtil.verifyToken(cookie.getValue());
+                        final Long userId = Long.valueOf(decodedJWT.getSubject());
 
-                        final String id = decodedJWT.getSubject();
-                        final List<String> roles = decodedJWT.getClaim("roles").asList(String.class);
+                        User user = User.builder()
+                                .id(userId)
+                                .name(decodedJWT.getClaim("username").asString())
+                                .displayName(decodedJWT.getClaim("displayName").asString())
+                                .profileImage(decodedJWT.getClaim("profileImage").asString())
+                                .roles(decodedJWT.getClaim("roles").asString())
+                                .build();
 
-                        final UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(id, null, roles.stream().map(SimpleGrantedAuthority::new).toList());
+                        final UsernamePasswordAuthenticationToken auth
+                                = new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
                         auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                         SecurityContextHolder.getContext().setAuthentication(auth);
                     });
@@ -70,10 +79,10 @@ public class TokenFilter extends OncePerRequestFilter {
                                     HttpServletRequest request,
                                     HttpServletResponse response) {
         final String oldRefreshToken = refreshCookie.getValue();
-        final Long userId = refreshTokenUtil.validateAndGetUserId(oldRefreshToken);
-        if (userId == null) return;
+        User user = refreshTokenUtil.validateAndGetUser(oldRefreshToken);
+        if (Objects.isNull(user)) return;
 
-        refreshTokenUtil.deleteTokenByUserId(userId);
+        refreshTokenUtil.deleteTokenByUserId(user.getId());
 
         List<String> roles = null;
         try {
@@ -83,19 +92,27 @@ public class TokenFilter extends OncePerRequestFilter {
 
         if (ObjectUtils.isEmpty(roles)) return;
 
-        final String newAccessToken = jwtUtil.generateToken(userId, roles);
-        final String newRefreshToken = refreshTokenUtil.generateToken(userId, roles);
+        final String newAccessToken = jwtUtil.generateToken(user);
+        final String newRefreshToken = refreshTokenUtil.generateToken(user);
 
         cookieUtil.addAccessToken(response, newAccessToken);
         cookieUtil.addPayload(response, newAccessToken);
         cookieUtil.addRefreshToken(response, newRefreshToken);
 
         try {
-            DecodedJWT decodedJwt = jwtUtil.verifyToken(newAccessToken);
-            roles = decodedJwt.getClaim("roles").asList(String.class);
+            final DecodedJWT decodedJWT = jwtUtil.verifyToken(newAccessToken);
+            final Long userId = Long.valueOf(decodedJWT.getSubject());
 
-            UsernamePasswordAuthenticationToken auth =
-                    new UsernamePasswordAuthenticationToken(userId, null, roles.stream().map(SimpleGrantedAuthority::new).toList());
+            user = User.builder()
+                    .id(userId)
+                    .name(decodedJWT.getClaim("username").asString())
+                    .displayName(decodedJWT.getClaim("displayName").asString())
+                    .profileImage(decodedJWT.getClaim("profileImage").asString())
+                    .roles(decodedJWT.getClaim("roles").asString())
+                    .build();
+
+            final UsernamePasswordAuthenticationToken auth =
+                    new UsernamePasswordAuthenticationToken(user, null, roles.stream().map(SimpleGrantedAuthority::new).toList());
 
             auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
             SecurityContextHolder.getContext().setAuthentication(auth);

@@ -1,5 +1,6 @@
 package com.forestfull.chat.config;
 
+import com.auth0.jwt.interfaces.DecodedJWT;
 import com.forestfull.common.token.JwtUtil;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
@@ -21,6 +22,8 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class JwtHandshakeInterceptor implements HandshakeInterceptor {
 
+    private final JwtUtil jwtUtil;
+
     @Override
     public boolean beforeHandshake(ServerHttpRequest request, ServerHttpResponse response, WebSocketHandler wsHandler, Map<String, Object> attributes) {
         if (!(request instanceof ServletServerHttpRequest servletRequest)) return false;
@@ -30,14 +33,15 @@ public class JwtHandshakeInterceptor implements HandshakeInterceptor {
 
         if (cookies == null) return false;
 
-        final Optional<Cookie> jwtCookie = Arrays.stream(cookies)
+        final Optional<DecodedJWT> jwtCookie = Arrays.stream(cookies)
                 .filter(c -> JwtUtil.TOKEN_TYPE.JWT.name().equals(c.getName()))
+                .map(cookie -> jwtUtil.verifyToken(cookie.getValue()))
                 .findFirst();
 
         if (jwtCookie.isEmpty()) return false;
 
         try {
-            attributes.put(JwtUtil.TOKEN_TYPE.JWT.name(), jwtCookie.get().getValue());
+            attributes.put(JwtUtil.TOKEN_TYPE.JWT_PAYLOAD.name(), jwtCookie.get().getPayload());
             return true;
         } catch (Exception e) {
             return false;

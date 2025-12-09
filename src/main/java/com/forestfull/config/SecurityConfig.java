@@ -29,7 +29,7 @@ public class SecurityConfig {
     private final CustomUserDetailsService customUserDetailsService;
     private static final AntPathMatcher antPathMatcher = new AntPathMatcher();
     private static final String[] PUBLIC_RESOURCES = {"/", "/favicon.ico", "/css/**", "/js/**", "/images/**", "/webjars/**"};
-    private static final String[] ALLOW_PATHS = {"/api/auth/login"};
+    private static final String[] ALLOW_PATHS = {"/api/auth/signup", "/api/auth/login"};
 
     public static boolean isPublicResources(String path) {
         return Arrays.stream(PUBLIC_RESOURCES).anyMatch(pattern -> antPathMatcher.match(pattern, path));

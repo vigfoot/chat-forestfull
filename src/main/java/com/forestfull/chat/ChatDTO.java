@@ -1,5 +1,6 @@
 package com.forestfull.chat;
 
+import com.forestfull.domain.User;
 import lombok.Data;
 import java.time.LocalDateTime;
 
@@ -18,13 +19,11 @@ public class ChatDTO {
 
         private Long id;                  // DB 저장용
         private Long roomId;
-        private Long memberId;
+        private User user;
 
         private MessageType type;         // 메시지 타입 (입장/퇴장/대화)
-        private String sender;            // username
         private String message;           // 본문
-        private LocalDateTime sentAt;     // 송신 시간
-
+        private LocalDateTime createAt;     // 송신 시간
         private String createdBy;         // DB 저장용
         private String updatedBy;
     }

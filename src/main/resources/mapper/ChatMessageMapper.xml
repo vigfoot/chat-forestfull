@@ -3,19 +3,38 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
 <mapper namespace="com.forestfull.chat.message.ChatMessageMapper">
+    <resultMap id="MessageResultMap" type="com.forestfull.chat.ChatDTO$Message">
+        <id property="id" column="id"/>
+        <result property="roomId" column="room_id"/>
+        <result property="type" column="type"/>
+        <result property="message" column="message"/>
+        <result property="createAt" column="created_at"/>
+        <result property="user.id" column="member_id"/>
+        <result property="user.name" column="username"/>
+        <result property="user.displayName" column="display_name"/>
+        <result property="user.profileImage" column="profile_image"/>
+    </resultMap>
 
     <!-- 메시지 저장 -->
-    <insert id="saveMessage" useGeneratedKeys="true" keyProperty="id">
+    <insert id="saveMessage" parameterType="com.forestfull.chat.ChatDTO$Message" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO chat_forestfull.chat_message (room_id, member_id, message, created_by)
-        VALUES (#{roomId}, #{memberId}, #{message}, #{sender})
+        VALUES (#{roomId}, #{userPrincipal.memberId}, #{message}, #{userPrincipal.displayName})
     </insert>
 
     <!-- 최근 메시지 조회 -->
-    <select id="findRecentMessages" resultType="com.forestfull.chat.ChatDTO$Message">
-        SELECT id, room_id, member_id, message, sent_at, created_by AS sender
-        FROM chat_forestfull.chat_message
-        WHERE room_id = #{roomId}
-        ORDER BY sent_at DESC
-        LIMIT #{limit}
+    <select id="findRecentMessages" resultMap="MessageResultMap">
+        SELECT msg.id
+             , msg.room_id
+             , msg.message
+             , msg.created_at
+             , msg.member_id
+             , m.name AS username
+             , m.display_name
+             , m.profile_image
+        FROM chat_forestfull.chat_message msg
+             JOIN chat_forestfull.member m ON msg.member_id = m.id
+        WHERE msg.room_id = #{roomId}
+            ORDER BY msg.created_at DESC
+            LIMIT #{limit}
     </select>
 </mapper>

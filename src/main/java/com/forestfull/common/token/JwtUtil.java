@@ -5,6 +5,7 @@ import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.auth0.jwt.interfaces.JWTVerifier;
+import com.forestfull.domain.User;
 import com.forestfull.domain.UserMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Value;
@@ -12,10 +13,7 @@ import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Component
 public class JwtUtil {
@@ -41,15 +39,16 @@ public class JwtUtil {
                 .findFirst();
     }
 
-    // Access Token 생성
-    public String generateToken(Long id, List<String> roles) {
-        Date now = new Date();
-        Date exp = new Date(now.getTime() + expireMillis);
+    // JwtUtil.java 예시
+    public String generateToken(User user) {
         return JWT.create()
-                .withSubject(id + "")
-                .withClaim("roles", roles)
-                .withIssuedAt(now)
-                .withExpiresAt(exp)
+                .withSubject(String.valueOf(user.getId()))
+                .withClaim("roles", user.getRoles())
+                .withClaim("username", user.getUsername())
+                .withClaim("displayName", user.getDisplayName())
+                .withClaim("profileImage", user.getProfileImage())
+                .withIssuedAt(new Date())
+                .withExpiresAt(new Date(System.currentTimeMillis() + expireMillis))
                 .sign(algorithm);
     }
 
@@ -78,23 +77,24 @@ public class JwtUtil {
         }
 
         // Refresh Token 생성
-        public String generateToken(Long id, List<String> roles) {
-            Date now = new Date();
-            Date exp = new Date(now.getTime() + refreshExpireMillis);
-
+        public String generateToken(User user) {
+            Date expiresAt = new Date(System.currentTimeMillis() + refreshExpireMillis);
             String token = JWT.create()
-                    .withSubject(id + "")
-                    .withClaim("roles", roles)
-                    .withIssuedAt(now)
-                    .withExpiresAt(exp)
+                    .withSubject(String.valueOf(user.getId()))
+                    .withClaim("roles", user.getRoles())
+                    .withClaim("username", user.getUsername())
+                    .withClaim("displayName", user.getDisplayName())
+                    .withClaim("profileImage", user.getProfileImage())
+                    .withIssuedAt(new Date())
+                    .withExpiresAt(expiresAt)
                     .sign(algorithm);
 
-            Long memberId = userMapper.findUserIdById(id);
+            Long memberId = userMapper.findUserIdById(user.getId());
             if (memberId == null) {
-                throw new IllegalStateException("member not found for username: " + id);
+                throw new IllegalStateException("member not found for username: " + user.getId());
             }
 
-            LocalDateTime expiryDate = LocalDateTime.ofInstant(exp.toInstant(), ZoneId.systemDefault());
+            LocalDateTime expiryDate = LocalDateTime.ofInstant(expiresAt.toInstant(), ZoneId.systemDefault());
             refreshTokenMapper.save(memberId, token, expiryDate);
 
             return token;
@@ -139,7 +139,7 @@ public class JwtUtil {
         }
 
         // Refresh Token 유효성 검증 + DB 저장 여부 확인
-        public Long validateAndGetUserId(String refreshToken) {
+        public User validateAndGetUser(String refreshToken) {
             try {
                 // 1️⃣ JWT 자체 검증 (서명, 만료)
                 DecodedJWT jwt = verifier.verify(refreshToken);
@@ -149,17 +149,17 @@ public class JwtUtil {
                 if (jwt.getSubject() == null) throw new RuntimeException();
 
                 // 2️⃣ DB에 저장된 토큰과 비교 (DB에 없으면 무효)
-                Long memberId = userMapper.findUserIdById(id);
-                if (memberId == null) throw new RuntimeException();
+                User user = userMapper.findByUserId(id);
+                if (Objects.isNull(user)) throw new RuntimeException();
 
-                String tokenInDb = refreshTokenMapper.findValidTokenByMemberId(memberId);
-                if (tokenInDb == null) throw new RuntimeException();
+                String tokenInDB = refreshTokenMapper.findValidTokenByMemberId(user.getId());
+                if (tokenInDB == null) throw new RuntimeException();
 
-                if (!tokenInDb.equals(refreshToken)) {
+                if (!tokenInDB.equals(refreshToken)) {
                     return null; // 다른 Refresh 토큰이면 무효
                 }
 
-                return id;
+                return user;
             } catch (Exception e) {
                 return null; // JWT 서명/만료 오류 → 무효 토큰
             }

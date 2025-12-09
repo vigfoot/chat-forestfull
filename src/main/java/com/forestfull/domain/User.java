@@ -3,11 +3,13 @@ package com.forestfull.domain;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.experimental.SuperBuilder;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.nio.file.attribute.UserPrincipal;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Collection;
@@ -18,7 +20,7 @@ import java.util.stream.Collectors;
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-public class User implements UserDetails {
+public class User implements UserDetails, UserPrincipal {
     private Long id;
     private String name;
     private String password;
