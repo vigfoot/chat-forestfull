@@ -6,13 +6,16 @@ import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.auth0.jwt.interfaces.JWTVerifier;
 import com.forestfull.domain.UserMapper;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 
 @Component
 public class JwtUtil {
@@ -29,6 +32,13 @@ public class JwtUtil {
     public JwtUtil(@Value("${key}") String secretKey) {
         this.algorithm = Algorithm.HMAC256(secretKey);
         this.verifier = JWT.require(algorithm).build();
+    }
+
+    public Optional<DecodedJWT> getJwtToken(HttpServletRequest request) {
+        return Arrays.stream(request.getCookies())
+                .filter(cookie -> TOKEN_TYPE.JWT.name().equals(cookie.getName()))
+                .map(cookie -> verifier.verify(cookie.getValue()))
+                .findFirst();
     }
 
     // Access Token 생성

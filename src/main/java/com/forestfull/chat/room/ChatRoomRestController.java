@@ -1,13 +1,17 @@
 package com.forestfull.chat.room;
 
+import com.auth0.jwt.interfaces.DecodedJWT;
 import com.forestfull.chat.ChatDTO;
 import com.forestfull.chat.message.ChatMessageService;
+import com.forestfull.common.token.JwtUtil;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequiredArgsConstructor
@@ -16,15 +20,18 @@ public class ChatRoomRestController {
 
     private static final int RECENT_MESSAGE_LIMIT = 50;
 
+    private final JwtUtil jwtUtil;
     private final ChatRoomService chatRoomService;
     private final ChatMessageService chatMessageService;
 
     @PostMapping
-    public ResponseEntity<ChatDTO.Room> createRoom(@RequestBody ChatDTO.Room request) {
-        if (request.getName() == null || request.getCreatedBy() == null) {
-            return ResponseEntity.badRequest().build();
-        }
-        ChatDTO.Room created = chatRoomService.createRoom(request.getName(), request.getCreatedBy());
+    public ResponseEntity<ChatDTO.Room> createRoom(@RequestBody ChatDTO.Room roomInfo, HttpServletRequest request) {
+        if (roomInfo.getName() == null) return ResponseEntity.badRequest().build();
+
+        final Optional<DecodedJWT> jwtToken = jwtUtil.getJwtToken(request);
+        if (jwtToken.isEmpty()) return ResponseEntity.badRequest().build();
+
+        ChatDTO.Room created = chatRoomService.createRoom(roomInfo.getName(), Long.valueOf(jwtToken.get().getSubject()));
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
