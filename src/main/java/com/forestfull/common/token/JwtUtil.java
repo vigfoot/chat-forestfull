@@ -72,12 +72,13 @@ public class JwtUtil {
         }
 
         // Refresh Token 생성
-        public String generateToken(String name) {
+        public String generateToken(String name, List<String> roles) {
             Date now = new Date();
             Date exp = new Date(now.getTime() + refreshExpireMillis);
 
             String token = JWT.create()
                     .withSubject(name)
+                    .withClaim("roles", roles)
                     .withIssuedAt(now)
                     .withExpiresAt(exp)
                     .sign(algorithm);
@@ -87,10 +88,9 @@ public class JwtUtil {
                 throw new IllegalStateException("member not found for username: " + name);
             }
 
-            // expiry_date: LocalDateTime 변환
             LocalDateTime expiryDate = LocalDateTime.ofInstant(exp.toInstant(), ZoneId.systemDefault());
-
             refreshTokenMapper.save(memberId, token, expiryDate);
+
             return token;
         }
 

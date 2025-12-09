@@ -34,80 +34,121 @@ public class TokenFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
-        final Cookie[] cookies = request.getCookies();
 
-        // JWT 확인
-        if (cookies == null) {
-            filterChain.doFilter(request, response);
-            return;
-        }
+        Cookie[] cookies = request.getCookies();
+        if (cookies != null && SecurityContextHolder.getContext().getAuthentication() == null) {
 
-        final Optional<Cookie> optionalJWT = Arrays.stream(cookies)
-                .filter(c -> JwtUtil.TOKEN_TYPE.JWT.name().equals(c.getName()))
-                .findFirst();
+            extractJWT(cookies).ifPresentOrElse(jwtCookie -> {
+                authenticateAccessToken(jwtCookie, request);
 
-        if (optionalJWT.isPresent()) {
-            final DecodedJWT decodedJWT = jwtUtil.verifyToken(optionalJWT.get().getValue());
-            setAuthentication(decodedJWT, request);
-
-        } else {
-            Arrays.stream(cookies)
-                    .filter(c -> JwtUtil.TOKEN_TYPE.REFRESH.name().equals(c.getName()))
-                    .findFirst().ifPresent(cookie -> {
-                        String oldRefreshToken = cookie.getValue();
-                        String name = refreshTokenUtil.validateAndGetUsername(oldRefreshToken);
-
-                        if (name == null) return;
-
-                        // 기존 Refresh 무효화
-                        refreshTokenUtil.deleteTokenByUsername(name);
-
-                        // 새 Refresh 토큰 생성 + DB 저장
-                        String newRefreshToken = refreshTokenUtil.generateToken(name);
-                        Cookie refreshCookie = new Cookie(JwtUtil.TOKEN_TYPE.REFRESH.name(), newRefreshToken);
-                        refreshCookie.setHttpOnly(true);
-                        refreshCookie.setSecure("prod".equals(onProfile));
-                        refreshCookie.setPath("/");
-                        refreshCookie.setMaxAge((int) (JwtUtil.refreshExpireMillis / 1000));
-                        refreshCookie.setAttribute("SameSite", "prod".equals(onProfile) ? "None" : "Lax");
-                        response.addCookie(refreshCookie);
-
-                        // 기존 로직: Access Token 새로 발급
-                        DecodedJWT decodedJWT = refreshTokenUtil.verify(newRefreshToken);
-                        List<String> roles = decodedJWT.getClaim("roles").asList(String.class);
-                        String newAccessToken = jwtUtil.generateToken(name, roles);
-
-                        Cookie newJwtCookie = new Cookie(JwtUtil.TOKEN_TYPE.JWT.name(), newAccessToken);
-                        newJwtCookie.setHttpOnly(true);
-                        newJwtCookie.setSecure("prod".equals(onProfile));
-                        newJwtCookie.setPath("/");
-                        newJwtCookie.setMaxAge((int) (JwtUtil.expireMillis / 1000));
-                        newJwtCookie.setAttribute("SameSite", "prod".equals(onProfile) ? "None" : "Lax");
-                        response.addCookie(newJwtCookie);
-
-                        // 페이로드 쿠키
-                        String[] parts = newAccessToken.split("\\.");
-                        String payload = parts.length > 1 ? parts[1] : "";
-                        Cookie payloadCookie = new Cookie(JwtUtil.TOKEN_TYPE.JWT_PAYLOAD.name(), payload);
-                        payloadCookie.setHttpOnly(false);
-                        payloadCookie.setSecure("prod".equals(onProfile));
-                        payloadCookie.setPath("/");
-                        payloadCookie.setMaxAge((int) (JwtUtil.expireMillis / 1000));
-                        payloadCookie.setAttribute("SameSite", "Lax");
-                        response.addCookie(payloadCookie);
-
-                        setAuthentication(jwtUtil.verifyToken(newAccessToken), request);
-                    });
+            }, () -> {
+                extractRefreshToken(cookies).ifPresent(refreshCookie -> {
+                    handleRefreshToken(refreshCookie, request, response);
+                });
+            });
         }
 
         filterChain.doFilter(request, response);
     }
 
-    private void setAuthentication(DecodedJWT jwt, HttpServletRequest request) {
-        final String name = jwt.getSubject();
-        final List<String> roles = jwt.getClaim("roles").asList(String.class);
+    /** ---------------------- JWT 인증 ---------------------- */
+    private Optional<Cookie> extractJWT(Cookie[] cookies) {
+        return Arrays.stream(cookies)
+                .filter(c -> JwtUtil.TOKEN_TYPE.JWT.name().equals(c.getName()))
+                .findFirst();
+    }
 
-        final UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(name, null, roles.stream().map(SimpleGrantedAuthority::new).toList());
+    private void authenticateAccessToken(Cookie jwtCookie, HttpServletRequest request) {
+        try {
+            DecodedJWT decoded = jwtUtil.verifyToken(jwtCookie.getValue());
+            setAuthentication(decoded, request);
+        } catch (Exception e) {
+            SecurityContextHolder.clearContext();
+        }
+    }
+
+    /** ------------------- Refresh 인증 + 재발급 ------------------- */
+    private Optional<Cookie> extractRefreshToken(Cookie[] cookies) {
+        return Arrays.stream(cookies)
+                .filter(c -> JwtUtil.TOKEN_TYPE.REFRESH.name().equals(c.getName()))
+                .findFirst();
+    }
+
+    private void handleRefreshToken(Cookie refreshCookie,
+                                    HttpServletRequest request,
+                                    HttpServletResponse response) {
+
+        String oldRefreshToken = refreshCookie.getValue();
+        String username = refreshTokenUtil.validateAndGetUsername(oldRefreshToken);
+        if (username == null) return;
+
+        refreshTokenUtil.deleteTokenByUsername(username);
+
+        DecodedJWT oldDecoded = null;
+        List<String> roles = null;
+        try {
+            oldDecoded = refreshTokenUtil.verify(oldRefreshToken);
+            roles = oldDecoded.getClaim("roles").asList(String.class);
+        } catch (Exception ignored) {}
+
+        if (roles == null) roles = List.of("ROLE_USER");
+
+        String newRefreshToken = refreshTokenUtil.generateToken(username, roles);
+        addRefreshCookie(response, newRefreshToken);
+
+        String newAccessToken = jwtUtil.generateToken(username, roles);
+        addAccessAndPayloadCookies(response, newAccessToken);
+
+        authenticateAccessToken(createCookie(JwtUtil.TOKEN_TYPE.JWT.name(), newAccessToken), request);
+    }
+
+    /** ------------------- Cookie Helper ------------------- */
+    private void addRefreshCookie(HttpServletResponse response, String token) {
+        Cookie cookie = createCookie(JwtUtil.TOKEN_TYPE.REFRESH.name(), token);
+        cookie.setMaxAge((int) (JwtUtil.refreshExpireMillis / 1000));
+        cookie.setHttpOnly(true);
+        cookie.setAttribute("SameSite", isProd() ? "None" : "Lax");
+        response.addCookie(cookie);
+    }
+
+    private void addAccessAndPayloadCookies(HttpServletResponse response, String accessToken) {
+        Cookie accessCookie = createCookie(JwtUtil.TOKEN_TYPE.JWT.name(), accessToken);
+        accessCookie.setMaxAge((int) (JwtUtil.expireMillis / 1000));
+        accessCookie.setHttpOnly(true);
+        accessCookie.setAttribute("SameSite", isProd() ? "None" : "Lax");
+        response.addCookie(accessCookie);
+
+        String[] parts = accessToken.split("\\.");
+        String payload = parts.length > 1 ? parts[1] : "";
+        Cookie payloadCookie = createCookie(JwtUtil.TOKEN_TYPE.JWT_PAYLOAD.name(), payload);
+        payloadCookie.setMaxAge((int) (JwtUtil.expireMillis / 1000));
+        payloadCookie.setHttpOnly(false);
+        payloadCookie.setAttribute("SameSite", "Lax");
+        response.addCookie(payloadCookie);
+    }
+
+    private Cookie createCookie(String name, String value) {
+        Cookie c = new Cookie(name, value);
+        c.setPath("/");
+        c.setSecure(isProd());
+        return c;
+    }
+
+    private boolean isProd() {
+        return "prod".equals(onProfile);
+    }
+
+    /** ------------------- SecurityContext 설정 ------------------- */
+    private void setAuthentication(DecodedJWT jwt, HttpServletRequest request) {
+        String username = jwt.getSubject();
+        List<String> roles = jwt.getClaim("roles").asList(String.class);
+
+        UsernamePasswordAuthenticationToken auth =
+                new UsernamePasswordAuthenticationToken(
+                        username, null,
+                        roles.stream().map(SimpleGrantedAuthority::new).toList()
+                );
+
         auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
         SecurityContextHolder.getContext().setAuthentication(auth);
     }
