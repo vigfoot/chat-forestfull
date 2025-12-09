@@ -12,9 +12,9 @@ public interface UserMapper {
 
     Long findUserIdById(Long id);
 
-    Boolean save(MemberDTO.Member member);
+    Boolean save(User member);
 
-    List<MemberDTO.Member> findAllUsers();
+    List<User> findAllUsers();
 
     Boolean updateRoles(@Param("id") Long id, @Param("roles") String roles);
 

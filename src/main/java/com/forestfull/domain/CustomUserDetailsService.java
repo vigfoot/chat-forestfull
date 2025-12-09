@@ -41,7 +41,7 @@ public class CustomUserDetailsService implements UserDetailsService {
                 .collect(Collectors.toList());
     }
 
-    public boolean signup(MemberDTO.Member request) {
+    public boolean signup(User request) {
         request.setPassword(passwordEncoder.encode(request.getPassword()));
         return userMapper.save(request);
     }

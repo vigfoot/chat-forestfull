@@ -3,7 +3,7 @@ package com.forestfull.admin;
 import com.forestfull.common.ResponseException;
 import com.forestfull.common.file.FILE_TYPE;
 import com.forestfull.common.file.FileService;
-import com.forestfull.domain.MemberDTO;
+import com.forestfull.domain.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -22,7 +22,7 @@ public class AdminController {
     private final AdminUserService adminUserService;
 
     @GetMapping("/users")
-    public List<MemberDTO.Member> listUsers() {
+    public List<User> listUsers() {
         return adminUserService.getAllUsers();
     }
 

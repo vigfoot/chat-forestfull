@@ -104,7 +104,7 @@ public class AuthController {
     }
 
     @PostMapping("/signup")
-    ResponseEntity<?> signup(@RequestBody MemberDTO.Member member) {
+    ResponseEntity<?> signup(@RequestBody User member) {
         return userService.signup(member) ? ResponseEntity.ok().build() : ResponseEntity.badRequest().build();
     }
 }

@@ -8,6 +8,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -21,7 +22,13 @@ public class User implements UserDetails {
     private Long id;
     private String name;
     private String password;
-    private String roles;
+    private String roles = "ROLE_USER";
+    private String displayName;
+    private String profileImage;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+    private String createdBy;
+    private String updatedBy;
 
     public List<String> getRoleList() {
         return Arrays.stream(roles.split(",")).collect(Collectors.toList());

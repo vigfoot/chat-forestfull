@@ -18,15 +18,15 @@
     </select>
 
     <!-- 회원 생성 -->
-    <insert id="save" parameterType="com.forestfull.domain.MemberDTO$Member" useGeneratedKeys="true" keyProperty="id">
+    <insert id="save" parameterType="com.forestfull.domain.User" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO chat_forestfull.member (name, password, roles, display_name, profile_image, created_by, updated_by)
         VALUES (#{name}, #{password}, #{roles}, #{displayName}, #{profileImage}, #{createdBy}, #{updatedBy})
     </insert>
 
     <!-- 모든 회원 조회 -->
-    <select id="findAllUsers" resultType="com.forestfull.domain.MemberDTO$Member">
-        SELECT *
-        FROM chat_forestfull.member
+    <select id="findAllUsers" resultType="com.forestfull.domain.User">
+        SELECT m.id, password, name, roles, display_name, profile_image, created_at, updated_at, created_by, updated_by
+        FROM chat_forestfull.member m
     </select>
 
     <!-- 회원 권한만 조회 -->
