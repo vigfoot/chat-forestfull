@@ -1,8 +1,7 @@
 package com.forestfull.admin;
 
-import com.forestfull.domain.User;
 import com.forestfull.domain.UserMapper;
-import com.forestfull.member.MemberDTO;
+import com.forestfull.domain.MemberDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

@@ -40,7 +40,7 @@
         VALUES(#{name}, #{createdBy})
     </insert>
 
-    <insert id="joinRoom" parameterType="com.forestfull.member.MemberDTO$Room">
+    <insert id="joinRoom" parameterType="com.forestfull.domain.MemberDTO$Room">
         INSERT INTO chat_forestfull.member_rooms(room_id, member_id, joined_at)
         VALUES(#{roomId}, #{memberId}, NOW())
         ON DUPLICATE KEY UPDATE joined_at = NOW()

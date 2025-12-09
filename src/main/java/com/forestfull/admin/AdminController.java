@@ -3,12 +3,10 @@ package com.forestfull.admin;
 import com.forestfull.common.ResponseException;
 import com.forestfull.common.file.FILE_TYPE;
 import com.forestfull.common.file.FileService;
-import com.forestfull.domain.User;
-import com.forestfull.member.MemberDTO;
+import com.forestfull.domain.MemberDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 

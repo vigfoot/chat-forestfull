@@ -1,8 +1,6 @@
 package com.forestfull.domain;
 
-import com.forestfull.common.ResponseException;
 import com.forestfull.common.token.JwtUtil;
-import com.forestfull.member.MemberDTO;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;

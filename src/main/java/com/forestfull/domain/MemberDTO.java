@@ -1,6 +1,5 @@
-package com.forestfull.member;
+package com.forestfull.domain;
 
-import com.forestfull.domain.User;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
