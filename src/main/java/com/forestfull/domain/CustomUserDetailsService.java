@@ -27,6 +27,13 @@ public class CustomUserDetailsService implements UserDetailsService {
         return user;
     }
 
+    public User loadUserByUserId(Long userId) throws UsernameNotFoundException {
+        final User user = userMapper.findByUserId(userId);
+        if (user == null) throw new UsernameNotFoundException("User not found: " + userId);
+
+        return user;
+    }
+
     public List<String> getRoles(Long userId) {
         final User user = userMapper.getRolesByUserId(userId);
         if (user == null) throw new UsernameNotFoundException("User not found: " + userId);

@@ -6,12 +6,14 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.handler.annotation.*;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
 
 import java.security.Principal;
 import java.util.List;
 
 @Controller
 @RequiredArgsConstructor
+@RequestMapping("/app")
 public class ChatController {
 
     private final ChatMessageService chatMessageService;
@@ -29,12 +31,8 @@ public class ChatController {
     }
 
     @MessageMapping("/chat.enter")
-    public void enterRoom(@Payload ChatDTO.Participant participant,
-                          Principal principal) {
-
-        String username = principal.getName();
-
-//        chatRoomService.enterRoom(participant.getRoomId(), username);
+    public void enterRoom(@Payload ChatDTO.Participant participant, Principal principal) {
+        chatRoomService.enterRoom(participant.getRoomId(), Long.valueOf(principal.getName()));
 
         List<ChatDTO.Participant> updated = chatRoomService.getParticipants(participant.getRoomId());
         simpMessagingTemplate.convertAndSend(
@@ -44,12 +42,8 @@ public class ChatController {
     }
 
     @MessageMapping("/chat.leave")
-    public void leaveRoom(@Payload ChatDTO.Participant participant,
-                          Principal principal) {
-
-        String username = principal.getName();
-
-//        chatRoomService.leaveRoom(participant.getRoomId(), username);
+    public void leaveRoom(@Payload ChatDTO.Participant participant, Principal principal) {
+        chatRoomService.leaveRoom(participant.getRoomId(), Long.valueOf(principal.getName()));
 
         List<ChatDTO.Participant> updated = chatRoomService.getParticipants(participant.getRoomId());
         simpMessagingTemplate.convertAndSend(

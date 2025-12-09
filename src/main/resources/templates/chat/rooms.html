@@ -1,52 +1,156 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <title>Chat Rooms</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="/webjars/bootstrap/5.3.8/css/bootstrap.min.css">
+  <script src="/webjars/bootstrap/5.3.8/js/bootstrap.bundle.min.js"></script>
   <script src="/js/script.js"></script>
+  <style>
+    body { background:#f5f7fa; color:#222; }
+    .card { background:#ffffff; border:1px solid #e0e5eb; }
+    .room-item:hover { background:#f0f4ff; }
+    nav.navbar { background:#3765d0; }
+    .btn-outline-light { border-color:white; color:white; }
+    #user-info { color:#e0eaff; }
+  </style>
+  <title>Rooms - Chat</title>
 </head>
 <body>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark px-3">
+  <a class="navbar-brand" href="/">ForestChat</a>
+  <div class="ms-auto">
+    <button id="btn-create-room" class="btn btn-sm btn-outline-light">Create Room</button>
+  </div>
+</nav>
 
-<h2>채팅방 목록</h2>
-<button onclick="createRoom()">방 생성</button>
+<div class="container py-4">
+  <div class="row">
+    <div class="col-md-8 offset-md-2">
+      <div class="card p-3">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h5 class="mb-0">Chat Rooms</h5>
+          <small class="text-muted" id="user-info"></small>
+        </div>
 
-<ul id="roomList"></ul>
+        <ul id="rooms-list" class="list-group list-group-flush"></ul>
 
+        <div class="mt-3 text-muted small">Tip: Click a room to open it.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Create Room Modal -->
+<div class="modal fade" id="createRoomModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content card">
+      <div class="modal-header">
+        <h5 class="modal-title">Create Room</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <input id="new-room-name" class="form-control" placeholder="Room name (required)"/>
+      </div>
+      <div class="modal-footer">
+        <button id="create-room-submit" class="btn btn-primary">Create</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/webjars/sockjs-client/1.5.1/sockjs.min.js"></script>
+<script src="/webjars/stomp-websocket/2.3.4/stomp.min.js"></script>
+<!-- global script assumed loaded already (script.js) -->
 <script>
-  async function loadRooms() {
-    const res = await get("/api/chat/rooms");
-    if (!res.ok) return;
+  (function () {
+    // helper: format user info from JWT_PAYLOAD
+    const payload = getJwtPayload('JWT_PAYLOAD'); // global function
+    const userDisplay = payload ? (payload.displayName || payload.name || ('#' + payload.sub)) : 'Guest';
+    document.getElementById('user-info').innerText = userDisplay;
 
-    const rooms = await res.json();
-    const list = document.getElementById("roomList");
-    list.innerHTML = "";
+    const roomsList = document.getElementById('rooms-list');
+    const modal = new bootstrap.Modal(document.getElementById('createRoomModal'));
 
-    rooms.forEach(room => {
-      const li = document.createElement("li");
-      li.innerHTML = `
-            ${room.name}
-            <button onclick="enterRoom(${room.id})">입장</button>
-        `;
-      list.appendChild(li);
-    });
-  }
-
-  async function enterRoom(roomId) {
-    window.location.href = `/room.html?roomId=${roomId}`;
-  }
-
-  async function createRoom() {
-    const name = prompt("방 이름을 입력하세요:");
-    if (!name) return;
-
-    const res = await post("/api/chat/rooms", { name });
-    if (res.ok) {
-      loadRooms();
+    async function loadRooms() {
+      try {
+        const res = await get('/api/chat/rooms');
+        if (!res.ok) throw new Error('Failed to load rooms');
+        const rooms = await res.json();
+        renderRooms(rooms);
+      } catch (e) {
+        console.error(e);
+      }
     }
-  }
 
-  loadRooms();
+    function renderRooms(rooms) {
+      roomsList.innerHTML = '';
+      if (!rooms || rooms.length === 0) {
+        roomsList.innerHTML = `<li class="list-group-item bg-transparent text-center text-muted">No rooms yet</li>`;
+        return;
+      }
+      rooms.forEach(r => {
+        const li = document.createElement('li');
+        li.className = 'list-group-item room-item d-flex justify-content-between align-items-center';
+        li.innerHTML = `
+          <div>
+            <div class="fw-bold">${escapeHtml(r.name)}</div>
+            <div class="small text-muted">#${r.id} · created by ${r.createdBy ?? 'system'}</div>
+          </div>
+          <div>
+            <button class="btn btn-sm btn-outline-light btn-enter" data-id="${r.id}">Enter</button>
+          </div>
+        `;
+        roomsList.appendChild(li);
+      });
+
+      // attach click handlers
+      document.querySelectorAll('.btn-enter').forEach(btn => {
+        btn.addEventListener('click', (ev) => {
+          const id = ev.currentTarget.dataset.id;
+          // navigate to /pages/rooms/{id}
+          window.location.href = `/pages/rooms/${id}`;
+        });
+      });
+    }
+
+    // Create room
+    document.getElementById('btn-create-room').addEventListener('click', () => {
+      modal.show();
+      document.getElementById('new-room-name').value = '';
+      setTimeout(() => document.getElementById('new-room-name').focus(), 200);
+    });
+    document.getElementById('create-room-submit').addEventListener('click', async () => {
+      const name = document.getElementById('new-room-name').value.trim();
+      if (!name) return alert('Room name required');
+      try {
+        const createdBy = payload ? Number(payload.sub) : null;
+        const res = await post('/api/chat/rooms', { name, createdBy });
+        if (res.ok) {
+          modal.hide();
+          await loadRooms();
+          // go to created room if server returns created body
+          const body = await res.json();
+          if (body && body.id) window.location.href = `/pages/rooms/${body.id}`;
+        } else {
+          const text = await res.text();
+          alert('Create failed: ' + text);
+        }
+      } catch (e) {
+        console.error(e);
+        alert('Create failed');
+      }
+    });
+
+    // escape helper
+    function escapeHtml(s) {
+      if (!s) return '';
+      return s.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
+    }
+
+    // initial load
+    loadRooms();
+  })();
 </script>
-
 </body>
 </html>

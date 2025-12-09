@@ -1,6 +1,5 @@
 package com.forestfull.chat.config;
 
-import com.auth0.jwt.interfaces.DecodedJWT;
 import com.forestfull.common.token.JwtUtil;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
@@ -22,34 +21,23 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class JwtHandshakeInterceptor implements HandshakeInterceptor {
 
-    private final JwtUtil jwtUtil;
-
     @Override
     public boolean beforeHandshake(ServerHttpRequest request, ServerHttpResponse response, WebSocketHandler wsHandler, Map<String, Object> attributes) {
+        if (!(request instanceof ServletServerHttpRequest servletRequest)) return false;
 
-        if (!(request instanceof ServletServerHttpRequest servletRequest)) {
-            return false;
-        }
+        final HttpServletRequest httpRequest = servletRequest.getServletRequest();
+        final Cookie[] cookies = httpRequest.getCookies();
 
-        HttpServletRequest httpRequest = servletRequest.getServletRequest();
-        Cookie[] cookies = httpRequest.getCookies();
+        if (cookies == null) return false;
 
-        if (cookies == null) {
-            return false;
-        }
-
-        Optional<Cookie> jwtCookie = Arrays.stream(cookies)
+        final Optional<Cookie> jwtCookie = Arrays.stream(cookies)
                 .filter(c -> JwtUtil.TOKEN_TYPE.JWT.name().equals(c.getName()))
                 .findFirst();
 
-        if (jwtCookie.isEmpty()) {
-            return false;
-        }
+        if (jwtCookie.isEmpty()) return false;
 
         try {
-            DecodedJWT decodedJWT = jwtUtil.verifyToken(jwtCookie.get().getValue());
-            attributes.put("username", decodedJWT.getSubject());
-
+            attributes.put(JwtUtil.TOKEN_TYPE.JWT.name(), jwtCookie.get().getValue());
             return true;
         } catch (Exception e) {
             return false;

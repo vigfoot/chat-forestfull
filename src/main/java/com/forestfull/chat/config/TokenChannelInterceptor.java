@@ -11,6 +11,8 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
+import java.util.Map;
+
 @Component
 @RequiredArgsConstructor
 public class TokenChannelInterceptor implements ChannelInterceptor {
@@ -20,19 +22,16 @@ public class TokenChannelInterceptor implements ChannelInterceptor {
 
     @Override
     public Message<?> preSend(Message<?> message, MessageChannel channel) {
-
         StompHeaderAccessor accessor = StompHeaderAccessor.wrap(message);
-        Object tokenObj = accessor.getSessionAttributes().get(JwtUtil.TOKEN_TYPE.JWT.name());
+        Map<String, Object> sessionAttributes = accessor.getSessionAttributes();
+        Object tokenObj = sessionAttributes.get(JwtUtil.TOKEN_TYPE.JWT.name());
 
         if (tokenObj != null) {
             String token = tokenObj.toString();
             try {
-                String username = jwtUtil.verifyToken(token).getSubject();
-                var userDetails = customUserDetailsService.loadUserByUsername(username);
-
-                var auth = new UsernamePasswordAuthenticationToken(
-                        userDetails, null, userDetails.getAuthorities()
-                );
+                Long userId = Long.valueOf(jwtUtil.verifyToken(token).getSubject());
+                var userDetails = customUserDetailsService.loadUserByUserId(userId);
+                var auth = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
                 accessor.setUser(auth);
                 SecurityContextHolder.getContext().setAuthentication(auth);
 

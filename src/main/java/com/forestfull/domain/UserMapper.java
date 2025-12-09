@@ -10,6 +10,8 @@ public interface UserMapper {
 
     User findByUsername(String username);
 
+    User findByUserId(Long userId);
+
     Long findUserIdById(Long id);
 
     Boolean save(User member);

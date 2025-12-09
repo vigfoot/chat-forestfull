@@ -1,82 +1,282 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <title>Chat Room</title>
-    <script src="https://cdn.jsdelivr.net/npm/sockjs-client/dist/sockjs.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/stompjs/lib/stomp.js"></script>
+    <script src="/webjars/sockjs-client/1.5.1/sockjs.min.js"></script>
+    <script src="/webjars/stomp-websocket/2.3.4/stomp.min.js"></script>
     <script src="/js/script.js"></script>
+
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Arial', sans-serif;
+            background: #f4f6f9;
+        }
+
+        .header {
+            background: #4a90e2;
+            color: #fff;
+            padding: 16px;
+            font-size: 18px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .back-btn {
+            cursor: pointer;
+            background: #fff;
+            color: #4a90e2;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            border: none;
+        }
+
+        .container {
+            display: flex;
+            height: calc(100vh - 64px); /* header 제외 */
+        }
+
+        #chatContainer {
+            flex: 3;
+            padding: 15px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            border-right: 1px solid #ddd;
+        }
+
+        .sidebar {
+            flex: 1;
+            background: #ffffff;
+            border-left: 1px solid #ddd;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-header {
+            padding: 12px;
+            font-weight: bold;
+            border-bottom: 1px solid #ddd;
+            background: #f0f2f5;
+        }
+
+        .user-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .user {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #ddd;
+        }
+
+        .message {
+            padding: 12px 16px;
+            border-radius: 14px;
+            max-width: 75%;
+            font-size: 15px;
+            animation: fadeIn 0.25s ease;
+        }
+
+        .mine {
+            margin-left: auto;
+            background: #4a90e2;
+            color: #fff;
+            border-bottom-right-radius: 2px;
+        }
+
+        .other {
+            background: #ffffff;
+            color: #333;
+            border-bottom-left-radius: 2px;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        @keyframes fadeIn {
+            from {opacity: 0; transform: translateY(5px);}
+            to {opacity: 1; transform: translateY(0);}
+        }
+
+        .input-wrap {
+            display: flex;
+            padding: 12px;
+            background: #ffffff;
+            border-top: 1px solid #ddd;
+            gap: 10px;
+        }
+
+        #messageInput {
+            flex: 1;
+            padding: 12px;
+            border-radius: 10px;
+            border: 1px solid #ccc;
+            font-size: 15px;
+        }
+
+        #sendBtn {
+            padding: 12px 18px;
+            border: none;
+            background: #4a90e2;
+            color: #fff;
+            font-size: 15px;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+    </style>
 </head>
 
 <body>
+<div class="header">
+    <button class="back-btn" onclick="location.href='/pages/rooms'">←</button>
+    Room #<span th:text="${roomId}"></span>
+</div>
 
-<h2 id="roomName">Loading...</h2>
+<div class="container">
+    <div id="chatContainer"></div>
 
-<div id="chatArea" style="border:1px solid #ccc; width:400px; height:300px; overflow:auto;"></div>
+    <div class="sidebar">
+        <div class="sidebar-header">참여자</div>
+        <div class="user-list" id="userList"></div>
+    </div>
+</div>
 
-<input type="text" id="msgInput" placeholder="메시지를 입력하세요" autocomplete="off" />
-<button onclick="sendMessage()">전송</button>
+<div class="input-wrap">
+    <input type="text" id="messageInput" placeholder="메시지를 입력하세요">
+    <button id="sendBtn">Send</button>
+</div>
 
-<script>
-    let roomId = new URLSearchParams(location.search).get("roomId");
+<script th:inline="javascript">
+    const roomId = /*[[${roomId}]]*/ 0;
 
-    async function init() {
-        document.getElementById("roomName").innerText = `채팅방 #${roomId}`;
+    function connectWebSocket(roomId) {
+        const socket = new SockJS("/ws/chat");
+        stompClient = Stomp.over(socket);
+        stompClient.debug = null;
 
-        connectWebSocket(() => {
-            stompClient.subscribe(`/sub/chat/${roomId}`, (msg) => {
-                const body = JSON.parse(msg.body);
-                addMessage(body);
+        stompClient.connect({}, () => {
+            console.log("STOMP 연결 성공");
+
+            // 메시지 구독
+            stompClient.subscribe(`/topic/rooms/${roomId}`, msg => {
+                addMessage(JSON.parse(msg.body));
             });
 
-            stompClient.send(`/pub/chat/enter/${roomId}`, {}, JSON.stringify({
-                roomId,
-                type: "ENTER"
-            }));
+            // 참여자 리스트 구독
+            stompClient.subscribe(`/topic/rooms/${roomId}/participants`, msg => {
+                updateUsers(JSON.parse(msg.body));
+            });
+
+            // 입장 이벤트 전송
+            stompClient.send("/app/chat.enter", {}, JSON.stringify({ roomId }));
         });
     }
 
-    function addMessage(msg) {
-        const chatArea = document.getElementById("chatArea");
-        const div = document.createElement("div");
+    function sendMessage(roomId, text) {
+        const payload = getJwtPayload(); // JWT_PAYLOAD에서 가져오기
+        if(!payload) return;
 
-        if (msg.type === "ENTER") {
-            div.innerText = `🔵 ${msg.sender} 님 입장`;
-        } else if (msg.type === "LEAVE") {
-            div.innerText = `🔸 ${msg.sender} 님 퇴장`;
-        } else {
-            div.innerText = `${msg.sender}: ${msg.message}`;
-        }
-
-        chatArea.appendChild(div);
-        chatArea.scrollTop = chatArea.scrollHeight;
-    }
-
-    function sendMessage() {
-        const input = document.getElementById("msgInput");
-        const text = input.value.trim();
-        if (!text) return;
-
-        stompClient.send(`/pub/chat/${roomId}`, {}, JSON.stringify({
+        stompClient.send("/app/chat.sendMessage", {}, JSON.stringify({
+            roomId,
+            memberId: parseInt(payload.sub), // JWT에서 ID
+            sender: payload.name,            // JWT에서 이름
             message: text,
             type: "TALK"
         }));
 
-        input.value = "";
+        document.getElementById("messageInput").value = "";
     }
 
-    window.onbeforeunload = () => {
-        if (stompClient) {
-            stompClient.send(`/pub/chat/leave/${roomId}`, {}, JSON.stringify({
-                roomId,
-                type: "LEAVE"
-            }));
-            disconnectWebSocket();
+    function leaveRoom(roomId) {
+        if (!stompClient) return;
+        stompClient.send("/app/chat.leave", {}, JSON.stringify({ roomId }));
+    }
+
+    function addMessage(msg) {
+        const chatContainer = document.getElementById("chatContainer");
+        const div = document.createElement("div");
+
+        const payload = getJwtPayload();
+        const myUserId = payload?.sub;
+
+        div.className = "message " + (msg.memberId == myUserId ? "mine" : "other");
+
+        if(msg.type === "ENTER" || msg.type === "LEAVE") {
+            div.textContent = msg.sender + (msg.type === "ENTER" ? "님이 입장했습니다" : "님이 퇴장했습니다");
+            div.classList.add("system-message");
+        } else {
+            div.textContent = msg.message;
         }
-    };
 
-    init();
+        chatContainer.appendChild(div);
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+
+    function updateUsers(users) {
+        const userList = document.getElementById("userList");
+        userList.innerHTML = ""; // 초기화
+        users.forEach(u => {
+            const div = document.createElement("div");
+            div.className = "user";
+
+            const avatar = document.createElement("div");
+            avatar.className = "user-avatar";
+            if(u.profileImage) avatar.style.backgroundImage = `url(${u.profileImage})`;
+
+            const name = document.createElement("span");
+            name.textContent = u.displayName;
+
+            div.appendChild(avatar);
+            div.appendChild(name);
+            userList.appendChild(div);
+        });
+    }
+
+    // 메시지 전송 버튼 + Enter key
+    const sendBtn = document.getElementById("sendBtn");
+    const messageInput = document.getElementById("messageInput");
+    sendBtn.addEventListener("click", () => {
+        const text = messageInput.value.trim();
+        if (text) {
+            sendMessage(roomId, text);
+            messageInput.value = "";
+        }
+    });
+    messageInput.addEventListener("keypress", e => {
+        if (e.key === "Enter") {
+            const text = messageInput.value.trim();
+            if (text) {
+                sendMessage(roomId, text);
+                messageInput.value = "";
+            }
+        }
+    });
+
+    // 초기 연결
+    connectWebSocket(roomId);
+
+    // 페이지 이탈시 퇴장 이벤트
+    window.addEventListener("beforeunload", () => {
+        leaveRoom(roomId);
+    });
 </script>
-
 </body>
 </html>

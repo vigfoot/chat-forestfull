@@ -13,6 +13,21 @@
         WHERE m.name = #{name}
     </select>
 
+    <select id="findByUserId" resultType="com.forestfull.domain.User" parameterType="long">
+        SELECT
+            m.id
+            , m.name
+            , m.roles
+            , m.display_name
+            , m.profile_image
+            , m.created_at
+            , m.created_by
+            , m.updated_at
+            , m.updated_by
+        FROM chat_forestfull.member m
+        WHERE m.id = #{userId}
+    </select>
+
     <select id="findUserIdById" resultType="long" parameterType="long">
         SELECT id FROM chat_forestfull.member WHERE member.id = #{id} LIMIT 1
     </select>
@@ -25,7 +40,7 @@
 
     <!-- 모든 회원 조회 -->
     <select id="findAllUsers" resultType="com.forestfull.domain.User">
-        SELECT m.id, password, name, roles, display_name, profile_image, created_at, updated_at, created_by, updated_by
+        SELECT m.id, name, roles, display_name, profile_image, created_at, updated_at, created_by, updated_by
         FROM chat_forestfull.member m
     </select>
 

@@ -8,7 +8,7 @@ function connectWebSocket(callback) {
         return;
     }
 
-    const socket = new SockJS("/ws-chat");
+    const socket = new SockJS("/ws/chat");
     stompClient = Stomp.over(socket);
     stompClient.debug = null; // 콘솔 로그 제거
 
