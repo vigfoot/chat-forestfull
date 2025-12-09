@@ -33,7 +33,7 @@ public class SecurityConfig {
                 .formLogin(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(reg -> reg
                         .requestMatchers(PUBLIC_RESOURCES).permitAll()
-                        .requestMatchers("/file/**", "/api/auth/**").permitAll()
+                        .requestMatchers("/api/**").permitAll()
                         .requestMatchers("/pages/admin/**", "/admin/**").hasRole("ADMIN")
                         .requestMatchers("/pages/management/**", "/management/**").hasAnyRole("ADMIN", "MANAGER")
                         .anyRequest().authenticated()

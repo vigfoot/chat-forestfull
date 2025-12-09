@@ -5,6 +5,10 @@ import java.time.LocalDateTime;
 
 public class ChatDTO {
 
+    /**
+     * 🔹 채팅 메시지 DTO
+     * WebSocket 실시간 처리 + DB 저장 겸용
+     */
     @Data
     public static class Message {
 
@@ -12,20 +16,22 @@ public class ChatDTO {
             ENTER, TALK, LEAVE
         }
 
-        private Long id;            // DB 저장용
+        private Long id;                  // DB 저장용
         private Long roomId;
         private Long memberId;
 
-        // 🔥 WebSocket 실시간 처리용 필드
-        private MessageType type;
-        private String sender;      // username(=memberName 대신)
-        private String message;
-        private LocalDateTime sentAt;
+        private MessageType type;         // 메시지 타입 (입장/퇴장/대화)
+        private String sender;            // username
+        private String message;           // 본문
+        private LocalDateTime sentAt;     // 송신 시간
 
-        private String createdBy;   // DB 저장용
+        private String createdBy;         // DB 저장용
         private String updatedBy;
     }
 
+    /**
+     * 🔹 방 정보 DTO
+     */
     @Data
     public static class Room {
         private Long id;
@@ -35,6 +41,9 @@ public class ChatDTO {
         private LocalDateTime updatedAt;
     }
 
+    /**
+     * 🔹 참여자 DTO
+     */
     @Data
     public static class Participant {
         private Long memberId;
