@@ -15,6 +15,9 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.util.AntPathMatcher;
+
+import java.util.Arrays;
 
 @Configuration
 @EnableWebSecurity
@@ -24,7 +27,17 @@ public class SecurityConfig {
     private final TokenFilter tokenFilter;
     private final PasswordEncoder passwordEncoder;
     private final CustomUserDetailsService customUserDetailsService;
-    private static final String[] PUBLIC_RESOURCES = {"/", "/favicon.ico", "/css/**", "/js/**", "/images/**", "/webjars/**", "/pages/**"};
+    private static final AntPathMatcher antPathMatcher = new AntPathMatcher();
+    private static final String[] PUBLIC_RESOURCES = {"/", "/favicon.ico", "/css/**", "/js/**", "/images/**", "/webjars/**"};
+    private static final String[] ALLOW_PATHS = {"/api/auth/login"};
+
+    public static boolean isPublicResources(String path) {
+        return Arrays.stream(PUBLIC_RESOURCES).anyMatch(pattern -> antPathMatcher.match(pattern, path));
+    }
+
+    public static boolean isLoginPath(String path){
+        return Arrays.stream(ALLOW_PATHS).anyMatch(pattern -> antPathMatcher.match(pattern, path));
+    }
 
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -39,7 +52,7 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 )
                 .userDetailsService(customUserDetailsService)
-                .addFilterBefore(tokenFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterAt(tokenFilter, UsernamePasswordAuthenticationFilter.class)
                 .sessionManagement(config -> config.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .build();
     }

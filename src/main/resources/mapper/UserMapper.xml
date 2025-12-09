@@ -13,8 +13,8 @@
         WHERE m.name = #{name}
     </select>
 
-    <select id="findIdByUsername" resultType="long" parameterType="String">
-        SELECT id FROM chat_forestfull.member WHERE member.name = #{name} LIMIT 1
+    <select id="findUserIdById" resultType="long" parameterType="long">
+        SELECT id FROM chat_forestfull.member WHERE member.id = #{id} LIMIT 1
     </select>
 
     <!-- 회원 생성 -->
@@ -57,4 +57,8 @@
         DELETE FROM chat_forestfull.member
         WHERE id = #{id}
     </delete>
+
+    <select id="getRolesByUserId" parameterType="long" resultType="long">
+        SELECT roles FROM chat_forestfull.member WHERE id = #{id}
+    </select>
 </mapper>

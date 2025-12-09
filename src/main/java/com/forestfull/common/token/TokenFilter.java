@@ -1,155 +1,106 @@
 package com.forestfull.common.token;
 
+import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.interfaces.DecodedJWT;
+import com.forestfull.config.SecurityConfig;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
+import org.springframework.util.ObjectUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 
 @Component
 @RequiredArgsConstructor
 public class TokenFilter extends OncePerRequestFilter {
 
-    @Value("${spring.config.activate.on-profile}")
-    private String onProfile;
-
     private final JwtUtil jwtUtil;
     private final JwtUtil.Refresh refreshTokenUtil;
+    private final CookieUtil cookieUtil;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
+        if (SecurityConfig.isPublicResources(request.getRequestURI()) || SecurityConfig.isLoginPath(request.getRequestURI())) {
+            filterChain.doFilter(request, response);
+            return;
+        }
 
-        Cookie[] cookies = request.getCookies();
-        if (cookies != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+        final Cookie[] cookies = request.getCookies();
+        if (cookies == null) throw new RuntimeException("Cookies Not found");
 
-            extractJWT(cookies).ifPresentOrElse(jwtCookie -> {
-                authenticateAccessToken(jwtCookie, request);
+        try {
+            Arrays.stream(cookies)
+                    .filter(c -> JwtUtil.TOKEN_TYPE.JWT.name().equals(c.getName()))
+                    .findFirst()
+                    .ifPresent(cookie -> {
+                        DecodedJWT decodedJWT = jwtUtil.verifyToken(cookie.getValue());
 
-            }, () -> {
-                extractRefreshToken(cookies).ifPresent(refreshCookie -> {
-                    handleRefreshToken(refreshCookie, request, response);
-                });
-            });
+                        final String id = decodedJWT.getSubject();
+                        final List<String> roles = decodedJWT.getClaim("roles").asList(String.class);
+
+                        final UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(id, null, roles.stream().map(SimpleGrantedAuthority::new).toList());
+                        auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                        SecurityContextHolder.getContext().setAuthentication(auth);
+                    });
+
+        } catch (JWTVerificationException e) {
+            Arrays.stream(cookies)
+                    .filter(c -> JwtUtil.TOKEN_TYPE.REFRESH.name().equals(c.getName()))
+                    .findFirst()
+                    .ifPresent(cookie -> handleRefreshToken(cookie, request, response));
         }
 
         filterChain.doFilter(request, response);
     }
 
-    /** ---------------------- JWT 인증 ---------------------- */
-    private Optional<Cookie> extractJWT(Cookie[] cookies) {
-        return Arrays.stream(cookies)
-                .filter(c -> JwtUtil.TOKEN_TYPE.JWT.name().equals(c.getName()))
-                .findFirst();
-    }
-
-    private void authenticateAccessToken(Cookie jwtCookie, HttpServletRequest request) {
-        try {
-            DecodedJWT decoded = jwtUtil.verifyToken(jwtCookie.getValue());
-            setAuthentication(decoded, request);
-        } catch (Exception e) {
-            SecurityContextHolder.clearContext();
-        }
-    }
-
-    /** ------------------- Refresh 인증 + 재발급 ------------------- */
-    private Optional<Cookie> extractRefreshToken(Cookie[] cookies) {
-        return Arrays.stream(cookies)
-                .filter(c -> JwtUtil.TOKEN_TYPE.REFRESH.name().equals(c.getName()))
-                .findFirst();
-    }
-
     private void handleRefreshToken(Cookie refreshCookie,
                                     HttpServletRequest request,
                                     HttpServletResponse response) {
+        final String oldRefreshToken = refreshCookie.getValue();
+        final Long userId = refreshTokenUtil.validateAndGetUserId(oldRefreshToken);
+        if (userId == null) return;
 
-        String oldRefreshToken = refreshCookie.getValue();
-        String username = refreshTokenUtil.validateAndGetUsername(oldRefreshToken);
-        if (username == null) return;
+        refreshTokenUtil.deleteTokenByUserId(userId);
 
-        refreshTokenUtil.deleteTokenByUsername(username);
-
-        DecodedJWT oldDecoded = null;
         List<String> roles = null;
         try {
-            oldDecoded = refreshTokenUtil.verify(oldRefreshToken);
-            roles = oldDecoded.getClaim("roles").asList(String.class);
-        } catch (Exception ignored) {}
+            roles = refreshTokenUtil.verify(oldRefreshToken).getClaim("roles").asList(String.class);
+        } catch (Exception ignored) {
+        }
 
-        if (roles == null) roles = List.of("ROLE_USER");
+        if (ObjectUtils.isEmpty(roles)) return;
 
-        String newRefreshToken = refreshTokenUtil.generateToken(username, roles);
-        addRefreshCookie(response, newRefreshToken);
+        final String newAccessToken = jwtUtil.generateToken(userId, roles);
+        final String newRefreshToken = refreshTokenUtil.generateToken(userId, roles);
 
-        String newAccessToken = jwtUtil.generateToken(username, roles);
-        addAccessAndPayloadCookies(response, newAccessToken);
+        cookieUtil.addAccessToken(response, newAccessToken);
+        cookieUtil.addPayload(response, newAccessToken);
+        cookieUtil.addRefreshToken(response, newRefreshToken);
 
-        authenticateAccessToken(createCookie(JwtUtil.TOKEN_TYPE.JWT.name(), newAccessToken), request);
-    }
+        try {
+            DecodedJWT decodedJwt = jwtUtil.verifyToken(newAccessToken);
+            roles = decodedJwt.getClaim("roles").asList(String.class);
 
-    /** ------------------- Cookie Helper ------------------- */
-    private void addRefreshCookie(HttpServletResponse response, String token) {
-        Cookie cookie = createCookie(JwtUtil.TOKEN_TYPE.REFRESH.name(), token);
-        cookie.setMaxAge((int) (JwtUtil.refreshExpireMillis / 1000));
-        cookie.setHttpOnly(true);
-        cookie.setAttribute("SameSite", isProd() ? "None" : "Lax");
-        response.addCookie(cookie);
-    }
+            UsernamePasswordAuthenticationToken auth =
+                    new UsernamePasswordAuthenticationToken(userId, null, roles.stream().map(SimpleGrantedAuthority::new).toList());
 
-    private void addAccessAndPayloadCookies(HttpServletResponse response, String accessToken) {
-        Cookie accessCookie = createCookie(JwtUtil.TOKEN_TYPE.JWT.name(), accessToken);
-        accessCookie.setMaxAge((int) (JwtUtil.expireMillis / 1000));
-        accessCookie.setHttpOnly(true);
-        accessCookie.setAttribute("SameSite", isProd() ? "None" : "Lax");
-        response.addCookie(accessCookie);
-
-        String[] parts = accessToken.split("\\.");
-        String payload = parts.length > 1 ? parts[1] : "";
-        Cookie payloadCookie = createCookie(JwtUtil.TOKEN_TYPE.JWT_PAYLOAD.name(), payload);
-        payloadCookie.setMaxAge((int) (JwtUtil.expireMillis / 1000));
-        payloadCookie.setHttpOnly(false);
-        payloadCookie.setAttribute("SameSite", "Lax");
-        response.addCookie(payloadCookie);
-    }
-
-    private Cookie createCookie(String name, String value) {
-        Cookie c = new Cookie(name, value);
-        c.setPath("/");
-        c.setSecure(isProd());
-        return c;
-    }
-
-    private boolean isProd() {
-        return "prod".equals(onProfile);
-    }
-
-    /** ------------------- SecurityContext 설정 ------------------- */
-    private void setAuthentication(DecodedJWT jwt, HttpServletRequest request) {
-        String username = jwt.getSubject();
-        List<String> roles = jwt.getClaim("roles").asList(String.class);
-
-        UsernamePasswordAuthenticationToken auth =
-                new UsernamePasswordAuthenticationToken(
-                        username, null,
-                        roles.stream().map(SimpleGrantedAuthority::new).toList()
-                );
-
-        auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-        SecurityContextHolder.getContext().setAuthentication(auth);
+            auth.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+            SecurityContextHolder.getContext().setAuthentication(auth);
+        } catch (Exception e) {
+            SecurityContextHolder.clearContext();
+        }
     }
 }

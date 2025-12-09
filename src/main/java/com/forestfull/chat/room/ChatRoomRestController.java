@@ -1,5 +1,7 @@
-package com.forestfull.chat;
+package com.forestfull.chat.room;
 
+import com.forestfull.chat.ChatDTO;
+import com.forestfull.chat.message.ChatMessageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

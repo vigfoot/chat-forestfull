@@ -10,7 +10,7 @@ public interface UserMapper {
 
     User findByUsername(String username);
 
-    Long findIdByUsername(String username);
+    Long findUserIdById(Long id);
 
     Boolean save(MemberDTO.Member member);
 
@@ -19,4 +19,6 @@ public interface UserMapper {
     Boolean updateRoles(@Param("id") Long id, @Param("roles") String roles);
 
     Boolean deleteById(Long userId);
+
+    User getRolesByUserId(Long userId);
 }

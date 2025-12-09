@@ -1,5 +1,6 @@
-package com.forestfull.chat;
+package com.forestfull.chat.room;
 
+import com.forestfull.chat.ChatDTO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

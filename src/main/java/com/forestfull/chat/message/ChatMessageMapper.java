@@ -1,5 +1,6 @@
-package com.forestfull.chat;
+package com.forestfull.chat.message;
 
+import com.forestfull.chat.ChatDTO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 

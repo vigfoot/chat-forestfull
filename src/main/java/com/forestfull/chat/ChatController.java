@@ -1,9 +1,13 @@
 package com.forestfull.chat;
 
+import com.forestfull.chat.message.ChatMessageService;
+import com.forestfull.chat.room.ChatRoomService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.handler.annotation.*;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
+
+import java.security.Principal;
 import java.util.List;
 
 @Controller
@@ -24,10 +28,13 @@ public class ChatController {
         );
     }
 
-    // 유저 입장 이벤트
     @MessageMapping("/chat.enter")
-    public void enterRoom(@Payload ChatDTO.Participant participant) {
-        chatRoomService.enterRoom(participant.getRoomId(), participant.getMemberId());
+    public void enterRoom(@Payload ChatDTO.Participant participant,
+                          Principal principal) {
+
+        String username = principal.getName();
+
+//        chatRoomService.enterRoom(participant.getRoomId(), username);
 
         List<ChatDTO.Participant> updated = chatRoomService.getParticipants(participant.getRoomId());
         simpMessagingTemplate.convertAndSend(
@@ -36,10 +43,13 @@ public class ChatController {
         );
     }
 
-    // 유저 퇴장 이벤트
     @MessageMapping("/chat.leave")
-    public void leaveRoom(@Payload ChatDTO.Participant participant) {
-        chatRoomService.leaveRoom(participant.getRoomId(), participant.getMemberId());
+    public void leaveRoom(@Payload ChatDTO.Participant participant,
+                          Principal principal) {
+
+        String username = principal.getName();
+
+//        chatRoomService.leaveRoom(participant.getRoomId(), username);
 
         List<ChatDTO.Participant> updated = chatRoomService.getParticipants(participant.getRoomId());
         simpMessagingTemplate.convertAndSend(
@@ -47,4 +57,5 @@ public class ChatController {
                 updated
         );
     }
+
 }

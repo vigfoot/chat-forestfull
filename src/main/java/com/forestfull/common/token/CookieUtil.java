@@ -28,7 +28,9 @@ public class CookieUtil {
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
     }
 
-    public void addPayload(HttpServletResponse response, String payload) {
+    public void addPayload(HttpServletResponse response, String token) {
+        final String[] parts = token.split("\\.");
+        final String payload = parts.length > 1 ? parts[1] : "";
         ResponseCookie cookie = ResponseCookie.from(JwtUtil.TOKEN_TYPE.JWT_PAYLOAD.name(), payload)
                 .httpOnly(false)
                 .secure("prod".equals(onProfile))
@@ -58,10 +60,10 @@ public class CookieUtil {
                 .forEach(name -> {
                     Cookie c = new Cookie(name, null);
                     c.setHttpOnly(JwtUtil.TOKEN_TYPE.JWT.name().equals(name) || JwtUtil.TOKEN_TYPE.REFRESH.name().equals(name));
-                    c.setSecure("prod".equals(onProfile));
+                    c.setSecure(true);
                     c.setPath("/");
                     c.setMaxAge(0);
-                    c.setAttribute("SameSite", name.equals(JwtUtil.TOKEN_TYPE.JWT_PAYLOAD.name()) ? "Lax" : "None");
+                    c.setAttribute("SameSite", "None");
                     response.addCookie(c);
                 });
     }

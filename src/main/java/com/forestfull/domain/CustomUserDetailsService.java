@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
@@ -23,11 +24,14 @@ public class CustomUserDetailsService implements UserDetailsService {
         final User user = userMapper.findByUsername(name);
         if (user == null) throw new UsernameNotFoundException("User not found: " + name);
 
-        return new org.springframework.security.core.userdetails.User(
-                user.getName(),
-                user.getPassword(),
-                getAuthorities(user.getRoles())
-        );
+        return user;
+    }
+
+    public List<String> getRoles(Long userId) {
+        final User user = userMapper.getRolesByUserId(userId);
+        if (user == null) throw new UsernameNotFoundException("User not found: " + userId);
+
+        return user.getRoleList();
     }
 
     private Collection<? extends GrantedAuthority> getAuthorities(String roles) {
