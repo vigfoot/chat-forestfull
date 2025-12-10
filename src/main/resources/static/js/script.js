@@ -46,27 +46,7 @@ async function httpRequest(url, method = 'GET', body = null, headers = {}, retry
         options.body = JSON.stringify(body);
     }
 
-    try {
-        const response = await fetch(url, options);
-
-        // Access Token 만료 → refresh 시도
-        if (response.status === 401 && retry) {
-            console.warn("Access Token expired → Refresh Token 시도");
-
-            const refreshed = await refreshTokens();
-            if (refreshed) {
-                console.warn("재발급 완료 → 원래 요청 재시도");
-                return httpRequest(url, method, body, headers, false);
-            } else {
-                console.warn("Refresh Token 실패 → 로그인 필요");
-                redirectToLogin();
-            }
-        }
-        return response;
-    } catch (error) {
-        console.error(`HTTP 요청 실패: ${error}`);
-        throw error;
-    }
+    return fetch(url, options);
 }
 
 async function refreshTokens() {
@@ -75,7 +55,6 @@ async function refreshTokens() {
             method: 'POST',
             credentials: 'include'
         });
-
         return response.ok;
     } catch (e) {
         console.error("Refresh 요청 실패:", e);
@@ -185,4 +164,77 @@ function deleteCookie(name) {
 function getCookie(name) {
     const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
     return match ? match[2] : null;
+}
+
+// src/main/resources/static/js/script.js (추가/수정 필요)
+
+// ... (기존의 post, get, getJwtPayload 함수 등) ...
+
+/**
+ * Global function to display the top alert.
+ * @param {string} message Message to display
+ * @param {string} type Bootstrap alert class (primary, success, danger, warning, etc.)
+ */
+function showAlert(message, type = 'warning') {
+    const alertArea = document.getElementById('top-alert-area');
+    const alertMessage = document.getElementById('top-alert-message');
+
+    if (!alertArea || !alertMessage) {
+        console.warn("Alert DOM elements not found (top-alert-area or top-alert-message).");
+        return;
+    }
+
+    alertArea.className = `alert alert-${type} alert-dismissible fade show`;
+    alertMessage.textContent = message;
+    alertArea.classList.remove('d-none'); // Show alert
+
+    // (Optional) Auto-hide after 5 seconds
+    setTimeout(() => {
+        const bsAlert = bootstrap.Alert.getOrCreateInstance(alertArea);
+        bsAlert.close();
+    }, 5000);
+}
+
+
+/**
+ * Global function to display the common modal.
+ * @param {string} title Modal title
+ * @param {string} bodyHtml Modal content (HTML string)
+ * @param {function|null} confirmAction Function to execute when the primary confirmation button is clicked.
+ */
+function showModal(title, bodyHtml, confirmAction = null) {
+    const modalEl = document.getElementById('commonModal');
+    if (!modalEl) {
+        console.error("Modal element 'commonModal' not found. Ensure footer.html is included.");
+        return;
+    }
+
+    document.getElementById('commonModalLabel').textContent = title;
+    document.getElementById('commonModalBody').innerHTML = bodyHtml;
+
+    const footer = document.getElementById('commonModalFooter');
+    footer.innerHTML = '<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>';
+
+    if (confirmAction) {
+        const confirmBtn = document.createElement('button');
+        confirmBtn.setAttribute('type', 'button');
+        confirmBtn.className = 'btn btn-primary';
+        confirmBtn.textContent = 'Confirm';
+
+        // Clone the button to remove existing event listeners safely
+        const newConfirmBtn = confirmBtn.cloneNode(true);
+        newConfirmBtn.addEventListener('click', () => {
+            confirmAction();
+            // Hide modal instance safely
+            const modalInstance = bootstrap.Modal.getInstance(modalEl);
+            if (modalInstance) {
+                modalInstance.hide();
+            }
+        });
+
+        footer.appendChild(newConfirmBtn);
+    }
+
+    const modal = new bootstrap.Modal(modalEl);
+    modal.show();
 }

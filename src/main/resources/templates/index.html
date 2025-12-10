@@ -1,103 +1,148 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat Forestfull</title>
-    <link rel="stylesheet" href="/webjars/bootstrap/5.3.8/css/bootstrap.min.css">
-    <script src="/js/script.js"></script>
-    <script src="/webjars/bootstrap/5.3.8/js/bootstrap.bundle.min.js"></script>
+    <script th:replace="~{/layout/config.html}"></script>
+    <title>Chat Forestfull | Login</title>
+    <script>
+        /* Login Page Routes */
+        const ADMIN_PAGE = '/pages/admin/dashboard';
+        const ROOMS_PAGE = '/pages/rooms';
+        const LOGIN_API = '/api/auth/login';
+        const SIGNUP_API = '/api/auth/signup';
+
+        document.addEventListener("DOMContentLoaded", () => {
+            // 1. 빠른 라우팅을 위한 쿠키 체크 (DOMContentLoaded에서 한 번 실행)
+            const payload = getJwtPayload();
+            if (payload?.roles?.includes("ROLE_ADMIN")) {
+                window.location.replace(ADMIN_PAGE);
+            } else if(payload?.roles?.startsWith("ROLE_")){
+                window.location.replace(ROOMS_PAGE);
+            }
+
+            // 2. **[FIX]** password 입력 필드에 이벤트 리스너 추가
+            const passwordInput = document.getElementById('password');
+            if (passwordInput) {
+                passwordInput.addEventListener('keydown', (event) => {
+                    // 표준적인 key 속성 체크
+                    if (event.key === 'Enter') {
+                        event.preventDefault(); // 기본 폼 제출 방지
+                        loginOrSignup();
+                    }
+                });
+            }
+        });
+
+        // async 함수는 DOMContentLoaded 바깥에 정의하여 전역적으로 접근 가능하도록 유지
+        async function loginOrSignup() {
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value.trim();
+
+            if (!username || !password) {
+                showModal("Input Error", "Please enter both ID and Password.", null);
+                return;
+            }
+
+            const joinBtn = document.querySelector('button.btn-slack-primary');
+            joinBtn.disabled = true;
+
+            // showLoadingModal();
+
+            try {
+                // 1. Attempt Login
+                const loginResp = await post(LOGIN_API, {username, password});
+
+                if (loginResp.ok) {
+                    const payload = getJwtPayload();
+                    const targetPage = payload.roles?.includes('ROLE_ADMIN') ? ADMIN_PAGE : ROOMS_PAGE;
+
+                    // hideLoadingModal();
+
+                    showModal("Login Successful", "Welcome! Redirecting to the service.", () => {
+                        window.location.replace(targetPage);
+                    });
+                    return;
+
+                } else if (loginResp.status === 401) {
+                    showModal("Login Failed", "❗ The password you entered is incorrect. Please try again.", null);
+
+                } else if (loginResp.status === 400) {
+                    const signupPrompt = `
+                    <p>The user ID <strong>${username}</strong> was not found.</p>
+                    <p>Would you like to create a new account now?</p>
+                `;
+
+                    showModal("Account Not Found", signupPrompt, async () => {
+                        const signupResp = await post(SIGNUP_API, {name: username, password: password});
+
+                        if (signupResp.ok) {
+                            showModal("Sign Up Complete", "🎉 Account successfully created. Attempting to log you in...", async () => {
+                                const finalLoginResp = await post(LOGIN_API, {username, password});
+
+                                if (finalLoginResp.ok) {
+                                    const payload = getJwtPayload();
+                                    const targetPage = payload.roles?.includes('ROLE_ADMIN') ? ADMIN_PAGE : ROOMS_PAGE;
+                                    window.location.replace(targetPage);
+                                } else {
+                                    showModal("Critical Error", "Account was created, but immediate login failed.", null);
+                                }
+                            });
+
+                        } else if (signupResp.status === 409) {
+                            showModal("Sign Up Failed", "❗ The username already exists.", null);
+                        } else {
+                            showModal("Sign Up Failed", "❌ Failed to sign up due to an unknown server error.", null);
+                        }
+                    });
+                } else {
+                    showModal("Login Failed", `❌ Failed to log in due to a server error. (Status: ${loginResp.status})`, null);
+                }
+            } catch (err) {
+                console.error(err);
+                showModal("Communication Error", "⚠️ An issue occurred while communicating with the server. Please check your network status.", null);
+            } finally {
+                // hideLoadingModal();
+                joinBtn.disabled = false;
+            }
+        }
+    </script>
+    <style>
+        /* ... (styles are the same) ... */
+    </style>
 </head>
-<body class="bg-light">
+<body class="bg-slack-light d-flex flex-column min-vh-100">
 
-<div class="container py-5">
-    <h2 class="text-center mb-5">Chat Forestfull 로그인</h2>
-
+<main class="container my-auto">
     <div class="row justify-content-center">
-        <div class="col-md-6">
-            <div class="card shadow-sm">
-                <div class="card-header">로그인</div>
-                <div class="card-body">
+        <div class="col-12">
+
+            <div class="text-center mb-5 mt-5">
+                <span class="slack-logo-text">ForestFull</span>
+                <p class="text-muted mt-2 fw-semibold">Sign in to your workspace or create an account.</p>
+            </div>
+
+            <div class="card login-card-slack mx-auto">
+                <div class="card-body p-0">
+                    <h2 class="h4 text-center mb-4 fw-bold">Sign in with your Email Address</h2>
+
                     <div class="mb-3">
-                        <label>Username</label>
-                        <input id="username" type="text" class="form-control">
+                        <label for="username" class="form-label visually-hidden">Username</label>
+                        <input id="username" type="text" class="form-control form-control-lg" placeholder="Enter your ID">
                     </div>
-                    <div class="mb-3">
-                        <label>Password</label>
-                        <input id="password" type="password" class="form-control">
+                    <div class="mb-4">
+                        <label for="password" class="form-label visually-hidden">Password</label>
+                        <input id="password" type="password" class="form-control form-control-lg" placeholder="Enter your password">
                     </div>
-                    <button class="btn btn-success w-100" onclick="loginOrSignup()">로그인 / 회원가입</button>
-                    <pre id="login-result" class="mt-3 bg-dark text-white p-2 rounded" style="font-size:0.85rem;"></pre>
+
+                    <button type="button" class="btn btn-slack-primary btn-lg w-100 mb-4 fw-bold" onclick="loginOrSignup()">
+                        Join
+                    </button>
                 </div>
             </div>
+
         </div>
     </div>
-</div>
+</main>
 
-<script>
-    document.addEventListener("DOMContentLoaded", () => {
-        // JWT Payload 쿠키 검사
-        const payload = getJwtPayload();
-        if (!payload) return; // 로그인 안 된 상태 → 그냥 로그인 화면 보여줌
-
-        // 이미 로그인 상태 → 권한에 따라 페이지 이동
-        if (payload.roles?.includes("ROLE_ADMIN")) {
-            window.location.replace("/pages/admin/dashboard");
-        } else {
-            window.location.replace("/pages/rooms");
-        }
-    });
-
-    async function loginOrSignup() {
-        const username = document.getElementById('username').value.trim();
-        const password = document.getElementById('password').value.trim();
-        const resultEl = document.getElementById('login-result');
-
-        if (!username || !password) {
-            resultEl.textContent = "아이디와 비밀번호를 입력해주세요.";
-            return;
-        }
-
-        try {
-            // 로그인 시도
-            const loginResp = await post('/api/auth/login', {username, password});
-            if (loginResp.ok) {
-                resultEl.textContent = "로그인 성공!";
-
-                // JWT_PAYLOAD 쿠키에서 페이로드 가져오기
-                const payload = getJwtPayload();
-                if (!payload) {
-                    resultEl.textContent = "JWT_PAYLOAD 확인 실패";
-                    return;
-                }
-
-                // 역할(roles) 기반 페이지 이동
-                if (payload.roles?.includes('ROLE_ADMIN')) {
-                    window.location.href = '/pages/admin/dashboard';
-                } else {
-                    window.location.href = '/pages/rooms';
-                }
-
-            } else if (loginResp.status === 401) {
-                // 로그인 실패 → 회원가입 시도
-                const signupResp = await post('/api/auth/signup', {name: username, password: password});
-                if (signupResp.ok) {
-                    resultEl.textContent = "회원가입 완료. 다시 로그인 해주세요.";
-                    document.getElementById('username').value = '';
-                    document.getElementById('password').value = '';
-                } else if (signupResp.status === 409) {
-                    resultEl.textContent = "사용자가 이미 존재합니다.";
-                } else {
-                    resultEl.textContent = "회원가입 실패";
-                }
-            } else {
-                resultEl.textContent = "로그인 실패";
-            }
-        } catch (err) {
-            console.error(err);
-            resultEl.textContent = "서버와 통신 중 오류 발생";
-        }
-    }
-</script>
+<footer th:replace="~{/layout/footer.html}"></footer>
 </body>
 </html>
