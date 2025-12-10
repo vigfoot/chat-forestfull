@@ -49,6 +49,7 @@ public class ChatRoomRestController {
 
     @PostMapping("/{roomId}/enter")
     public ResponseEntity<Void> enterRoom(@PathVariable Long roomId, @RequestParam Long memberId) {
+
         boolean ok = chatRoomService.enterRoom(roomId, memberId);
         return ok ? ResponseEntity.ok().build() : ResponseEntity.status(HttpStatus.CONFLICT).build();
     }
@@ -66,7 +67,7 @@ public class ChatRoomRestController {
     }
 
     @GetMapping("/{roomId}/participants")
-    public ResponseEntity<List<ChatDTO.Participant>> getParticipants(@PathVariable Long roomId) {
+    public ResponseEntity<List<ChatDTO.Message>> getParticipants(@PathVariable Long roomId) {
         return ResponseEntity.ok(chatRoomService.getParticipants(roomId));
     }
 

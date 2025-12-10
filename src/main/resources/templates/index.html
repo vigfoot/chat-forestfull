@@ -8,7 +8,6 @@
         const ADMIN_PAGE = '/pages/admin/dashboard';
         const ROOMS_PAGE = '/pages/rooms';
         const LOGIN_API = '/api/auth/login';
-        const SIGNUP_API = '/api/auth/signup';
 
         document.addEventListener("DOMContentLoaded", () => {
             // 1. 빠른 라우팅을 위한 쿠키 체크 (DOMContentLoaded에서 한 번 실행)
@@ -45,54 +44,23 @@
             const joinBtn = document.querySelector('button.btn-slack-primary');
             joinBtn.disabled = true;
 
-            // showLoadingModal();
-
             try {
-                // 1. Attempt Login
                 const loginResp = await post(LOGIN_API, {username, password});
 
                 if (loginResp.ok) {
+                    // SUCCESS: User is logged in
                     const payload = getJwtPayload();
                     const targetPage = payload.roles?.includes('ROLE_ADMIN') ? ADMIN_PAGE : ROOMS_PAGE;
-
-                    // hideLoadingModal();
 
                     showModal("Login Successful", "Welcome! Redirecting to the service.", () => {
                         window.location.replace(targetPage);
                     });
                     return;
 
-                } else if (loginResp.status === 401) {
-                    showModal("Login Failed", "❗ The password you entered is incorrect. Please try again.", null);
+                } else if (loginResp.status === 401 || loginResp.status === 404) {
+                    // **[CHANGED]** 아이디 없음 (404) 또는 비밀번호 오류 (401) 모두 통합 처리
+                    showModal("Login Failed", "❗ The ID or password you entered is incorrect.", null);
 
-                } else if (loginResp.status === 400) {
-                    const signupPrompt = `
-                    <p>The user ID <strong>${username}</strong> was not found.</p>
-                    <p>Would you like to create a new account now?</p>
-                `;
-
-                    showModal("Account Not Found", signupPrompt, async () => {
-                        const signupResp = await post(SIGNUP_API, {name: username, password: password});
-
-                        if (signupResp.ok) {
-                            showModal("Sign Up Complete", "🎉 Account successfully created. Attempting to log you in...", async () => {
-                                const finalLoginResp = await post(LOGIN_API, {username, password});
-
-                                if (finalLoginResp.ok) {
-                                    const payload = getJwtPayload();
-                                    const targetPage = payload.roles?.includes('ROLE_ADMIN') ? ADMIN_PAGE : ROOMS_PAGE;
-                                    window.location.replace(targetPage);
-                                } else {
-                                    showModal("Critical Error", "Account was created, but immediate login failed.", null);
-                                }
-                            });
-
-                        } else if (signupResp.status === 409) {
-                            showModal("Sign Up Failed", "❗ The username already exists.", null);
-                        } else {
-                            showModal("Sign Up Failed", "❌ Failed to sign up due to an unknown server error.", null);
-                        }
-                    });
                 } else {
                     showModal("Login Failed", `❌ Failed to log in due to a server error. (Status: ${loginResp.status})`, null);
                 }
@@ -100,13 +68,77 @@
                 console.error(err);
                 showModal("Communication Error", "⚠️ An issue occurred while communicating with the server. Please check your network status.", null);
             } finally {
-                // hideLoadingModal();
                 joinBtn.disabled = false;
             }
         }
     </script>
     <style>
-        /* ... (styles are the same) ... */
+        /* GitHub Style Variables */
+        :root {
+            --github-dark-bg: #0d1117;       /* 짙은 배경 */
+            --github-card-bg: #161b22;       /* 카드/폼 배경 (약간 밝음) */
+            --github-text-primary: #f0f6fc;  /* 주 텍스트 (밝은 흰색) */
+            --github-text-secondary: #8b949e; /* 보조 텍스트 */
+            --github-border: #30363d;        /* 경계선 */
+            --github-accent: #238636;        /* GitHub Green (버튼/액센트 컬러) */
+            --github-accent-hover: #2ea043;
+        }
+
+        .bg-slack-light { /* 기존 클래스를 재활용하여 배경색 변경 */
+            background-color: var(--github-dark-bg);
+        }
+
+        /* **[CHANGE]** 로그인 카드 스타일: 각진 모서리, 어두운 배경, 그림자 제거 */
+        .login-card-slack {
+            max-width: 400px;
+            padding: 40px;
+            border-radius: 6px; /* Slack보다 각지게 */
+            box-shadow: none; /* 그림자 제거 */
+            border: 1px solid var(--github-border); /* 옅은 테두리 */
+            background: var(--github-card-bg);
+            color: var(--github-text-primary);
+        }
+
+        .login-card-slack h2 {
+            color: var(--github-text-primary);
+        }
+
+        /* 입력 필드 스타일 */
+        .form-control-lg {
+            background-color: var(--github-dark-bg); /* 입력 필드는 배경색에 가깝게 */
+            color: var(--github-text-primary);
+            border: 1px solid var(--github-border);
+            border-radius: 6px;
+        }
+        .form-control-lg::placeholder {
+            color: var(--github-text-secondary);
+        }
+        .form-control-lg:focus {
+            border-color: var(--github-accent); /* GitHub Green 포커스 */
+            box-shadow: 0 0 0 0.2rem rgba(35, 134, 54, 0.4);
+            background-color: var(--github-dark-bg);
+            color: var(--github-text-primary);
+        }
+
+        /* **[CHANGE]** 버튼 스타일: GitHub Green 적용 */
+        .btn-slack-primary {
+            background-color: var(--github-accent);
+            border-color: var(--github-accent);
+            color: #ffffff;
+            font-weight: 600 !important; /* GitHub 버튼은 굵은 폰트 사용 */
+            transition: background-color 0.1s;
+        }
+
+        .btn-slack-primary:hover {
+            background-color: var(--github-accent-hover);
+            border-color: var(--github-accent-hover);
+            color: #ffffff;
+        }
+
+        /* 텍스트 링크 색상 */
+        .text-decoration-none {
+            color: var(--github-accent) !important;
+        }
     </style>
 </head>
 <body class="bg-slack-light d-flex flex-column min-vh-100">
@@ -114,10 +146,9 @@
 <main class="container my-auto">
     <div class="row justify-content-center">
         <div class="col-12">
-
             <div class="text-center mb-5 mt-5">
-                <span class="slack-logo-text">ForestFull</span>
-                <p class="text-muted mt-2 fw-semibold">Sign in to your workspace or create an account.</p>
+                <span class="github-logo-text">Chat ForestFull</span>
+                <p class="text-muted mt-2 fw-semibold">Sign in to your workspace.</p>
             </div>
 
             <div class="card login-card-slack mx-auto">
@@ -130,15 +161,22 @@
                     </div>
                     <div class="mb-4">
                         <label for="password" class="form-label visually-hidden">Password</label>
-                        <input id="password" type="password" class="form-control form-control-lg" placeholder="Enter your password">
+                        <input id="password" type="password" class="form-control form-control-lg" placeholder="Enter your password"
+                               onkeydown="if(event.key === 'Enter') loginOrSignup()">
                     </div>
 
-                    <button type="button" class="btn btn-slack-primary btn-lg w-100 mb-4 fw-bold" onclick="loginOrSignup()">
-                        Join
+                    <button type="button" class="btn btn-slack-primary btn-lg w-100 mb-3 fw-bold" onclick="loginOrSignup()">
+                        Sign In
                     </button>
+
+                    <div class="text-center">
+                        <p class="text-muted mb-0">Don't have an account?</p>
+                        <a href="/pages/signup" class="text-decoration-none fw-bold" style="color: var(--slack-purple);">
+                            Sign Up
+                        </a>
+                    </div>
                 </div>
             </div>
-
         </div>
     </div>
 </main>

@@ -29,7 +29,7 @@ public class SecurityConfig {
     private final CustomUserDetailsService customUserDetailsService;
     private static final AntPathMatcher antPathMatcher = new AntPathMatcher();
     private static final String[] PUBLIC_RESOURCES = {"/", "/favicon.ico", "/css/**", "/js/**", "/images/**", "/webjars/**"};
-    private static final String[] ALLOW_PATHS = {"/api/auth/signup", "/api/auth/login"};
+    private static final String[] ALLOW_PATHS = {"/api/auth/login", "/pages/signup", "/api/auth/signup", "/api/auth/check-username/**"};
 
     public static boolean isPublicResources(String path) {
         return Arrays.stream(PUBLIC_RESOURCES).anyMatch(pattern -> antPathMatcher.match(pattern, path));
@@ -46,7 +46,7 @@ public class SecurityConfig {
                 .formLogin(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(reg -> reg
                         .requestMatchers(PUBLIC_RESOURCES).permitAll()
-                        .requestMatchers("/api/**").permitAll()
+                        .requestMatchers("/api/**", "/pages/**").permitAll()
                         .requestMatchers("/pages/admin/**", "/admin/**").hasRole("ADMIN")
                         .requestMatchers("/pages/management/**", "/management/**").hasAnyRole("ADMIN", "MANAGER")
                         .anyRequest().authenticated()

@@ -118,4 +118,14 @@ public class AuthController {
     ResponseEntity<?> signup(@RequestBody User member) {
         return customUserService.signup(member) ? ResponseEntity.ok().build() : ResponseEntity.badRequest().build();
     }
+
+    @PostMapping("/check-username/{username}")
+    ResponseEntity<?> checkUsername(@PathVariable String username) {
+        try {
+            customUserService.loadUserByUsername(username);
+            return ResponseEntity.unprocessableEntity().build();
+        }catch (UsernameNotFoundException e) {
+            return ResponseEntity.ok().build();
+        }
+    }
 }

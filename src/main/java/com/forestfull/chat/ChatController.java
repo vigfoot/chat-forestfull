@@ -26,18 +26,10 @@ public class ChatController {
     // 채팅 메시지 전송
     @MessageMapping("/chat.sendMessage")
     public void sendMessage(@Payload ChatDTO.Message message, Principal principal) {
-        if (!(principal instanceof User)) return;
-
-        User user = (User) principal;
-        message.setUser(user);
         message.setType(ChatDTO.Message.MessageType.TALK);
-        message.setCreatedBy(user.getUsername());
 
         ChatDTO.Message saved = chatMessageService.saveMessage(message);
-        simpMessagingTemplate.convertAndSend(
-                "/topic/rooms/" + saved.getRoomId(),
-                saved
-        );
+        simpMessagingTemplate.convertAndSend("/topic/rooms/" + saved.getRoomId(), saved);
     }
 
     // 입장 이벤트
@@ -61,7 +53,7 @@ public class ChatController {
                 enterMsg
         );
 
-        List<ChatDTO.Participant> updated = chatRoomService.getParticipants(participant.getRoomId());
+        List<ChatDTO.Message> updated = chatRoomService.getParticipants(participant.getRoomId());
         simpMessagingTemplate.convertAndSend(
                 "/topic/rooms/" + participant.getRoomId() + "/participants",
                 updated
@@ -89,7 +81,8 @@ public class ChatController {
                 leaveMsg
         );
 
-        List<ChatDTO.Participant> updated = chatRoomService.getParticipants(participant.getRoomId());
+
+        List<ChatDTO.Message> updated = chatRoomService.getParticipants(participant.getRoomId());
         simpMessagingTemplate.convertAndSend(
                 "/topic/rooms/" + participant.getRoomId() + "/participants",
                 updated

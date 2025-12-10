@@ -8,7 +8,7 @@
         <result property="roomId" column="room_id"/>
         <result property="type" column="type"/>
         <result property="message" column="message"/>
-        <result property="createAt" column="created_at"/>
+        <result property="createdAt" column="created_at"/>
         <result property="user.id" column="member_id"/>
         <result property="user.name" column="username"/>
         <result property="user.displayName" column="display_name"/>
@@ -18,7 +18,7 @@
     <!-- 메시지 저장 -->
     <insert id="saveMessage" parameterType="com.forestfull.chat.ChatDTO$Message" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO chat_forestfull.chat_message (room_id, member_id, message, created_by)
-        VALUES (#{roomId}, #{userPrincipal.memberId}, #{message}, #{userPrincipal.displayName})
+        VALUES (#{roomId}, #{user.id}, #{message}, #{user.name})
     </insert>
 
     <!-- 최근 메시지 조회 -->

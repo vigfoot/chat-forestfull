@@ -147,8 +147,14 @@
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(5px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(5px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
     </style>
 </head>
@@ -201,8 +207,10 @@
             // 입장 이벤트 전송
             stompClient.send("/app/chat.enter", {}, JSON.stringify({
                 roomId,
-                memberId: MY_ID,
-                displayName: MY_NAME
+                user: {
+                    id: MY_ID,
+                    name: MY_NAME,
+                }
             }));
         }, error => {
             console.error("WebSocket 연결 실패:", error);
@@ -221,9 +229,11 @@
     function sendMessage(text) {
         if (!text) return;
         stompClient.send("/app/chat.sendMessage", {}, JSON.stringify({
-            roomId,
-            memberId: MY_ID,
-            displayName: MY_NAME,
+            roomId: roomId,
+            user: {
+                id: MY_ID,
+                name: MY_NAME,
+            },
             type: "TALK",
             message: text
         }));
@@ -232,9 +242,11 @@
     function leaveRoom() {
         if (!stompClient) return;
         stompClient.send("/app/chat.leave", {}, JSON.stringify({
-            roomId,
-            memberId: MY_ID,
-            displayName: MY_NAME
+            roomId: roomId,
+            user: {
+                id: MY_ID,
+                name: MY_NAME,
+            }
         }));
     }
 
@@ -276,10 +288,11 @@
             div.classList.add("participant");
 
             const avatar = document.createElement("img");
-            avatar.src = u.profileImage || "/img/default-avatar.png";
+            avatar.src = u.user.profileImage || "/img/default-avatar.png";
 
             const name = document.createElement("span");
-            name.textContent = u.displayName;
+            name.textContent = u.user.name;
+
 
             div.appendChild(avatar);
             div.appendChild(name);
@@ -294,7 +307,7 @@
         fetch(`/api/chat/rooms/${roomId}/messages`, {credentials: 'include'})
             .then(res => res.json())
             .then(messages => {
-                messages.forEach(addMessage);
+                messages.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt)).forEach(addMessage);
             });
 
         // 메시지 전송 이벤트

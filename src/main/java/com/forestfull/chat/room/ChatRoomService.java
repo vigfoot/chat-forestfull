@@ -42,7 +42,7 @@ public class ChatRoomService {
         return affected > 0;
     }
 
-    public List<ChatDTO.Participant> getParticipants(Long roomId) {
+    public List<ChatDTO.Message> getParticipants(Long roomId) {
         return chatRoomMapper.findParticipants(roomId);
     }
 

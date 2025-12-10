@@ -3,15 +3,26 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
 <mapper namespace="com.forestfull.chat.room.ChatRoomMapper">
+    <resultMap id="MessageResultMap" type="com.forestfull.chat.ChatDTO$Message">
+        <id property="id" column="id"/>
+        <result property="roomId" column="room_id"/>
+        <result property="type" column="type"/>
+        <result property="message" column="message"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="user.id" column="member_id"/>
+        <result property="user.name" column="username"/>
+        <result property="user.displayName" column="display_name"/>
+        <result property="user.profileImage" column="profile_image"/>
+    </resultMap>
 
     <select id="findAllRooms" resultType="com.forestfull.chat.ChatDTO$Room">
-        SELECT id, name, created_by AS createdBy, created_at AS createdAt, updated_at AS updatedAt
+        SELECT id, name, created_by, created_at, updated_at
         FROM chat_forestfull.chat_room
         ORDER BY updated_at DESC
     </select>
 
     <select id="findRoomById" parameterType="long" resultType="com.forestfull.chat.ChatDTO$Room">
-        SELECT id, name, created_by AS createdBy, created_at AS createdAt, updated_at AS updatedAt
+        SELECT id, name, created_by, created_at, updated_at
         FROM chat_forestfull.chat_room
         WHERE id = #{roomId}
     </select>
@@ -25,13 +36,15 @@
         DELETE FROM chat_forestfull.chat_room WHERE id = #{roomId}
     </delete>
 
-    <select id="findParticipants" parameterType="long" resultType="com.forestfull.chat.ChatDTO$Participant">
+    <select id="findParticipants" parameterType="long" resultMap="MessageResultMap">
         SELECT
-            cp.member_id AS memberId,
-            cp.room_id   AS roomId,
-            cp.display_name AS displayName,
-            cp.profile_image AS profileImage
+            cp.room_id
+            , m.id AS member_id
+            , m.name AS username
+            , m.display_name
+            , m.profile_image
         FROM chat_forestfull.chat_participant cp
+            JOIN chat_forestfull.member m ON cp.member_id = m.id
         WHERE cp.room_id = #{roomId}
     </select>
 

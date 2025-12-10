@@ -1,6 +1,7 @@
 package com.forestfull.chat.room;
 
 import com.forestfull.chat.ChatDTO;
+import com.forestfull.domain.User;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -17,7 +18,7 @@ public interface ChatRoomMapper {
 
     int deleteRoom(@Param("roomId") Long roomId);
 
-    List<ChatDTO.Participant> findParticipants(@Param("roomId") Long roomId);
+    List<ChatDTO.Message> findParticipants(@Param("roomId") Long roomId);
 
     boolean isUserInRoom(@Param("roomId") Long roomId, @Param("memberId") Long memberId);
 

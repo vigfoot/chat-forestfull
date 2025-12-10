@@ -18,15 +18,6 @@ function connectWebSocket(callback) {
     });
 }
 
-/** WebSocket 연결 종료 */
-function disconnectWebSocket() {
-    if (stompClient !== null) {
-        stompClient.disconnect(() => {
-            console.log("WebSocket Disconnected");
-        });
-    }
-}
-
 /**
  * 공통 HTTP 요청 함수
  * - 모든 요청에 쿠키 포함

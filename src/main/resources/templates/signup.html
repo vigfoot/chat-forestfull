@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <script th:replace="~{/layout/config.html}"></script>
+    <title>Chat ForestFull | Sign Up</title>
+
+    <style>
+        /* GitHub Style Variables (유지) */
+        :root {
+            --github-dark-bg: #0d1117;
+            --github-card-bg: #161b22;
+            --github-text-primary: #f0f6fc;
+            --github-text-secondary: #8b949e;
+            --github-border: #30363d;
+            --github-accent: #238636;
+            --github-accent-hover: #2ea043;
+            --github-red: #E01E5A;
+        }
+
+        /* 배경 그라디언트 및 폰트 */
+        .bg-slack-light {
+            background: radial-gradient(circle at top left, #1a232e 0%, var(--github-dark-bg) 70%);
+            min-height: 100vh;
+        }
+
+        .text-muted {
+            color: var(--github-text-secondary) !important;
+            font-size: 1rem;
+        }
+
+        /* **[FIX]** 폼 너비 조정 (Grid로 제어하기 위해 max-width는 다시 좁게 유지) */
+        .login-card-slack {
+            max-width: 440px; /* 적당한 크기로 되돌림 */
+            padding: 30px;
+            border-radius: 6px;
+            box-shadow: none;
+            border: 1px solid var(--github-border);
+            background: var(--github-card-bg);
+            color: var(--github-text-primary);
+        }
+
+        .login-card-slack h2 {
+            color: var(--github-text-primary);
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        /* 인풋 필드 스타일 조정 */
+        .form-control-lg {
+            background-color: var(--github-dark-bg);
+            color: var(--github-text-primary);
+            border: 1px solid var(--github-border);
+            border-radius: 6px;
+            font-size: 1rem;
+        }
+
+        /* ID Check 버튼 스타일 */
+        .btn-check-custom {
+            background-color: var(--github-accent);
+            color: white;
+            border-color: var(--github-accent);
+            /* 둥근 모서리는 Bootstrap이 처리하도록 맡김 */
+        }
+
+        /* **[FIX]** Input Group에서 버튼이 붙을 때 인풋 필드의 오른쪽 모서리를 기본값으로 */
+        .input-group > .form-control:not(:first-child):not(.dropdown-toggle) {
+            border-top-right-radius: 6px;
+            border-bottom-right-radius: 6px;
+        }
+
+        /* **[NEW]** 반응형 그리드 폼 */
+        /* MD 사이즈 이상에서 라벨과 인풋을 인라인으로 정렬 */
+        @media (min-width: 768px) {
+            .form-row-custom > .form-label-custom {
+                text-align: right;
+            }
+        }
+
+        /* 모바일에서는 라벨과 인풋이 분리되도록 */
+        @media (max-width: 767.98px) {
+            .form-row-custom > .form-label-custom {
+                text-align: left;
+                margin-bottom: 0.25rem;
+            }
+        }
+    </style>
+</head>
+<body class="bg-slack-light d-flex flex-column min-vh-100">
+
+<main class="container my-auto">
+    <div class="row justify-content-center">
+        <div class="col-12">
+            <div class="card login-card-slack mx-auto">
+                <div class="card-body p-0">
+                    <h2 class="h4 text-center mb-4 fw-bold">Create an Account</h2>
+
+                    <div class="mb-3">
+                        <div class="row form-row-custom align-items-center">
+                            <label for="username" class="col-md-5 col-12 form-label-custom text-muted">ID</label>
+
+                            <div class="col-md-7 col-12">
+                                <div class="input-group input-group-lg">
+                                    <input id="username" type="text" class="form-control form-control-lg" placeholder="e.g., james"
+                                           aria-label="ID input"
+                                           oninput="isUsernameAvailable = false;" style="z-index: 1;">
+
+                                    <button type="button" class="btn btn-sm btn-check-custom"
+                                            onclick="checkUsername()">
+                                        Check
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-5 d-none d-md-block"></div>
+                            <div class="col-md-7 col-12">
+                                <small id="usernameStatus" class="form-text" style="height: 1.2rem;"></small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="row form-row-custom align-items-center">
+                            <label for="displayName" class="col-md-5 col-12 form-label-custom text-muted">Display Name</label>
+                            <div class="col-md-7 col-12">
+                                <input id="displayName" type="text" class="form-control form-control-lg" placeholder="e.g., Forest King"
+                                       aria-label="Display Name input">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="row form-row-custom align-items-center">
+                            <label for="password" class="col-md-5 col-12 form-label-custom text-muted">Password</label>
+                            <div class="col-md-7 col-12">
+                                <input id="password" type="password" class="form-control form-control-lg" placeholder="Your password"
+                                       aria-label="Password input">
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <div class="mb-3">
+                        <div class="row form-row-custom align-items-center">
+                            <label for="password" class="col-md-5 col-12 form-label-custom text-muted">Password Confirm</label>
+                            <div class="col-md-7 col-12">
+                                <input id="passwordConfirm" type="password" class="form-control form-control-lg" placeholder="Confirm your password"
+                                       aria-label="Confirm Password input">
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="button" class="btn btn-slack-primary btn-lg w-100 mb-3 fw-bold" onclick="signup()">
+                        Sign Up
+                    </button>
+
+                    <div class="text-center">
+                        <a href="/pages/login" class="text-decoration-none fw-bold" style="color: var(--github-accent);">
+                            Already have an account? Sign In
+                        </a>
+                    </div>
+
+                    <div class="text-center mt-3">
+                        <a href="/" class="text-decoration-none fw-bold" style="color: var(--github-text-secondary);">
+                            ← Back to Main Page
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<script>
+    const SIGNUP_API = '/api/auth/signup';
+    const CHECK_USERNAME_API = '/api/auth/check-username';
+    const LOGIN_PAGE = '/pages/login';
+
+    // **[NEW]** 중복 확인 상태를 저장하는 전역 변수
+    let isUsernameAvailable = false;
+
+    // 에러 표시를 위한 색상 변수를 JavaScript에서 사용하기 위해 임시 정의
+    const GITHUB_RED = '#E01E5A';
+    const GITHUB_ACCENT = '#238636';
+    const GITHUB_TEXT_SECONDARY = '#8b949e';
+
+    /**
+     * ID (Username) 중복을 확인합니다.
+     */
+    async function checkUsername() {
+        const username = document.getElementById('username').value.trim();
+        const usernameStatus = document.getElementById('usernameStatus');
+
+        usernameStatus.textContent = '';
+        isUsernameAvailable = false;
+
+        if (!username) {
+            usernameStatus.textContent = 'Please enter an ID.';
+            usernameStatus.style.color = GITHUB_TEXT_SECONDARY;
+            return;
+        }
+
+        try {
+            // post 함수가 Promise를 반환한다고 가정하고, 중복 확인은 GET 요청으로 처리
+            const checkResp = await post(`${CHECK_USERNAME_API}/${username}`);
+
+            if (checkResp.ok) {
+                // SUCCESS (200 OK): 사용 가능한 ID
+                isUsernameAvailable = true;
+                usernameStatus.textContent = '✅ Available ID.';
+                usernameStatus.style.color = GITHUB_ACCENT;
+            } else if (checkResp.status === 409) {
+                // 409 Conflict: 이미 사용 중인 ID
+                isUsernameAvailable = false;
+                usernameStatus.textContent = '❌ ID already taken.';
+                usernameStatus.style.color = GITHUB_RED;
+            } else {
+                // Other errors
+                usernameStatus.textContent = `⚠️ The ID already exists`;
+                usernameStatus.style.color = GITHUB_TEXT_SECONDARY;
+            }
+        } catch (err) {
+            console.error(err);
+            usernameStatus.textContent = '⚠️ Network error during check.';
+            usernameStatus.style.color = GITHUB_RED;
+        }
+    }
+
+    async function signup() {
+        const username = document.getElementById('username').value.trim();
+        const displayName = document.getElementById('displayName').value.trim();
+        const password = document.getElementById('password').value.trim();
+        const passwordConfirm = document.getElementById('passwordConfirm').value.trim();
+
+        // 1. 필수 입력값 체크
+        if (!username || !displayName || !password || !passwordConfirm) {
+            showModal("Input Error", "All fields are required.", null);
+            return;
+        }
+
+        // 2. 비밀번호 일치 체크
+        if (password !== passwordConfirm) {
+            showModal("Password Mismatch", "Password and confirmation password do not match.", null);
+            return;
+        }
+
+        // 3. 중복 확인 상태 체크
+        if (!isUsernameAvailable) {
+            showModal("Validation Required", "Please check ID availability before signing up.", null);
+            return;
+        }
+
+        const signupBtn = document.querySelector('button.btn-slack-primary');
+        signupBtn.disabled = true;
+
+        try {
+            const signupData = {
+                name: username,
+                password: password,
+                displayName: displayName
+            };
+
+            const signupResp = await post(SIGNUP_API, signupData);
+
+            if (signupResp.ok) {
+                showModal("Sign Up Complete", "🎉 Account successfully created! Please log in.", () => {
+                    showModal('Success Sign Up', 'Please log in');
+                    window.location.replace(LOGIN_PAGE);
+                });
+            } else if (signupResp.status === 409) {
+                // 409 Conflict: 이미 존재하는 username (중복 확인을 통과했더라도 다시 한 번 서버에서 확인)
+                showModal("Sign Up Failed", "❗ The ID (username) is already taken. Please choose another one.", null);
+            } else {
+                showModal("Sign Up Failed", `❌ Failed to sign up due to a server error. (Status: ${signupResp.status})`, null);
+            }
+        } catch (err) {
+            console.error(err);
+            showModal("Communication Error", "⚠️ An issue occurred while communicating with the server. Please check your network status.", null);
+        } finally {
+            signupBtn.disabled = false;
+        }
+    }
+</script>
+
+<footer th:replace="~{/layout/footer.html}"></footer>
+</body>
+</html>

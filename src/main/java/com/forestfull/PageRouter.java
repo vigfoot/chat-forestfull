@@ -21,18 +21,23 @@ public class PageRouter {
     }
 
     @GetMapping("/pages/admin/users")
-    public String adminUsers() {
+    String adminUsers() {
         return "admin/users";
     }
 
     @GetMapping("/pages/rooms")
-    public String chatRooms() {
+    String chatRooms() {
         return "chat/rooms";
     }
 
     @GetMapping("/pages/rooms/{roomId}")
-    public String roomPage(@PathVariable Long roomId, Model model) {
+    String roomPage(@PathVariable Long roomId, Model model) {
         model.addAttribute("roomId", roomId);
         return "chat/room";
+    }
+
+    @GetMapping("/pages/signup")
+    String signup(){
+        return "signup";
     }
 }
