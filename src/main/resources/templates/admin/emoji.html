@@ -1,43 +1,56 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
-    <meta charset="UTF-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Emoji 관리</title>
-    <link rel="stylesheet" href="/webjars/bootstrap/5.3.8/css/bootstrap.min.css">
-    <script src="/webjars/bootstrap/5.3.8/js/bootstrap.bundle.min.js"></script>
-    <!-- 공통 함수: 사용자가 제공한 script.js (httpRequest, get, del, httpFileRequest 등) -->
-    <script src="/js/script.js"></script>
+    <script th:replace="~{/layout/config.html}"></script>
+
+    <title>Chat ForestFull | Emoji Management</title>
+
     <style>
+        /* Override light theme defaults for this page */
         body {
-            font-family: Arial, sans-serif;
-            padding: 20px;
-            background: #f5f5f5;
+            background-color: var(--cf-dark-bg-primary);
+            color: var(--cf-text-primary);
         }
 
-        h1 {
+        /* Drop Zone Styles */
+        #drop-zone {
+            border: 2px dashed var(--cf-border-color);
+            padding: 30px;
             text-align: center;
+            cursor: pointer;
+            border-radius: 8px;
+            background: var(--cf-dark-bg-secondary);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+            color: var(--cf-text-secondary);
+            transition: all 0.2s ease;
         }
 
+        #drop-zone:hover, #drop-zone.hover {
+            border-color: var(--cf-accent-primary);
+            color: var(--cf-accent-primary);
+        }
+
+        /* Emoji List Container */
         #emoji-list {
             display: flex;
             flex-wrap: wrap;
-            gap: 10px;
-            margin-top: 20px;
+            gap: 15px;
+            margin-top: 30px;
             justify-content: center;
         }
 
+        /* Single Emoji Item */
         .emoji-item {
             position: relative;
             width: 100px;
             height: 100px;
-            border: 1px solid #ccc;
+            border: 1px solid var(--cf-border-color);
             border-radius: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
-            background: #fff;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            background: var(--cf-dark-bg-tertiary);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
         }
 
         .emoji-item img {
@@ -46,48 +59,54 @@
             border-radius: 4px;
         }
 
+        /* Delete Button */
         .delete-btn {
             position: absolute;
-            top: 2px;
-            right: 2px;
-            background: red;
+            top: -8px;
+            right: -8px;
+            background: #dc3545; /* Bootstrap danger */
             color: #fff;
-            border: none;
+            border: 2px solid var(--cf-dark-bg-tertiary);
             border-radius: 50%;
-            width: 20px;
-            height: 20px;
+            width: 24px;
+            height: 24px;
             cursor: pointer;
             font-weight: bold;
-            line-height: 18px;
+            line-height: 1.2;
+            padding: 0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            transition: background 0.2s;
         }
 
-        #drop-zone {
-            border: 2px dashed #aaa;
-            padding: 20px;
-            text-align: center;
-            cursor: pointer;
-            border-radius: 8px;
-            background: #fff;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        .delete-btn:hover {
+            background: #c82333;
         }
 
-        #drop-zone.hover {
-            border-color: #333;
-        }
-
+        /* Canvas Pop-up & Overlay (RESPONSIVE) */
         #canvas-popup {
             display: none;
             position: fixed;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background: #fff;
+            background: var(--cf-dark-bg-secondary);
             padding: 20px;
             z-index: 1001;
             border-radius: 10px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-            width: 720px;
-            max-width: 95%;
+            box-shadow: 0 0 30px rgba(187, 134, 252, 0.2);
+            border: 1px solid var(--cf-border-color);
+            width: 95vw; /* Use 95% of viewport width */
+            max-width: 760px; /* Max width for large screens */
+            max-height: 95vh;
+            overflow-y: auto;
+        }
+
+        #popup-content-wrapper {
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+            justify-content: center;
+            flex-wrap: wrap; /* 모바일에서 내용이 아래로 떨어지도록 */
         }
 
         #popup-overlay {
@@ -97,21 +116,36 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.5);
+            background: rgba(0, 0, 0, 0.7);
             z-index: 1000;
         }
 
         canvas {
-            border: 1px solid #ccc;
+            border: 1px solid var(--cf-border-color);
             display: block;
             margin: auto;
-            background: #eee;
+            background: var(--cf-dark-bg-primary);
+            /* Canvas will be sized by JS for responsiveness */
+            max-width: 100%;
+            height: auto;
         }
 
+        /* Preview & Template Container */
+        #preview-controls {
+            display:flex;
+            flex-direction:column;
+            gap:8px;
+            align-items:center;
+            min-width: 128px; /* Ensure space for preview box */
+        }
+
+        /* Controls Panel */
         .control-panel {
-            margin-top: 10px;
+            margin-top: 15px;
+            padding: 15px 0;
+            border-top: 1px solid var(--cf-border-color);
             display: flex;
-            gap: 10px;
+            gap: 20px;
             justify-content: center;
             flex-wrap: wrap;
         }
@@ -120,107 +154,134 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            font-size: 12px;
+            font-size: 14px;
+            color: var(--cf-text-secondary);
         }
 
         .control-panel input[type="color"], .control-panel input[type="range"] {
             margin-top: 5px;
+            appearance: none;
+            width: 100px;
+            height: 6px;
+            background: var(--cf-dark-bg-tertiary);
+            border-radius: 5px;
+        }
+        .control-panel input[type="range"]::-webkit-slider-thumb {
+            appearance: none;
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            background: var(--cf-accent-primary);
+            cursor: pointer;
         }
 
         .template-btn {
-            background: #007bff;
-            color: #fff;
+            background: var(--cf-accent-primary);
+            color: #000;
             border: none;
             padding: 5px 10px;
             border-radius: 4px;
             cursor: pointer;
+            font-weight: 600;
         }
 
         .template-btn:hover {
-            background: #0056b3;
-        }
-
-        .small {
-            font-size: 12px;
+            background: var(--cf-accent-hover);
         }
 
         #preview-box {
             width: 128px;
             height: 128px;
-            border: 1px solid #ccc;
-            margin-left: 10px;
+            border: 2px solid var(--cf-accent-primary);
             display: inline-block;
-            vertical-align: top;
-            background: #fff;
+            background: var(--cf-dark-bg-primary);
+            border-radius: 4px;
         }
 
-        .controls-row {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-
-        .handle {
-            position: absolute;
-            width: 12px;
-            height: 12px;
-            background: #fff;
-            border: 2px solid #333;
-            border-radius: 2px;
-            box-sizing: border-box;
+        /* Mobile adjustment for wrapping content */
+        @media (max-width: 768px) {
+            #popup-content-wrapper {
+                flex-direction: column;
+                align-items: center;
+            }
         }
     </style>
 </head>
-<body>
-<h1>Emoji 관리</h1>
+<body class="d-flex flex-column min-vh-100">
 
-<div id="drop-zone">여기에 이미지 드래그 또는 클릭하여 업로드</div>
-<div id="emoji-list"></div>
+<header th:replace="~{/layout/header.html :: header}"></header>
+
+<main class="container py-5 flex-grow-1">
+    <div class="row justify-content-center">
+        <div class="col-sm-12 col-lg-10">
+            <h2 class="text-center mb-5 fw-bold" style="color: var(--cf-accent-primary);">
+                <i class="bi bi-emoji-heart-eyes me-2"></i> Emoji Management
+            </h2>
+
+            <div id="drop-zone" class="mb-4">
+                <i class="bi bi-cloud-arrow-up-fill me-2" style="font-size: 1.5rem;"></i>
+                Drag image here or click to upload
+            </div>
+
+            <hr style="border-color: var(--cf-border-color);">
+
+            <div id="emoji-list">
+                <p class="text-center text-secondary w-100 mt-3">Loading emojis...</p>
+            </div>
+
+        </div>
+    </div>
+</main>
+
+<footer th:replace="~{/layout/footer.html}"></footer>
 
 <div id="popup-overlay"></div>
 <div id="canvas-popup">
-    <div style="display:flex; gap:12px; align-items:flex-start; justify-content:center;">
+    <h4 class="mb-3 text-center" style="color: var(--cf-accent-primary);">Image Editor</h4>
+
+    <div id="popup-content-wrapper">
+
         <canvas id="emoji-canvas" width="512" height="512"></canvas>
-        <div style="display:flex; flex-direction:column; gap:8px; align-items:center;">
-            <div id="preview-box" title="미리보기"></div>
-            <div class="small">템플릿</div>
-            <button id="template-256" class="template-btn">256px</button>
+
+        <div id="preview-controls">
+            <div id="preview-box" title="Preview"></div>
+            <div class="text-secondary small">Template</div>
+            <button id="template-256" class="template-btn w-100">256 x 256px</button>
         </div>
     </div>
 
-    <div class="control-panel" style="margin-top:12px;">
-        <label>배경
-            <div style="display:flex; gap:6px; margin-top:6px;">
-                <label><input type="radio" name="bgOption" value="transparent" checked> 투명</label>
-                <label><input type="radio" name="bgOption" value="color"> 색상</label>
+    <div class="control-panel">
+
+        <label>Background
+            <div style="display:flex; gap:10px; margin-top:6px;">
+                <label class="text-white"><input type="radio" name="bgOption" value="transparent" checked> Transparent</label>
+                <label class="text-white"><input type="radio" name="bgOption" value="color"> Color</label>
             </div>
-            <input type="color" id="bg-color" value="#ffffff" disabled>
+            <input type="color" id="bg-color" value="#121212" disabled>
         </label>
 
-        <label>회전<input type="range" id="rotate" min="0" max="360" value="0"></label>
-        <label>반전
-            <button id="flip">↔</button>
+        <label>Rotate<input type="range" id="rotate" min="0" max="360" value="0"></label>
+        <label>Flip (H)
+            <button id="flip" class="btn btn-sm btn-secondary mt-1">↔</button>
         </label>
 
-        <label>밝기<input type="range" id="brightness" min="0" max="200" value="100"></label>
-        <label>대비<input type="range" id="contrast" min="0" max="200" value="100"></label>
-        <label>채도<input type="range" id="saturation" min="0" max="200" value="100"></label>
+        <label>Brightness<input type="range" id="brightness" min="0" max="200" value="100"></label>
+        <label>Contrast<input type="range" id="contrast" min="0" max="200" value="100"></label>
+        <label>Saturation<input type="range" id="saturation" min="0" max="200" value="100"></label>
     </div>
 
-    <div style="margin-top:10px; display:flex; gap:10px; justify-content:center;">
-        <button id="confirm-btn" class="btn btn-primary">확인</button>
-        <button id="cancel-btn" class="btn btn-secondary">취소</button>
+    <div style="margin-top:20px; display:flex; gap:15px; justify-content:center;">
+        <button id="confirm-btn" class="btn btn-primary"><i class="bi bi-check-circle me-1"></i> Confirm & Upload</button>
+        <button id="cancel-btn" class="btn btn-secondary"><i class="bi bi-x-circle me-1"></i> Cancel</button>
     </div>
 </div>
 
 <input type="file" id="file-input" accept="image/*" style="display:none;">
 
 <script>
-    /* ========== 전역 (script.js 의 get, del, httpFileRequest가 필요) ========== */
+    /* ========== Global Variables and DOM Elements ========== */
 
-    /* DOM */
+    /* DOM Elements */
     const emojiList = document.getElementById('emoji-list');
     const dropZone = document.getElementById('drop-zone');
     const fileInput = document.getElementById('file-input');
@@ -241,180 +302,218 @@
     const saturationInput = document.getElementById('saturation');
     const templateBtn = document.getElementById('template-256');
 
+    /* State Management */
     let uploadedFile = null;
     let img = new Image();
     let imgLoaded = false;
-
-    /* selection (정사각) */
-    let selection = {x: 0, y: 0, size: 256};
-
-    /* transform state */
+    let selection = {x: 0, y: 0, size: 256}; // Square selection
     let flipped = false;
     let backgroundTransparent = true;
-    let backgroundColor = '#ffffff';
+    let backgroundColor = '#121212'; // Default dark background
 
-    /* interaction flags */
+    /* Interaction Flags */
     let dragging = false;
     let dragOffsetX = 0;
     let dragOffsetY = 0;
     let resizing = false;
     let resizeCorner = null; // 'tl','tr','bl','br'
 
-    /* helpers */
+    /* Helpers */
     function encodePathForSrc(directory) {
-// directory: "2025/12/6/file.png" => keep folders, encode last part
         if (!directory) return directory;
         const parts = directory.split('/');
         const last = encodeURIComponent(parts.pop());
+        // Assumes '/file/' endpoint serves static files
         return '/file/' + (parts.length ? (parts.join('/') + '/' + last) : last);
     }
 
-    /* ========== 서버 API 연동 ========== */
+    function resetSelectionAndTransforms() {
+        selection = {x: 0, y: 0, size: 256};
+        flipped = false;
+        backgroundTransparent = true;
+        backgroundColor = '#121212';
+        rotateInput.value = 0;
+        brightnessInput.value = 100;
+        contrastInput.value = 100;
+        saturationInput.value = 100;
 
-    /* 파일 목록 불러오기 (GET /file/emoji) */
+        bgOption[0].checked = true; // Transparent
+        bgColorInput.disabled = true;
+    }
+
+    // 🚩 ADDED: Function to dynamically size the canvas based on parent container width
+    function setCanvasSize() {
+        const wrapper = document.getElementById('popup-content-wrapper');
+        // Subtract preview area width and gap (approx 128 + 20px)
+        const maxWidth = wrapper.clientWidth * 0.95; // 팝업 너비의 95%로 일단 계산
+
+        let targetSize = 512;
+
+        // Find maximum square size that fits the remaining width (subtracting preview area)
+        // Adjust for mobile view where content wraps (no horizontal preview area)
+        if (wrapper.clientWidth > 768) { // Desktop View
+            targetSize = Math.min(512, Math.floor(maxWidth - 150)); // 150 accounts for preview and gap
+        } else { // Mobile View
+            targetSize = Math.min(512, Math.floor(maxWidth * 0.9)); // Max 90% of screen width
+        }
+
+        targetSize = Math.max(256, targetSize); // Minimum size of 256px
+
+        canvas.width = targetSize;
+        canvas.height = targetSize;
+
+        // Recenter selection box after resize
+        centerSelection();
+        drawCanvas();
+    }
+
+
+    /* ========== Server API Interaction ========== */
+
+    /* Fetch File List (GET /file/emoji) */
     async function fetchEmojiList() {
+        emojiList.innerHTML = '<p class="text-center text-secondary w-100 mt-3">Loading emojis...</p>';
         try {
             const res = await get('/file/emoji');
-            if (!res.ok) throw new Error('파일 목록 로드 실패');
+            if (!res.ok) throw new Error('Failed to load file list.');
             const list = await res.json(); // expect FileDTO[]
             renderEmojiList(list || []);
         } catch (e) {
-            console.error('fetchEmojiList 오류:', e);
+            emojiList.innerHTML = `<p class="text-center text-danger w-100 mt-3">Error: Failed to load emojis. Check server connection.</p>`;
+            console.error('fetchEmojiList Error:', e);
         }
     }
 
     function renderEmojiList(list) {
         emojiList.innerHTML = '';
+        if (list.length === 0) {
+            emojiList.innerHTML = '<p class="text-center text-secondary w-100 mt-3">No emojis uploaded yet.</p>';
+            return;
+        }
+
         list.forEach(item => {
             const div = document.createElement('div');
             div.className = 'emoji-item';
-            const imgEl = document.createElement('img');
 
-// item.directory 예시: "2025/12/6/uuid_name.png"
+            const imgEl = document.createElement('img');
             imgEl.src = encodePathForSrc(item.directory);
             imgEl.alt = item.name || '';
-
             div.appendChild(imgEl);
 
             const delBtn = document.createElement('button');
             delBtn.className = 'delete-btn';
-            delBtn.textContent = 'X';
-            delBtn.onclick = () => deleteEmoji(item.id);
+            delBtn.innerHTML = '<i class="bi bi-x"></i>'; // Use Bootstrap icon for X
+            delBtn.title = `Delete ${item.name}`;
+            delBtn.onclick = (e) => {
+                e.stopPropagation(); // Prevent container events
+                deleteEmoji(item.id);
+            };
             div.appendChild(delBtn);
 
             emojiList.appendChild(div);
         });
     }
 
-    /* 삭제 (DELETE /admin/emoji/{id}) */
+    /* Delete (DELETE /admin/emoji/{id}) */
     async function deleteEmoji(id) {
-        if (!confirm('정말 삭제하시겠습니까?')) return;
+        if (!confirm('Are you sure you want to delete this emoji?')) return;
         try {
             const res = await del(`/admin/emoji/${id}`);
             if (!res.ok) {
                 const err = await res.json().catch(() => null);
-                alert(err?.message || `삭제 실패: ${res.status}`);
+                alert(err?.message || `Delete failed: ${res.status}`);
                 return;
             }
-// 성공 시 목록 갱신
-            fetchEmojiList();
+            fetchEmojiList(); // Refresh list on success
         } catch (e) {
-            console.error('deleteEmoji 오류:', e);
-            alert('삭제 실패 (서버 오류)');
+            console.error('deleteEmoji Error:', e);
+            alert('Delete failed (Server error).');
         }
     }
 
-    /* 업로드: POST /admin/emoji/{filename} (multipart/form-data) */
+    /* Upload: POST /admin/emoji/{filename} (multipart/form-data) */
     async function uploadBlobWithFilename(blob, filename) {
         try {
             const form = new FormData();
             form.append('file', blob, filename);
-// URL에 filename 넣어야 함. 서버에서 path variable 로 filename 처리
             const encodedFilename = encodeURIComponent(filename);
-// httpFileRequest은 공통 파일 업로드 함수 (script.js)
+
+            // httpFileRequest is assumed to be defined in script.js for file uploads
             const res = await httpFileRequest(`/admin/emoji/${encodedFilename}`, form);
             if (!res.ok) {
                 const body = await res.json().catch(() => null);
-                throw new Error(body?.message || `업로드 실패 ${res.status}`);
+                throw new Error(body?.message || `Upload failed ${res.status}`);
             }
             return await res.json().catch(() => ({success: true}));
         } catch (e) {
-            console.error('uploadBlobWithFilename 오류:', e);
+            console.error('uploadBlobWithFilename Error:', e);
             throw e;
         }
     }
 
-    /* ========== 캔버스 렌더링 및 상호작용 ========== */
+    /* ========== Canvas Rendering and Interaction ========== */
 
-    /* 중앙에 선택 박스 배치 (이미지 로드 시 호출) */
     function centerSelection() {
-        selection.size = Math.min(img.width, img.height, 256);
-// canvas는 고정 512x512 (위에서 세팅). 사용자의 이미지 비율이 다를 수 있으므로
-// 우리는 이미지 전체를 canvas에 fit 형태로 그려서 selection을 canvas 기준으로 계산
-// drawImage 사용에서 img를 canvas에 꽉 채워 그리므로 selection 기준은 canvas 크기 사용
         selection.size = Math.min(canvas.width, canvas.height, 256);
         selection.x = (canvas.width - selection.size) / 2;
         selection.y = (canvas.height - selection.size) / 2;
     }
 
-    /* draw canvas (이미지 + 필터 + 회전/플립은 preview에만 반영하지 않고 전체 캔버스 렌더에 적용) */
     function drawCanvas() {
         if (!imgLoaded) return;
 
-// clear
+        // 🚩 FIX: Get CSS variable values for strokeStyle inside the function
+        const rootStyles = getComputedStyle(document.documentElement);
+        const accentColor = rootStyles.getPropertyValue('--cf-accent-primary').trim() || 'red';
+        const tertiaryBg = rootStyles.getPropertyValue('--cf-dark-bg-secondary').trim() || '#1e1e1e';
+
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-// background
-        if (backgroundTransparent) {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-        } else {
+        // 1. Draw Background
+        if (!backgroundTransparent) {
             ctx.fillStyle = backgroundColor;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
         }
 
-// apply filter
+        // 2. Apply Filters and Transforms
         ctx.save();
         ctx.filter = `brightness(${brightnessInput.value}%) contrast(${contrastInput.value}%) saturate(${saturationInput.value}%)`;
 
-// translate to center, rotate, flip, then draw image fitted to canvas
         ctx.translate(canvas.width / 2, canvas.height / 2);
         ctx.rotate((parseFloat(rotateInput.value) || 0) * Math.PI / 180);
         ctx.scale(flipped ? -1 : 1, 1);
 
-// draw image covering canvas (maintain aspect fill)
+        // Draw image fitted to canvas (cover style)
         const cw = canvas.width, ch = canvas.height;
-// compute aspect-fit cover: scale so that image covers canvas
         const scale = Math.max(cw / img.width, ch / img.height);
         const iw = img.width * scale, ih = img.height * scale;
         ctx.drawImage(img, -iw / 2, -ih / 2, iw, ih);
 
         ctx.restore();
 
-// draw dim overlay outside selection (optional visual cue)
+        // 3. Draw Dim Overlay outside selection
         ctx.save();
-        ctx.fillStyle = 'rgba(0,0,0,0.25)';
-// top
-        ctx.fillRect(0, 0, canvas.width, selection.y);
-// bottom
-        ctx.fillRect(0, selection.y + selection.size, canvas.width, canvas.height - (selection.y + selection.size));
-// left
-        ctx.fillRect(0, selection.y, selection.x, selection.size);
-// right
-        ctx.fillRect(selection.x + selection.size, selection.y, canvas.width - (selection.x + selection.size), selection.size);
+        ctx.fillStyle = 'rgba(0,0,0,0.5)';
+        // Draw 4 rectangles to dim the outside
+        ctx.fillRect(0, 0, canvas.width, selection.y); // Top
+        ctx.fillRect(0, selection.y + selection.size, canvas.width, canvas.height - (selection.y + selection.size)); // Bottom
+        ctx.fillRect(0, selection.y, selection.x, selection.size); // Left
+        ctx.fillRect(selection.x + selection.size, selection.y, canvas.width - (selection.x + selection.size), selection.size); // Right
         ctx.restore();
 
-// draw selection box (dashed)
+        // 4. Draw Selection Box (dashed)
         ctx.save();
-        ctx.strokeStyle = 'red';
+        ctx.strokeStyle = accentColor; // Use JS variable
         ctx.lineWidth = 2;
         ctx.setLineDash([6, 4]);
         ctx.strokeRect(selection.x, selection.y, selection.size, selection.size);
         ctx.setLineDash([]);
         ctx.restore();
 
-// draw corner handles (for resizing)
+        // 5. Draw Corner Handles
         const handleSize = 12;
         const half = handleSize / 2;
+
         const corners = [
             {cx: selection.x, cy: selection.y, id: 'tl'},
             {cx: selection.x + selection.size, cy: selection.y, id: 'tr'},
@@ -423,43 +522,36 @@
         ];
         corners.forEach(c => {
             ctx.save();
-            ctx.fillStyle = '#fff';
-            ctx.strokeStyle = '#333';
+            ctx.fillStyle = tertiaryBg; // Use JS variable
+            ctx.strokeStyle = accentColor; // Use JS variable
             ctx.lineWidth = 2;
             ctx.fillRect(c.cx - half, c.cy - half, handleSize, handleSize);
             ctx.strokeRect(c.cx - half, c.cy - half, handleSize, handleSize);
             ctx.restore();
         });
 
-// update preview box (scaled crop preview)
+        // Update preview box
         updatePreview();
     }
 
-    /* 미리보기 (preview-box)에 selection 영역을 클립해서 간단하게 보여줌 */
+    /* Update Preview Box */
     function updatePreview() {
         if (!imgLoaded) return;
-// create an offscreen canvas to extract the selection as currently rendered
         const tmp = document.createElement('canvas');
-        const size = 128; // preview size
+        const size = 128;
         tmp.width = size;
         tmp.height = size;
         const tctx = tmp.getContext('2d');
-
-// draw same transforms as main canvas but scaled so selection maps to full preview
-// We'll draw the full canvas rendering into tmp, cropping the selection area
-// Approach: draw image with same transforms to cover tmp scaled by ratio
-// Compute scale between canvas selection -> tmp
         const sx = selection.x, sy = selection.y, s = selection.size;
-// draw current canvas area selection onto tmp
-// use drawImage(sourceCanvas, sx, sy, s, s, 0, 0, size, size)
+
+        // Draw the selected area of the main canvas onto the preview canvas
         tctx.drawImage(canvas, sx, sy, s, s, 0, 0, size, size);
 
-// set as preview background
         previewBox.style.backgroundImage = `url(${tmp.toDataURL()})`;
         previewBox.style.backgroundSize = 'cover';
     }
 
-    /* ========== 마우스 이벤트 (드래그/리사이즈) ========== */
+    /* ========== Mouse Events (Drag/Resize) ========== */
     function getMousePos(e) {
         const rect = canvas.getBoundingClientRect();
         return {x: e.clientX - rect.left, y: e.clientY - rect.top};
@@ -490,7 +582,6 @@
             resizeCorner = corner;
             return;
         }
-// inside selection => start dragging
         if (mx > selection.x && mx < selection.x + selection.size && my > selection.y && my < selection.y + selection.size) {
             dragging = true;
             dragOffsetX = mx - selection.x;
@@ -502,46 +593,37 @@
         if (!imgLoaded) return;
         const {x: mx, y: my} = getMousePos(e);
         if (resizing) {
-// calculate new square selection keeping aspect ratio 1:1
-// Depending on corner, adjust selection.x/y and size
             let newX = selection.x, newY = selection.y, newSize = selection.size;
+            const minSize = 24;
+
+            const clamp = (val, min, max) => Math.min(Math.max(val, min), max);
+
             if (resizeCorner === 'tl') {
-// new bottom-right fixed, top-left moves to (mx,my)
                 const brx = selection.x + selection.size;
                 const bry = selection.y + selection.size;
-// size is min of width/height to keep square
-                newSize = Math.max(24, Math.min(brx - mx, bry - my));
+                newSize = clamp(Math.min(brx - mx, bry - my), minSize, Math.min(brx, bry));
                 newX = brx - newSize;
                 newY = bry - newSize;
             } else if (resizeCorner === 'tr') {
                 const blx = selection.x;
                 const bly = selection.y + selection.size;
-                newSize = Math.max(24, Math.min(mx - blx, bly - my));
+                newSize = clamp(Math.min(mx - blx, bly - my), minSize, Math.min(canvas.width - blx, bly));
                 newX = blx;
                 newY = bly - newSize;
             } else if (resizeCorner === 'bl') {
                 const trx = selection.x + selection.size;
                 const tryy = selection.y;
-                newSize = Math.max(24, Math.min(trx - mx, my - tryy));
+                newSize = clamp(Math.min(trx - mx, my - tryy), minSize, Math.min(trx, canvas.height - tryy));
                 newX = trx - newSize;
                 newY = tryy;
             } else if (resizeCorner === 'br') {
-// top-left fixed
-                const nx = mx;
-                const ny = my;
-                newSize = Math.max(24, Math.min(nx - selection.x, ny - selection.y));
+                newSize = clamp(Math.min(mx - selection.x, my - selection.y), minSize, Math.min(canvas.width - selection.x, canvas.height - selection.y));
                 newX = selection.x;
                 newY = selection.y;
             }
-// clamp to canvas bounds
-            if (newX < 0) {
-                newX = 0;
-            }
-            if (newY < 0) {
-                newY = 0;
-            }
-            if (newX + newSize > canvas.width) newSize = canvas.width - newX;
-            if (newY + newSize > canvas.height) newSize = canvas.height - newY;
+
+            newX = clamp(newX, 0, canvas.width - newSize);
+            newY = clamp(newY, 0, canvas.height - newSize);
 
             selection.x = newX;
             selection.y = newY;
@@ -552,7 +634,7 @@
         if (dragging) {
             selection.x = mx - dragOffsetX;
             selection.y = my - dragOffsetY;
-// clamp
+            // clamp
             if (selection.x < 0) selection.x = 0;
             if (selection.y < 0) selection.y = 0;
             if (selection.x + selection.size > canvas.width) selection.x = canvas.width - selection.size;
@@ -567,7 +649,15 @@
         resizeCorner = null;
     });
 
-    /* ========== UI 이벤트 바인딩 ========== */
+    // 🚩 ADDED: Recalculate size on window resize
+    window.addEventListener('resize', () => {
+        if (popup.style.display === 'block') {
+            setCanvasSize();
+        }
+    });
+
+
+    /* ========== UI Event Binding ========== */
 
     bgOption.forEach(option => option.addEventListener('change', () => {
         backgroundTransparent = option.value === 'transparent';
@@ -591,14 +681,14 @@
     });
 
     templateBtn.addEventListener('click', () => {
-// set selection to 256 square centered
-        selection.size = Math.min(256, canvas.width, canvas.height);
+        // set selection to 256 square centered
+        selection.size = 256;
         selection.x = (canvas.width - selection.size) / 2;
         selection.y = (canvas.height - selection.size) / 2;
         drawCanvas();
     });
 
-    /* 드롭/파일 입력 처리 */
+    /* Drop/File Input Handling */
     dropZone.addEventListener('click', () => fileInput.click());
     dropZone.addEventListener('dragover', (e) => {
         e.preventDefault();
@@ -619,38 +709,39 @@
         if (f) openFileForEdit(f);
     });
 
-    /* 파일 열기 및 캔버스 준비 */
+    /* Open File and Prepare Canvas */
     function openFileForEdit(file) {
         uploadedFile = file;
+        resetSelectionAndTransforms(); // Reset transforms for new image
         img = new Image();
         img.onload = () => {
             imgLoaded = true;
-// canvas 크기가 고정 512x512; 원하면 canvas 크기 동적으로 이미지 기준으로 조정 가능
-// 현재는 canvas 고정, 이미지를 cover 방식으로 렌더
+
+            setCanvasSize(); // 🚩 ADDED: Set canvas size dynamically
             centerSelection();
             drawCanvas();
+
             overlay.style.display = 'block';
             popup.style.display = 'block';
         };
         img.onerror = (e) => {
-            console.error('이미지 로드 실패', e);
-            alert('이미지 로드 실패');
+            console.error('Image load failed', e);
+            alert('Image load failed');
         };
         img.src = URL.createObjectURL(file);
     }
 
-    /* 확인 버튼: 선택 영역을 캔버스에서 잘라내어 Blob으로 업로드 */
+    /* Confirm Button: Crop and Upload */
     confirmBtn.addEventListener('click', async () => {
         if (!uploadedFile || !imgLoaded) return;
         try {
-// create a tmp canvas with desired output size (use selection.size or template 256)
-            const outSize = 256; // 업로드 크기 (템플릿 버튼으로 바꿀 수 있음) - 고정 256
+            const outSize = 256; // Final upload size
             const tmp = document.createElement('canvas');
             tmp.width = outSize;
             tmp.height = outSize;
             const tctx = tmp.getContext('2d');
 
-// background
+            // 1. Draw Background on output canvas
             if (!backgroundTransparent) {
                 tctx.fillStyle = backgroundColor;
                 tctx.fillRect(0, 0, tmp.width, tmp.height);
@@ -658,27 +749,25 @@
                 tctx.clearRect(0, 0, tmp.width, tmp.height);
             }
 
-// apply same filter & transforms as main canvas when drawing into tmp.
-// We'll draw the part of the main canvas (selection) onto tmp directly to preserve what user sees.
+            // 2. Draw the selected area of the main canvas onto the output canvas
             tctx.drawImage(canvas, selection.x, selection.y, selection.size, selection.size, 0, 0, tmp.width, tmp.height);
 
-// blob 생성
+            // Create Blob and Upload
             tmp.toBlob(async (blob) => {
                 try {
                     const res = await uploadBlobWithFilename(blob, uploadedFile.name);
-// 서버에서 성공 시 새 목록 불러오기
                     fetchEmojiList();
                     closePopup();
                 } catch (err) {
-                    alert('업로드 실패: ' + (err.message || err));
+                    alert('Upload failed: ' + (err.message || err));
                 }
-            }, 'image/png');
+            }, 'image/png'); // Always use PNG for transparency
         } catch (e) {
-            console.error('confirm 오류', e);
+            console.error('Confirm error', e);
         }
     });
 
-    /* 취소 */
+    /* Cancel */
     cancelBtn.addEventListener('click', closePopup);
     overlay.addEventListener('click', closePopup);
 
@@ -687,12 +776,11 @@
         popup.style.display = 'none';
         uploadedFile = null;
         imgLoaded = false;
-// clear preview
         previewBox.style.backgroundImage = '';
         fileInput.value = '';
     }
 
-    /* 초기 로드 */
+    /* Initial Load */
     fetchEmojiList();
 
 </script>
