@@ -16,22 +16,11 @@ public interface UserMapper {
 
     Long findUserIdById(Long id);
 
-    Boolean save(User member);
-
     List<User> findAllUsers();
+
+    Boolean save(User user);
 
     Boolean updateRoles(@Param("id") Long id, @Param("roles") String roles);
 
     Boolean deleteById(Long userId);
-
-    User getRolesByUserId(Long userId);
-
-    @Select("SELECT COUNT(0) > 0 FROM chat_forestfull.member WHERE name = #{username}")
-    Boolean isExistedUsername(String username);
-
-    @Select("SELECT COUNT(0) > 0 FROM chat_forestfull.member WHERE display_name = #{displayName}")
-    Boolean isExistedNickname(String displayName);
-
-    @Insert("UPDATE chat_forestfull.member SET profile_image = #{profileImageUrl} WHERE id = #{id}")
-    int updateProfileImage(Long id, String profileImageUrl);
 }

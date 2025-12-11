@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <script th:replace="~{/layout/config.html}"></script>
 
@@ -11,6 +11,7 @@
             background-color: var(--cf-dark-bg-primary);
             color: var(--cf-text-primary);
         }
+
         .setting-card {
             background: var(--cf-dark-bg-secondary);
             border-radius: 12px;
@@ -20,44 +21,52 @@
             max-width: 800px;
             margin: 0 auto;
         }
+
         .form-control-custom {
             background-color: var(--cf-dark-bg-tertiary);
             border: 1px solid var(--cf-border-color);
             color: var(--cf-text-primary);
         }
+
         .form-control-custom:focus {
             background-color: var(--cf-dark-bg-tertiary);
             border-color: var(--cf-accent-primary);
             box-shadow: 0 0 0 0.25rem rgba(187, 134, 252, 0.25);
             color: var(--cf-text-primary);
         }
+
         .setting-section {
             border-bottom: 1px solid var(--cf-border-color);
             padding-bottom: 20px;
             margin-bottom: 20px;
         }
+
         .setting-section:last-child {
             border-bottom: none;
             margin-bottom: 0;
             padding-bottom: 0;
         }
+
         .btn-primary-custom {
             background-color: var(--cf-accent-primary);
             border-color: var(--cf-accent-primary);
             color: #ffffff !important;
             transition: all 0.2s;
         }
+
         .btn-primary-custom:hover {
             background-color: var(--cf-accent-hover);
             border-color: var(--cf-accent-hover);
             color: #ffffff !important;
         }
+
         .profile-img-container {
             display: flex;
             justify-content: center;
             margin-bottom: 30px;
             position: relative;
         }
+
         .profile-img {
             width: 120px;
             height: 120px;
@@ -68,24 +77,11 @@
             cursor: pointer;
             transition: transform 0.2s;
         }
+
         .profile-img:hover {
             transform: scale(1.05);
         }
-        .profile-img-container::after {
-            content: "\f4bf";
-            font-family: "bootstrap-icons";
-            position: absolute;
-            bottom: 0;
-            right: calc(50% - 60px);
-            transform: translateX(calc(100% + 15px));
-            background-color: var(--cf-accent-primary);
-            color: white;
-            border-radius: 50%;
-            padding: 8px;
-            font-size: 1rem;
-            opacity: 0.9;
-            cursor: pointer;
-        }
+
         /* 🌟 NEW: TikTok Button Styling */
         .btn-tiktok {
             background-color: #000000;
@@ -95,10 +91,12 @@
             padding: 10px;
             font-weight: bold;
         }
+
         .btn-tiktok:hover {
             background-color: #222222;
             color: white;
         }
+
         .btn-tiktok .bi-tiktok {
             font-size: 1.2rem;
         }
@@ -200,12 +198,15 @@
 <footer th:replace="~{/layout/footer.html}"></footer>
 
 <script>
+    // Constants from the global scope (assuming defined in script.js or before)
     const DEFAULT_AVATAR_PATH = '/images/default-avatar.png';
 
     // 🌟 1. User Data Loading via getJwtPayload()
     function loadUserData() {
+        // NOTE: getJwtPayload() 함수는 /js/script.js에 정의되어 있어야 합니다.
         const payload = getJwtPayload() || {};
 
+        // JWT 필드 추출 (프로젝트 관례에 맞는 변수명 가정)
         const username = payload.username;
         const nickname = payload.displayName;
         const email = payload.email;
@@ -219,7 +220,7 @@
         document.getElementById('email-input').value = email || '';
     }
 
-    // 🌟 2. Profile Image Change Logic
+    // 🌟 2. 이벤트 리스너 및 요청 로직
     document.addEventListener('DOMContentLoaded', () => {
         loadUserData();
 
@@ -227,15 +228,9 @@
         const fileInput = document.getElementById('profile-file-input');
         const profileContainer = document.querySelector('.profile-img-container');
 
-        // TikTok 연동 버튼 핸들러
-        document.getElementById('link-tiktok-btn').addEventListener('click', () => {
-            // TODO: TikTok OAuth 시작 엔드포인트로 리다이렉트하는 로직 추가
-            alert('Redirecting to TikTok OAuth for account linkage...');
-            // 예시: window.location.href = '/oauth2/authorization/tiktok';
-        });
 
+        // --- [ A. Profile Image Change & Upload Logic ] ----------------------
 
-        // 프로필 이미지 핸들러
         profileImg.addEventListener('click', () => fileInput.click());
         profileContainer.addEventListener('click', (e) => {
             if (e.target.id !== 'profile-image' && e.target.tagName !== 'INPUT') {
@@ -243,38 +238,160 @@
             }
         });
 
-        fileInput.addEventListener('change', (e) => {
+        fileInput.addEventListener('change', async (e) => {
             const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = (event) => {
-                    profileImg.src = event.target.result;
-                    // TODO: 서버에 파일 업로드 API 호출 로직 추가 (Multipart)
-                };
-                reader.readAsDataURL(file);
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                profileImg.src = event.target.result; // 미리보기 업데이트
+            };
+            reader.readAsDataURL(file);
+
+            // 파일 업로드 요청
+            const formData = new FormData();
+            formData.append('profileImage', file);
+
+            try {
+                // 🚩 API 요청: 파일 업로드 (httpFileRequest 사용)
+                const response = await httpFileRequest('/api/v1/users/profile-image', formData);
+
+                if (response.ok) {
+                    showAlert('Profile image updated successfully.', 'success');
+                    // 서버가 새로운 JWT를 반환할 경우 여기서 처리해야 함 (예: 로그인 후 JWT 갱신 로직 재실행)
+                } else if (response.status === 400) {
+                    const error = await response.json();
+                    showAlert(`Upload failed: ${error.message || response.statusText}`, 'danger');
+                } else {
+                    showAlert('An unknown error occurred during upload.', 'danger');
+                }
+            } catch (error) {
+                console.error('Profile image upload error:', error);
+                showAlert('Communication error with the server.', 'danger');
             }
         });
 
-        // 3. Form Submission Placeholders (Update/Password/Delete)
-        document.getElementById('profile-form').addEventListener('submit', (e) => {
+
+        // --- [ B. Profile Information Update Logic ] ------------------------
+
+        document.getElementById('profile-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-            // TODO: 클라이언트 유효성 검사 (닉네임 길이, 이메일 형식) 추가
-            // TODO: API를 호출하여 닉네임, 이메일 등 업데이트 로직
-            alert('Profile update API logic here.');
+
+            const nickname = document.getElementById('nickname-input').value.trim();
+            const email = document.getElementById('email-input').value.trim();
+
+            // 🚩 클라이언트 측 유효성 검사 (Placeholder)
+            if (!nickname || nickname.length < 2) {
+                showAlert('Nickname must be at least 2 characters long.', 'warning');
+                return;
+            }
+            if (!/^\S+@\S+\.\S+$/.test(email)) {
+                showAlert('Please enter a valid email address.', 'warning');
+                return;
+            }
+
+            const body = { nickname, email };
+
+            try {
+                // 🚩 API 요청: 프로필 정보 업데이트 (put 사용)
+                const response = await put('/api/v1/users/profile', body);
+
+                if (response.ok) {
+                    showAlert('Profile information updated successfully.', 'success');
+                    // 닉네임 변경 시 JWT도 갱신될 수 있으므로, 재로드 필요
+                    // 서버가 새 JWT를 반환하면 클라이언트가 쿠키를 업데이트해야 함.
+                    // 현재는 페이지 리로드로 처리하지 않고, 상태만 업데이트 가정
+                } else if (response.status === 409) { // 닉네임/이메일 중복 등
+                    const error = await response.json();
+                    showAlert(`Update failed: ${error.message || 'Nickname or email already in use.'}`, 'danger');
+                } else {
+                    showAlert('Failed to update profile. Please try again.', 'danger');
+                }
+            } catch (error) {
+                console.error('Profile update error:', error);
+                showAlert('Communication error with the server.', 'danger');
+            }
         });
 
-        document.getElementById('password-form').addEventListener('submit', (e) => {
+
+        // --- [ C. Password Change Logic ] -----------------------------------
+
+        document.getElementById('password-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-            // TODO: 클라이언트 유효성 검사 (비밀번호 일치, 최소 길이) 추가
-            // TODO: API를 호출하여 비밀번호 업데이트 로직
-            alert('Password change API logic here.');
+
+            const current = document.getElementById('current-password').value;
+            const newPass = document.getElementById('new-password').value;
+            const confirmPass = document.getElementById('confirm-password').value;
+
+            // 🚩 클라이언트 측 유효성 검사 (Placeholder)
+            if (newPass.length < 8) {
+                showAlert('New password must be at least 8 characters long.', 'warning');
+                return;
+            }
+            if (newPass !== confirmPass) {
+                showAlert('New password and confirmation do not match.', 'warning');
+                return;
+            }
+
+            const body = { currentPassword: current, newPassword: newPass };
+
+            try {
+                // 🚩 API 요청: 비밀번호 변경 (put 사용)
+                const response = await put('/api/v1/users/password', body);
+
+                if (response.ok) {
+                    showAlert('Password changed successfully. Please re-login if prompted.', 'success');
+                    // 폼 초기화
+                    document.getElementById('password-form').reset();
+                } else if (response.status === 401) {
+                    showAlert('Password change failed: Current password is incorrect.', 'danger');
+                } else {
+                    showAlert('Failed to change password. Please try again.', 'danger');
+                }
+            } catch (error) {
+                console.error('Password change error:', error);
+                showAlert('Communication error with the server.', 'danger');
+            }
         });
+
+
+        // --- [ D. TikTok Linkage Logic ] -----------------------------------
+
+        document.getElementById('link-tiktok-btn').addEventListener('click', () => {
+            // 🚩 TikTok OAuth 시작 엔드포인트로 리다이렉트 (실제 URI로 변경 필요)
+            const tiktokOAuthUrl = '/oauth2/authorization/tiktok';
+            window.location.href = tiktokOAuthUrl;
+        });
+
+
+        // --- [ E. Delete Account Logic ] -----------------------------------
 
         document.getElementById('delete-account-btn').addEventListener('click', () => {
-            if (confirm('Are you absolutely sure you want to delete your account? This action is irreversible.')) {
-                // TODO: API를 호출하여 계정 삭제 로직
-                alert('Account deletion API logic here.');
-            }
+            const confirmAction = async () => {
+                try {
+                    // 🚩 API 요청: 계정 삭제 (del 사용)
+                    const response = await del('/api/v1/users');
+
+                    if (response.ok) {
+                        showAlert('Account successfully deleted. Redirecting...', 'success');
+                        setTimeout(redirectToLogin, 1500); // 1.5초 후 로그인 페이지로 리디렉션
+                    } else if (response.status === 403) {
+                        showAlert('Deletion failed: You do not have permission.', 'danger');
+                    } else {
+                        showAlert('Account deletion failed. Please try again.', 'danger');
+                    }
+                } catch (error) {
+                    console.error('Account deletion error:', error);
+                    showAlert('Communication error with the server.', 'danger');
+                }
+            };
+
+            // 삭제 확인 모달 호출
+            showModal(
+                'Confirm Account Deletion',
+                '<p class="text-danger fw-bold">Warning: This action is irreversible.</p><p>All your data, including chat history and profile information, will be permanently deleted.</p><p>Do you wish to proceed?</p>',
+                confirmAction
+            );
         });
     });
 </script>
