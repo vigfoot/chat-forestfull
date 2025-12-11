@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <script th:replace="~{/layout/config.html}"></script>
+
+    <title>Chat ForestFull | My Settings</title>
+
+    <style>
+        /* Override light theme defaults for this page */
+        body {
+            background-color: var(--cf-dark-bg-primary);
+            color: var(--cf-text-primary);
+        }
+
+        /* Setting Card/Form Styling */
+        .setting-card {
+            background: var(--cf-dark-bg-secondary);
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--cf-border-color);
+            /* Login card max-width constraint not applied here, but a similar max-width is good practice */
+            max-width: 800px;
+            margin: 0 auto; /* Center the card */
+        }
+
+        .form-control-custom {
+            background-color: var(--cf-dark-bg-tertiary);
+            border: 1px solid var(--cf-border-color);
+            color: var(--cf-text-primary);
+        }
+
+        .form-control-custom:focus {
+            background-color: var(--cf-dark-bg-tertiary);
+            border-color: var(--cf-accent-primary);
+            box-shadow: 0 0 0 0.25rem rgba(187, 134, 252, 0.25);
+            color: var(--cf-text-primary);
+        }
+
+        .setting-section {
+            border-bottom: 1px solid var(--cf-border-color);
+            padding-bottom: 20px;
+            margin-bottom: 20px;
+        }
+
+        .setting-section:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .btn-primary-custom {
+            background-color: var(--cf-accent-primary);
+            border-color: var(--cf-accent-primary);
+            color: var(--cf-text-secondary); /* Dark text on bright button */
+            transition: all 0.2s;
+        }
+
+        .btn-primary-custom:hover {
+            background-color: var(--cf-accent-hover);
+            border-color: var(--cf-accent-hover);
+        }
+    </style>
+</head>
+<body class="d-flex flex-column min-vh-100">
+
+<header th:replace="~{/layout/header.html :: header}"></header>
+
+<main class="container py-5 flex-grow-1">
+    <div class="row justify-content-center">
+        <div class="col-sm-12">
+
+            <div class="setting-card">
+
+                <h2 class="text-center mb-5 fw-bold" style="color: var(--cf-accent-primary);">
+                    <i class="bi bi-gear-fill me-2"></i> My Settings
+                </h2>
+
+                <div class="setting-section">
+                    <h4 class="mb-3 text-secondary"><i class="bi bi-person me-2"></i> Profile Information</h4>
+
+                    <form id="profile-form">
+                        <div class="mb-3">
+                            <label for="username" class="form-label">Username</label>
+                            <input type="text" class="form-control form-control-custom" id="username" placeholder="Enter new username">
+                        </div>
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email Address (Read-only)</label>
+                            <input type="email" class="form-control form-control-custom" id="email" value="user@example.com" readonly>
+                        </div>
+                        <div class="text-end">
+                            <button type="submit" class="btn btn-primary-custom">Update Profile</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="setting-section">
+                    <h4 class="mb-3 text-secondary"><i class="bi bi-key me-2"></i> Change Password</h4>
+
+                    <form id="password-form">
+                        <div class="mb-3">
+                            <label for="current-password" class="form-label">Current Password</label>
+                            <input type="password" class="form-control form-control-custom" id="current-password">
+                        </div>
+                        <div class="mb-3">
+                            <label for="new-password" class="form-label">New Password</label>
+                            <input type="password" class="form-control form-control-custom" id="new-password">
+                        </div>
+                        <div class="mb-4">
+                            <label for="confirm-password" class="form-label">Confirm New Password</label>
+                            <input type="password" class="form-control form-control-custom" id="confirm-password">
+                        </div>
+                        <div class="text-end">
+                            <button type="submit" class="btn btn-primary-custom">Change Password</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="setting-section">
+                    <h4 class="mb-3 text-danger"><i class="bi bi-person-x me-2"></i> Danger Zone</h4>
+                    <p class="text-secondary">Permanently delete your account and all associated data.</p>
+                    <div class="text-end">
+                        <button type="button" class="btn btn-outline-danger" id="delete-account-btn">Delete Account</button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</main>
+
+<footer th:replace="~{/layout/footer.html}"></footer>
+
+<script>
+    // Placeholder JavaScript for form handling and data fetching
+    document.addEventListener('DOMContentLoaded', () => {
+        // Example: Fetch user data and populate form fields on load
+        // fetchUserData().then(data => { ... });
+
+        // Example: Profile form submission
+        document.getElementById('profile-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            alert('Profile update logic here.');
+        });
+
+        // Example: Password change form submission
+        document.getElementById('password-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            alert('Password change logic here.');
+        });
+
+        // Example: Delete account confirmation
+        document.getElementById('delete-account-btn').addEventListener('click', () => {
+            if (confirm('Are you absolutely sure you want to delete your account? This action is irreversible.')) {
+                alert('Account deletion logic here.');
+            }
+        });
+    });
+</script>
+</body>
+</html>

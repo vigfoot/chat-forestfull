@@ -50,6 +50,13 @@ public class PageRouter {
     String signup(Model model){
         // Sign up page typically doesn't need header context, but added for completeness
         addCurrentUri(model, "/pages/signup");
-        return "signup";
+        return "account/signup";
+    }
+
+    @GetMapping("/pages/setting")
+    String mySetting(Model model){
+        // Sign up page typically doesn't need header context, but added for completeness
+        addCurrentUri(model, "/pages/setting");
+        return "account/setting";
     }
 }

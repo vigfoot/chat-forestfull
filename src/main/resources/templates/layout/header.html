@@ -24,32 +24,47 @@
 
             <div class="collapse navbar-collapse justify-content-end" id="navbarNav" style="width: 100%;">
                 <ul class="navbar-nav ms-2 mb-2 mb-lg-0">
-                    <li class="nav-item d-lg-none">
-                        <a class="nav-link text-danger" href="#" onclick="handleLogout();">
-                            <i class="bi bi-box-arrow-right me-1"></i> Logout
-                        </a>
-                        <hr class="dropdown-divider d-lg-none">
-                    </li>
-
                     <li class="nav-item">
                         <a class="nav-link" th:href="@{/pages/rooms}"
-                           th:classappend="${currentUri != null and currentUri.startsWith('/pages/rooms') ? 'active' : ''}">Chat Rooms</a>
+                           th:classappend="${currentUri != null and currentUri.startsWith('/pages/rooms') ? 'active' : ''}">
+                            <i class="bi bi-controller me-1"></i> Play
+                        </a>
                     </li>
-                    <li class="nav-item" sec:authorize="hasRole('ROLE_ADMIN')">
-                        <a class="nav-link" th:href="@{/pages/admin/dashboard}"
-                           th:classappend="${currentUri != null and currentUri.startsWith('/pages/admin') ? 'active' : ''}">Admin Dashboard</a>
+
+                    <li class="nav-item dropdown" sec:authorize="hasRole('ROLE_ADMIN')">
+                        <a class="nav-link dropdown-toggle" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false"
+                           th:classappend="${currentUri != null and currentUri.startsWith('/pages/admin') ? 'active' : ''}">
+                            <i class="bi bi-shield-lock me-1"></i> Admin Tools
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-dark" aria-labelledby="adminDropdown">
+                            <li><a class="dropdown-item" th:href="@{/pages/admin/dashboard}"><i class="bi bi-speedometer2 me-2"></i> Dashboard</a></li>
+                            <li><a class="dropdown-item" th:href="@{/pages/admin/users}"><i class="bi bi-people me-2"></i> User Management</a></li>
+                            <li><a class="dropdown-item" th:href="@{/pages/admin/emoji}"><i class="bi bi-emoji-heart-eyes me-2"></i> Emoji Management</a></li>
+                        </ul>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/document/privacy-policy.html" target="_blank" title="Privacy Policy">Privacy Policy</a>
+
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="infoDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-info-circle me-1"></i> Info
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-dark" aria-labelledby="infoDropdown">
+                            <li><a class="dropdown-item" href="/document/privacy-policy.html" target="_blank" title="Privacy Policy"><i class="bi bi-file-earmark-lock me-2"></i> Privacy Policy</a></li>
+                            <li><a class="dropdown-item" href="/document/terms.html" target="_blank" title="Terms of Use"><i class="bi bi-journal-text me-2"></i> Terms of Use</a></li>
+                        </ul>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/document/terms.html" target="_blank" title="Terms of Use">Terms of Use</a>
+
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-person-circle me-1"></i> Account
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-dark dropdown-menu-end" aria-labelledby="userDropdown">
+                            <li><a class="dropdown-item" th:href="@{/pages/setting}"><i class="bi bi-gear me-2"></i> My Settings</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item text-danger" href="#" onclick="handleLogout();"><i class="bi bi-box-arrow-right me-2"></i> Logout</a></li>
+                        </ul>
                     </li>
-                </ul>
-                <ul class="navbar-nav">
                 </ul>
             </div>
-
         </div>
     </nav>
 </header>
