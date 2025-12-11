@@ -162,27 +162,24 @@ a:hover {
     object-fit: cover;
     border: 1px solid var(--cf-accent-primary);
 }
-
-.cf-footer-custom {
-    /* 헤더보다 더 어두운 배경색 또는 테마에 맞는 색상 사용 */
+/* 푸터의 얇고 간결한 디자인을 위한 스타일 (외부 CSS 파일에 추가되어야 합니다) */
+.cf-footer-minimized {
+    /* 기존의 cf-footer-custom보다 더 얇게 만듭니다. */
     background-color: var(--cf-dark-bg-primary) !important;
     border-top: 1px solid var(--cf-border-color);
     color: var(--cf-text-secondary);
-    padding: 1.5rem 0;
-    font-size: 0.85rem;
+    padding: 0; /* 패딩을 줄여서 높이를 최소화 */
 }
-
-.cf-footer-custom a {
+.cf-footer-minimized a {
     color: var(--cf-text-secondary);
     text-decoration: none;
-    transition: color 0.2s;
 }
-
-.cf-footer-custom a:hover {
+.cf-footer-minimized a:hover {
     color: var(--cf-accent-primary);
 }
-
-.cf-social-icon {
-    font-size: 1.2rem;
-    margin-left: 1rem;
+/* 푸터 인라인 로고 스타일 */
+.footer-inline-logo {
+    height: 16px; /* Header보다 더 작게 설정하여 미니멀함을 강조 */
+    vertical-align: middle;
+    /* margin은 HTML 태그에 이미 me-1로 적용됨 */
 }
