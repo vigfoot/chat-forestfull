@@ -91,9 +91,9 @@
             color: var(--cf-text-primary) !important;
         }
 
-        /* 9. 프로필 사진 스타일 🚩 NEW CSS */
+        /* 9. 프로필 사진 스타일 */
         .profile-upload-area {
-            margin-bottom: 40px !important; /* 아래쪽 간격 확보 */
+            margin-bottom: 40px !important;
         }
 
         .profile-image-container {
@@ -102,7 +102,7 @@
             border-radius: 50%;
             overflow: hidden;
             position: relative;
-            border: 3px solid var(--cf-accent-primary); /* 강조 색상 테두리 */
+            border: 3px solid var(--cf-accent-primary);
             background-color: var(--cf-dark-bg-tertiary);
             cursor: pointer;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
@@ -112,7 +112,6 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
-            /* 기본 이미지 스타일 (사용자 아바타 아이콘 등) */
         }
 
         .profile-image-label {
@@ -156,7 +155,7 @@
                     <div class="profile-upload-area text-center mb-5">
                         <div class="profile-image-container mx-auto">
                             <label for="profileImageInput" class="profile-image-label">
-                                <img id="profilePreview" src="https://via.placeholder.com/120/161b22/8b949e?text=No+Pic" alt="" class="profile-image-preview">
+                                <img id="profilePreview" src="https://via.placeholder.com/120x120/161b22/8b949e?text=No+Pic" alt="" class="profile-image-preview">
                                 <input type="file" id="profileImageInput" accept="image/*" class="d-none" onchange="handleImageSelect(event)">
                                 <div class="upload-overlay">
                                     <span>Select Photo</span>
@@ -165,6 +164,7 @@
                         </div>
                         <small class="form-text text-white-50 mt-2">Optional: Click to set your profile picture.</small>
                     </div>
+
                     <div class="mb-3">
                         <div class="row form-row-custom align-items-center">
                             <label for="username" class="col-md-4 col-12 form-label-custom text-white">ID</label>
@@ -289,14 +289,14 @@
 
     let isUsernameAvailable = false;
     let isNicknameAvailable = false;
-    let profileImageFile = null; // 🚩 NEW: 프로필 이미지 파일 저장 변수
+    let profileImageFile = null;
 
     const STATUS_SUCCESS = 'status-success';
     const STATUS_ERROR = 'status-error';
     const STATUS_INFO = 'status-info';
 
     /**
-     * 프로필 이미지 파일을 선택했을 때 미리보기를 표시하고 파일을 저장합니다. 🚩 NEW Function
+     * 프로필 이미지 파일을 선택했을 때 미리보기를 표시하고 파일을 저장합니다.
      */
     function handleImageSelect(event) {
         const file = event.target.files[0];
@@ -311,8 +311,8 @@
             reader.readAsDataURL(file);
         } else {
             profileImageFile = null;
-            // 파일 선택 취소 시 기본 이미지로 되돌릴 경우 아래 코드를 사용
-            // preview.src = 'https://via.placeholder.com/120/161b22/8b949e?text=No+Pic';
+            // 파일 선택 취소 시 기본 이미지로 되돌리기
+            preview.src = 'https://via.placeholder.com/120x120/161b22/8b949e?text=No+Pic';
         }
     }
 
@@ -398,7 +398,6 @@
 
     /**
      * 회원가입을 처리합니다.
-     * 🚩 MODIFIED: 파일 업로드 로직을 위한 FormData 생성 부분 추가
      */
     async function signup() {
         const username = document.getElementById('username').value.trim();
@@ -437,27 +436,19 @@
         signupBtn.disabled = true;
 
         try {
-            // 파일 업로드를 위해 FormData 사용
             const formData = new FormData();
             formData.append('name', username);
             formData.append('password', password);
-            formData.append('displayName', nickname); // 닉네임을 displayName으로 서버에 전달
+            formData.append('displayName', nickname);
 
             if (profileImageFile) {
-                // profileImageFile이 있으면 'profileImage'라는 이름으로 추가
                 formData.append('profileImage', profileImageFile);
             }
 
-            // fetch API를 사용해 FormData를 보냄 (post() 함수가 FormData를 지원하도록 수정 필요)
-            // 임시로 기존 post 함수 대신 fetch 사용 (만약 기존 post 함수가 JSON만 지원한다면)
-            // 서버 API가 파일 업로드(multipart/form-data)를 지원해야 합니다.
-
-            // 파일 업로드 시에는 일반 post 함수 대신 아래처럼 fetch를 사용해야 할 가능성이 높습니다.
-            // (사용자님의 기존 post 함수가 FormData를 지원하는지 확실치 않기 때문에, 파일 업로드 시 표준 fetch를 권장합니다.)
-
+            // fetch API를 사용하여 FormData (multipart/form-data)를 서버로 전송
             const signupResp = await fetch(SIGNUP_API, {
                 method: 'POST',
-                body: formData // FormData를 body에 직접 전달하면 Content-Type: multipart/form-data가 자동으로 설정됩니다.
+                body: formData
             });
 
             if (signupResp.ok) {
