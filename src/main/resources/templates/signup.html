@@ -282,9 +282,11 @@
 </main>
 
 <script>
+    // API Endpoints
     const SIGNUP_API = '/api/auth/signup';
-    const CHECK_USERNAME_API = '/api/auth/check-username';
-    const CHECK_NICKNAME_API = '/api/auth/check-nickname';
+    // 🚩 MODIFIED: URI 변경 반영
+    const CHECK_USERNAME_API_BASE = '/api/auth/check/id';
+    const CHECK_NICKNAME_API_BASE = '/api/auth/check/nickname';
     const LOGIN_PAGE = '/';
 
     let isUsernameAvailable = false;
@@ -311,7 +313,6 @@
             reader.readAsDataURL(file);
         } else {
             profileImageFile = null;
-            // 파일 선택 취소 시 기본 이미지로 되돌리기
             preview.src = 'https://via.placeholder.com/120x120/161b22/8b949e?text=No+Pic';
         }
     }
@@ -335,13 +336,14 @@
         }
 
         try {
-            const checkResp = await get(`${CHECK_USERNAME_API}/${username}`);
+            // POST 요청을 사용하여 중복 확인
+            const checkResp = await post(`${CHECK_USERNAME_API_BASE}/${username}`);
 
-            if (checkResp.ok) {
+            if (checkResp.ok) { // 200 OK
                 isUsernameAvailable = true;
                 usernameStatus.textContent = '✅ Available ID.';
                 usernameStatus.classList.add(STATUS_SUCCESS);
-            } else if (checkResp.status === 409) {
+            } else if (checkResp.status === 409) { // 409 Conflict 처리
                 isUsernameAvailable = false;
                 usernameStatus.textContent = '❌ ID already taken.';
                 usernameStatus.classList.add(STATUS_ERROR);
@@ -374,19 +376,20 @@
         }
 
         try {
-            const checkResp = await get(`${CHECK_NICKNAME_API}/${nickname}`);
+            // POST 요청을 사용하여 중복 확인
+            const checkResp = await post(`${CHECK_NICKNAME_API_BASE}/${nickname}`);
 
-            if (checkResp.ok) {
+            if (checkResp.ok) { // 200 OK
                 isNicknameAvailable = true;
                 nicknameStatus.textContent = '✅ Available Nickname.';
                 nicknameStatus.classList.add(STATUS_SUCCESS);
-            } else if (checkResp.status === 409) {
+            } else if (checkResp.status === 409) { // 409 Conflict 처리
                 isNicknameAvailable = false;
                 nicknameStatus.textContent = '❌ Nickname already taken.';
                 nicknameStatus.classList.add(STATUS_ERROR);
             } else {
-                nicknameStatus.textContent = `⚠️ An unexpected error occurred.`;
-                nicknameStatus.classList.add(STATUS_INFO);
+                usernameStatus.textContent = `⚠️ An unexpected error occurred.`;
+                usernameStatus.classList.add(STATUS_INFO);
             }
         } catch (err) {
             console.error(err);
@@ -436,6 +439,7 @@
         signupBtn.disabled = true;
 
         try {
+            // 파일 업로드를 위해 FormData 사용
             const formData = new FormData();
             formData.append('name', username);
             formData.append('password', password);
@@ -445,11 +449,8 @@
                 formData.append('profileImage', profileImageFile);
             }
 
-            // fetch API를 사용하여 FormData (multipart/form-data)를 서버로 전송
-            const signupResp = await fetch(SIGNUP_API, {
-                method: 'POST',
-                body: formData
-            });
+            // httpFileRequest 함수를 사용하여 파일 및 데이터를 POST로 전송
+            const signupResp = await httpFileRequest(SIGNUP_API, formData);
 
             if (signupResp.ok) {
                 showModal("Sign Up Complete", "🎉 Account successfully created! Please log in.", () => {
