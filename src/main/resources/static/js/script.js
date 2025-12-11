@@ -48,7 +48,7 @@ async function refreshTokens() {
         });
         return response.ok;
     } catch (e) {
-        console.error("Refresh 요청 실패:", e);
+        console.error("Refresh request failed:", e); // 🚩 수정
         return false;
     }
 }
@@ -62,7 +62,7 @@ async function httpFileRequest(url, fileFormData) {
             // headers: Content-Type 지정하지 않음! 브라우저가 자동으로 multipart/form-data 처리
         });
     } catch (error) {
-        console.error(`파일 업로드 실패: ${error}`);
+        console.error(`File upload failed: ${error}`); // 🚩 수정
         throw error;
     }
 }
@@ -125,7 +125,7 @@ function getJwtPayload(cookieName = 'JWT_PAYLOAD') {
             const payloadJson = atob(payloadBase64);
             return JSON.parse(payloadJson);
         } catch (e) {
-            console.error('JWT Payload 파싱 실패:', e);
+            console.error('JWT Payload parsing failed:', e); // 🚩 수정
             return null;
         }
     }

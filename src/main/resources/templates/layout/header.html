@@ -1,7 +1,7 @@
-<header class="p-3 mb-3 border-bottom sticky-top bg-white">
+<header class="p-3 mb-3 border-bottom sticky-top bg-white" th:fragment="headerFragment">
     <nav class="navbar navbar-expand-lg navbar-light bg-white">
         <div class="container-fluid">
-            <button class="btn btn-outline-secondary me-3" onclick="history.back()" title="뒤로가기">
+            <button class="btn btn-outline-secondary me-3" onclick="history.back()" title="Go Back">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-left" viewBox="0 0 16 16">
                     <path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8"/>
                 </svg>
@@ -17,37 +17,31 @@
 
             <div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasMenu" aria-labelledby="offcanvasMenuLabel">
                 <div class="offcanvas-header border-bottom">
-                    <h5 class="offcanvas-title" id="offcanvasMenuLabel">메뉴</h5>
-                    <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+                    <h5 class="offcanvas-title" id="offcanvasMenuLabel">Menu</h5> <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
                 </div>
                 <div class="offcanvas-body">
                     <ul class="navbar-nav justify-content-end flex-grow-1 pe-3">
                         <li class="nav-item mb-2">
                             <a class="nav-link btn btn-danger text-white" href="#" onclick="redirectToLogin()">
-                                <i class="bi bi-box-arrow-right"></i> 로그아웃
-                            </a>
+                                <i class="bi bi-box-arrow-right"></i> Sign Out </a>
                         </li>
                         <hr>
                         <li class="nav-item">
-                            <a class="nav-link" th:href="@{/member/mypage}">마이 페이지 (회원정보수정)</a>
-                        </li>
+                            <a class="nav-link" th:href="@{/member/mypage}">My Page (Edit Profile)</a> </li>
                         <li class="nav-item">
-                            <a class="nav-link" th:href="@{/chat/rooms}">채팅룸 이동</a>
-                        </li>
+                            <a class="nav-link" th:href="@{/chat/rooms}">Chat Rooms</a> </li>
                         <hr>
                         <li class="nav-item">
-                            <a class="nav-link" th:href="@{/terms/service}">회원약관 Terms of Service</a>
+                            <a class="nav-link" th:href="@{/terms/service}">Terms of Service</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" th:href="@{/terms/privacy}">회원약관 Privacy Policy</a>
+                            <a class="nav-link" th:href="@{/terms/privacy}">Privacy Policy</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" th:href="@{/inquiry}">문의 사항 페이지 이동</a>
-                        </li>
+                            <a class="nav-link" th:href="@{/inquiry}">Contact Us</a> </li>
                         <hr>
                         <li class="nav-item">
-                            <a class="nav-link" href="https://github.com" target="_blank">소셜미디어 (GitHub)</a>
-                        </li>
+                            <a class="nav-link" href="https://github.com" target="_blank">Social Media (GitHub)</a> </li>
                     </ul>
                 </div>
             </div>
