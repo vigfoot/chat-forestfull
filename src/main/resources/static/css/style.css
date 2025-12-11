@@ -3,21 +3,21 @@
 /* --- 1. CORE COLOR VARIABLES (Minimal Dark Theme) --- */
 :root {
     /* Backgrounds */
-    --cf-dark-bg-primary: #121212;         /* Main screen background (deepest dark) */
-    --cf-dark-bg-secondary: #1e1e1e;       /* Card/Content area background (slightly brighter) */
-    --cf-dark-bg-tertiary: #2a2a2a;        /* Sidebar/Header background (to create contrast) */
+    --cf-dark-bg-primary: #121212; /* Main screen background (deepest dark) */
+    --cf-dark-bg-secondary: #1e1e1e; /* Card/Content area background (slightly brighter) */
+    --cf-dark-bg-tertiary: #2a2a2a; /* Sidebar/Header background (to create contrast) */
 
     /* Text Colors */
-    --cf-text-primary: #e0e0e0;            /* Main text color (light gray) */
-    --cf-text-secondary: #a0a0a0;          /* Secondary text color (muted gray) */
+    --cf-text-primary: #e0e0e0; /* Main text color (light gray) */
+    --cf-text-secondary: #a0a0a0; /* Secondary text color (muted gray) */
 
     /* Accent & Action Colors (Based on purple/pink for Chat ForestFull identity) */
-    --cf-accent-primary: #BB86FC;          /* Primary accent (e.g., Active buttons, links) */
-    --cf-accent-secondary: #03DAC6;        /* Secondary accent (e.g., Online status) */
-    --cf-accent-hover: #9A66DE;            /* Primary accent darker on hover */
+    --cf-accent-primary: #BB86FC; /* Primary accent (e.g., Active buttons, links) */
+    --cf-accent-secondary: #03DAC6; /* Secondary accent (e.g., Online status) */
+    --cf-accent-hover: #9A66DE; /* Primary accent darker on hover */
 
     /* Border & Separators */
-    --cf-border-color: #383838;            /* Subtle border/separator lines */
+    --cf-border-color: #383838; /* Subtle border/separator lines */
 }
 
 
@@ -36,6 +36,7 @@ a {
     text-decoration: none;
     transition: color 0.2s ease;
 }
+
 a:hover {
     color: var(--cf-accent-hover);
     text-decoration: underline;
@@ -57,9 +58,11 @@ a:hover {
     color: var(--cf-text-primary);
     border: 1px solid var(--cf-border-color);
 }
+
 .form-control::placeholder {
     color: var(--cf-text-secondary);
 }
+
 .form-control:focus {
     background-color: var(--cf-dark-bg-tertiary);
     color: var(--cf-text-primary);
@@ -74,6 +77,7 @@ a:hover {
     color: #000000; /* Dark text for contrast on bright accent */
     font-weight: 600;
 }
+
 .btn-primary:hover {
     background-color: var(--cf-accent-hover);
     border-color: var(--cf-accent-hover);
@@ -91,7 +95,94 @@ a:hover {
     border: none;
     color: var(--cf-text-primary);
 }
+
 .alert-warning {
     background-color: #5C4000; /* Dark yellow/brown for warning */
     border-left: 5px solid #FFC107;
+}
+
+
+/* [User Constraint] No margin or padding for the logo */
+.navbar-brand {
+    padding: 0;
+    margin: 0;
+    /* 텍스트 줄바꿈 방지 */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+
+    /* 로고 텍스트 크기 및 색상 */
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: var(--cf-accent-primary) !important;
+
+    /* 이미지 포함을 위한 flex */
+    display: flex;
+    align-items: center;
+}
+
+/* 인라인 로고 스타일 (Sign In 페이지에서 가져옴) */
+.header-inline-logo {
+    height: 30px; /* Header에서는 조금 작게 설정 */
+    vertical-align: sub;
+    margin-right: 0.25rem;
+    padding: 0;
+}
+
+/* Dark theme styling for the navbar */
+.cf-navbar-custom {
+    background-color: var(--cf-dark-bg-secondary) !important;
+    border-bottom: 1px solid var(--cf-border-color);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+}
+
+/* Text color and active state for links */
+.nav-link {
+    color: var(--cf-text-secondary) !important;
+    font-weight: 500;
+    transition: color 0.2s;
+}
+
+.nav-link:hover {
+    color: var(--cf-text-primary) !important;
+}
+
+/* 현재 페이지 표시 */
+.nav-link.active {
+    color: var(--cf-text-primary) !important;
+    border-bottom: 2px solid var(--cf-accent-primary);
+    margin-bottom: -2px;
+}
+
+/* Profile icon style */
+.profile-icon {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid var(--cf-accent-primary);
+}
+
+.cf-footer-custom {
+    /* 헤더보다 더 어두운 배경색 또는 테마에 맞는 색상 사용 */
+    background-color: var(--cf-dark-bg-primary) !important;
+    border-top: 1px solid var(--cf-border-color);
+    color: var(--cf-text-secondary);
+    padding: 1.5rem 0;
+    font-size: 0.85rem;
+}
+
+.cf-footer-custom a {
+    color: var(--cf-text-secondary);
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.cf-footer-custom a:hover {
+    color: var(--cf-accent-primary);
+}
+
+.cf-social-icon {
+    font-size: 1.2rem;
+    margin-left: 1rem;
 }
