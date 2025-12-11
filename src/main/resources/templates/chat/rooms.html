@@ -53,7 +53,7 @@
 </head>
 <body class="d-flex flex-column min-vh-100">
 
-<header th:replace="~{/layout/header.html :: header}"></header>
+<header th:replace="~{/layout/header.html}"></header>
 
 <main class="container py-5 flex-grow-1">
     <div class="row justify-content-center">
@@ -84,12 +84,7 @@
     </div>
 </main>
 
-<footer th:replace="~{/layout/footer.html :: footer}"></footer>
-
-<div th:replace="~{/layout/footer.html :: common-ui}"></div>
-
-<div th:replace="~{/layout/header.html :: logout-form}"></div>
-
+<footer th:replace="~{/layout/footer.html}"></footer>
 
 <div class="modal fade" id="createRoomModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">

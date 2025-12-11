@@ -88,46 +88,7 @@ a:hover {
     background-color: var(--cf-dark-bg-tertiary) !important;
 }
 
-/* --- 4. UTILITIES (Used in Footer/Alerts) --- */
-
-/* Alert/Announcement styles to ensure good visibility */
-.alert {
-    border: none;
-    color: var(--cf-text-primary);
-}
-
-.alert-warning {
-    background-color: #5C4000; /* Dark yellow/brown for warning */
-    border-left: 5px solid #FFC107;
-}
-
-
-/* [User Constraint] No margin or padding for the logo */
-.navbar-brand {
-    padding: 0;
-    margin: 0;
-    /* 텍스트 줄바꿈 방지 */
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-
-    /* 로고 텍스트 크기 및 색상 */
-    font-size: 1.5rem;
-    font-weight: bold;
-    color: white !important;
-
-    /* 이미지 포함을 위한 flex */
-    display: flex;
-    align-items: center;
-}
-
-/* 인라인 로고 스타일 (Sign In 페이지에서 가져옴) */
-.header-inline-logo {
-    height: 30px; /* Header에서는 조금 작게 설정 */
-    vertical-align: sub;
-    margin-right: 0.25rem;
-    padding: 0;
-}
+/* --- 4. NAVBAR & HEADER STYLES --- */
 
 /* Dark theme styling for the navbar */
 .cf-navbar-custom {
@@ -136,7 +97,26 @@ a:hover {
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
 }
 
-/* Text color and active state for links */
+/* Logo specific styles (User Constraint: No margin/padding) */
+.navbar-brand, .h3 {
+    padding: 0 !important;
+    margin: 0 !important;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: var(--cf-accent-primary) !important; /* 로고 색상 통일 */
+}
+
+.header-inline-logo {
+    height: 30px;
+    vertical-align: sub;
+    margin-right: 0.25rem;
+    padding: 0;
+}
+
+/* Navigation Link styles */
 .nav-link {
     color: var(--cf-text-secondary) !important;
     font-weight: 500;
@@ -147,12 +127,29 @@ a:hover {
     color: var(--cf-text-primary) !important;
 }
 
-/* 현재 페이지 표시 */
+/* Current Page Active State */
 .nav-link.active {
     color: var(--cf-text-primary) !important;
     border-bottom: 2px solid var(--cf-accent-primary);
     margin-bottom: -2px;
 }
+
+/* 🚩 NAVBAR TOGGLER FIX FOR DARK THEME */
+.cf-navbar-toggler-dark .navbar-toggler-icon {
+    /* 아이콘을 흰색 계열로 보이게 하기 위해 배경 이미지의 색상을 변경 */
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28255, 255, 255, 1%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3cpath fill='rgba%28255, 255, 255, 1%29' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e") !important;
+}
+
+.cf-navbar-toggler-dark {
+    border-color: var(--cf-border-color) !important;
+}
+.cf-toggler-custom:focus {
+    /* 버튼 클릭 시 나타나는 원치 않는 포커스 아웃라인 제거 */
+    box-shadow: none !important;
+}
+
+
+/* --- 5. FOOTER & UTILITIES --- */
 
 /* Profile icon style */
 .profile-icon {
@@ -162,13 +159,13 @@ a:hover {
     object-fit: cover;
     border: 1px solid var(--cf-accent-primary);
 }
-/* 푸터의 얇고 간결한 디자인을 위한 스타일 (외부 CSS 파일에 추가되어야 합니다) */
+
+/* Footer's thin and minimalist design */
 .cf-footer-minimized {
-    /* 기존의 cf-footer-custom보다 더 얇게 만듭니다. */
     background-color: var(--cf-dark-bg-primary) !important;
     border-top: 1px solid var(--cf-border-color);
     color: var(--cf-text-secondary);
-    padding: 0; /* 패딩을 줄여서 높이를 최소화 */
+    padding: 0.5rem 0;
 }
 .cf-footer-minimized a {
     color: var(--cf-text-secondary);
@@ -177,18 +174,8 @@ a:hover {
 .cf-footer-minimized a:hover {
     color: var(--cf-accent-primary);
 }
-/* 푸터 인라인 로고 스타일 */
+/* Footer inline logo style */
 .footer-inline-logo {
-    height: 16px; /* Header보다 더 작게 설정하여 미니멀함을 강조 */
+    height: 16px;
     vertical-align: middle;
-    /* margin은 HTML 태그에 이미 me-1로 적용됨 */
-}
-.cf-toggler-custom .navbar-toggler-icon {
-    /* 이 코드는 Bootstrap의 기본 Toggler 아이콘을 흰색으로 강제 변경합니다. */
-    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28255, 255, 255, 1%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e") !important;
-}
-
-.cf-toggler-custom:focus {
-    /* 버튼 클릭 시 나타나는 원치 않는 포커스 아웃라인 제거 */
-    box-shadow: none !important;
 }
