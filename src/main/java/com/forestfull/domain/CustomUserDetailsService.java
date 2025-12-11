@@ -1,16 +1,12 @@
 package com.forestfull.domain;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.*;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.stream.Collectors;
+import org.springframework.util.StringUtils;
 
 @Service
 @RequiredArgsConstructor
@@ -34,20 +30,6 @@ public class CustomUserDetailsService implements UserDetailsService {
         return user;
     }
 
-    public List<String> getRoles(Long userId) {
-        final User user = userMapper.getRolesByUserId(userId);
-        if (user == null) throw new UsernameNotFoundException("User not found: " + userId);
-
-        return user.getRoleList();
-    }
-
-    private Collection<? extends GrantedAuthority> getAuthorities(String roles) {
-        return Arrays.stream(roles.split(","))
-                .map(r -> r.startsWith("ROLE_") ? r : "ROLE_" + r)
-                .map(SimpleGrantedAuthority::new)
-                .collect(Collectors.toList());
-    }
-
     public User signup(User user) {
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         userMapper.save(user);
@@ -62,7 +44,9 @@ public class CustomUserDetailsService implements UserDetailsService {
         return Boolean.TRUE.equals(userMapper.isExistedNickname(displayName));
     }
 
-    public void updateProfileImage(Long id, String profileImageUrl) {
-        userMapper.updateProfileImage(id, profileImageUrl);
+    public void updateProfileImage(Long userId, String profileImageUrl) {
+        if (userId == null || userId <= 0 || !StringUtils.hasText(profileImageUrl)) return;
+
+        userMapper.updateProfileImage(userId, profileImageUrl);
     }
 }

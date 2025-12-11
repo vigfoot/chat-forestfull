@@ -33,5 +33,5 @@ public interface UserMapper {
     Boolean isExistedNickname(String displayName);
 
     @Insert("UPDATE chat_forestfull.member SET profile_image = #{profileImageUrl} WHERE id = #{id}")
-    void updateProfileImage(Long id, String profileImageUrl);
+    int updateProfileImage(Long id, String profileImageUrl);
 }
