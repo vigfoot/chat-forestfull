@@ -1,71 +1,97 @@
-/* Slack style and minimalism */
+/* /css/style.css */
+
+/* --- 1. CORE COLOR VARIABLES (Minimal Dark Theme) --- */
 :root {
-    /* Slack Primary Brand Colors */
-    --slack-purple: #4A154B;
-    --slack-green: #36C5F0;
-    --slack-yellow: #ECB22E;
-    --slack-red: #E01E5A;
+    /* Backgrounds */
+    --cf-dark-bg-primary: #121212;         /* Main screen background (deepest dark) */
+    --cf-dark-bg-secondary: #1e1e1e;       /* Card/Content area background (slightly brighter) */
+    --cf-dark-bg-tertiary: #2a2a2a;        /* Sidebar/Header background (to create contrast) */
 
-    /* **[NEW]** Dark Theme Base Colors (로그인 페이지의 요소 색상 정의) */
-    --slack-dark-bg: #111A21;           /* 메인 배경색 */
-    --slack-dark-card: #22252A;         /* 로그인 카드 배경색 */
-    --slack-dark-text-primary: #DDDDDD;  /* 주 텍스트 색상 */
-    --slack-dark-border: #44474C;       /* 경계선 및 구분선 */
+    /* Text Colors */
+    --cf-text-primary: #e0e0e0;            /* Main text color (light gray) */
+    --cf-text-secondary: #a0a0a0;          /* Secondary text color (muted gray) */
+
+    /* Accent & Action Colors (Based on purple/pink for Chat ForestFull identity) */
+    --cf-accent-primary: #BB86FC;          /* Primary accent (e.g., Active buttons, links) */
+    --cf-accent-secondary: #03DAC6;        /* Secondary accent (e.g., Online status) */
+    --cf-accent-hover: #9A66DE;            /* Primary accent darker on hover */
+
+    /* Border & Separators */
+    --cf-border-color: #383838;            /* Subtle border/separator lines */
 }
 
-/* **[CHANGE]** Body 배경색 변경 */
-.bg-slack-light {
-    background-color: var(--slack-dark-bg);
+
+/* --- 2. GENERAL BODY & FONT STYLES --- */
+
+/* Apply the main background and text color to the body */
+body {
+    background-color: var(--cf-dark-bg-primary);
+    color: var(--cf-text-primary);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-/* **[CHANGE]** 로고 텍스트 색상 변경 (대비 확보) */
-.slack-logo-text {
-    color: var(--slack-dark-text-primary); /* 어두운 배경에서 잘 보이도록 변경 */
-    font-size: 2.5rem;
-    font-weight: 800;
+/* Ensure all links adopt the accent color and hover state */
+a {
+    color: var(--cf-accent-primary);
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+a:hover {
+    color: var(--cf-accent-hover);
+    text-decoration: underline;
 }
 
-/* **[CHANGE]** 로그인 카드 스타일 변경 */
-.login-card-slack {
-    max-width: 400px;
-    padding: 40px;
+/* --- 3. COMMON UI COMPONENTS (Buttons, Cards, Forms) --- */
+
+/* Card/Container style using the secondary background */
+.card, .bg-secondary-theme {
+    background-color: var(--cf-dark-bg-secondary) !important;
+    border: 1px solid var(--cf-border-color);
     border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4); /* 그림자도 더 어둡게 */
-    background: var(--slack-dark-card); /* 깊은 회색 배경 */
-    color: var(--slack-dark-text-primary); /* 카드 내부 텍스트 색상 */
+    color: var(--cf-text-primary);
 }
 
-/* 카드 내부의 H2 텍스트도 밝은 색으로 보장 */
-.login-card-slack h2 {
-    color: var(--slack-dark-text-primary);
+/* Form Input Field Style (using Bootstrap's form-control) */
+.form-control {
+    background-color: var(--cf-dark-bg-tertiary);
+    color: var(--cf-text-primary);
+    border: 1px solid var(--cf-border-color);
+}
+.form-control::placeholder {
+    color: var(--cf-text-secondary);
+}
+.form-control:focus {
+    background-color: var(--cf-dark-bg-tertiary);
+    color: var(--cf-text-primary);
+    border-color: var(--cf-accent-primary);
+    box-shadow: 0 0 0 0.25rem rgba(187, 134, 252, 0.25); /* Accent color glow */
 }
 
-/* 텍스트 입력 필드 스타일 조정 */
-.form-control-lg {
-    background-color: #2D3035; /* 입력 필드 배경은 주변보다 약간 밝게 */
-    color: var(--slack-dark-text-primary);
-    border: 1px solid var(--slack-dark-border);
+/* Primary Button Style (Accent Color) */
+.btn-primary {
+    background-color: var(--cf-accent-primary);
+    border-color: var(--cf-accent-primary);
+    color: #000000; /* Dark text for contrast on bright accent */
+    font-weight: 600;
 }
-.form-control-lg::placeholder {
-    color: var(--slack-dark-text-secondary); /* 플레이스홀더 색상 */
-}
-.form-control-lg:focus {
-    border-color: var(--slack-purple);
-    box-shadow: 0 0 0 0.25rem rgba(74, 21, 75, 0.25); /* 보라색 포커스링 */
-    background-color: #2D3035;
-    color: var(--slack-dark-text-primary);
+.btn-primary:hover {
+    background-color: var(--cf-accent-hover);
+    border-color: var(--cf-accent-hover);
 }
 
-/* 버튼 스타일은 기존 Slack Purple 유지 */
-.btn-slack-primary {
-    background-color: var(--slack-purple);
-    border-color: var(--slack-purple);
-    color: #ffffff;
-    transition: background-color 0.2s;
+/* Header/Sidebar Background (Tertiary Color) */
+.bg-tertiary-theme {
+    background-color: var(--cf-dark-bg-tertiary) !important;
 }
 
-.btn-slack-primary:hover {
-    background-color: #360D37;
-    border-color: #360D37;
-    color: #ffffff;
+/* --- 4. UTILITIES (Used in Footer/Alerts) --- */
+
+/* Alert/Announcement styles to ensure good visibility */
+.alert {
+    border: none;
+    color: var(--cf-text-primary);
+}
+.alert-warning {
+    background-color: #5C4000; /* Dark yellow/brown for warning */
+    border-left: 5px solid #FFC107;
 }
