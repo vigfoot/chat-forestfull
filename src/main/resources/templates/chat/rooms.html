@@ -1,7 +1,8 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <script th:replace="~{/layout/config.html}"></script>
+
     <style>
         /* Dark Theme overrides for the list card */
         .cf-rooms-card {
@@ -9,7 +10,6 @@
             border: 1px solid var(--cf-border-color);
             color: var(--cf-text-primary);
         }
-
         .cf-rooms-card .list-group-item {
             background-color: transparent !important; /* Make items inherit card color */
             border-color: var(--cf-border-color);
@@ -17,15 +17,12 @@
             padding: 1.25rem 1rem;
             cursor: pointer;
         }
-
         .cf-rooms-card .list-group-item:hover {
             background-color: var(--cf-hover-dark) !important;
         }
-
         .cf-rooms-card .text-muted {
             color: var(--cf-text-secondary) !important;
         }
-
         /* Styling for the Primary Enter Button */
         .btn-enter {
             background-color: var(--cf-accent-primary) !important;
@@ -34,11 +31,18 @@
             font-weight: bold;
             min-width: 90px;
         }
-
         .btn-enter:hover {
             filter: brightness(1.1);
         }
+        /* Room participant count style */
+        .room-participant-count {
+            color: var(--cf-accent-primary);
+            font-weight: bold;
+            margin-left: 10px;
+            font-size: 0.9em;
+        }
     </style>
+
     <title>Chat ForestFull | Rooms</title>
 </head>
 <body class="d-flex flex-column min-vh-100">
@@ -49,8 +53,7 @@
     <div class="row justify-content-center">
         <div class="col-sm-12 col-md-10 col-lg-8">
             <div class="card cf-rooms-card p-4">
-                <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3"
-                     style="border-color: var(--cf-border-color) !important;">
+                <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3" style="border-color: var(--cf-border-color) !important;">
                     <h4 class="mb-0 fw-bold">🌳 Chat Rooms</h4>
 
                     <div class="d-flex align-items-center">
@@ -74,6 +77,8 @@
 
 <footer th:replace="~{/layout/footer.html :: footer}"></footer>
 
+<div th:replace="~{/layout/footer.html :: common-ui}"></div>
+
 <div th:replace="~{/layout/header.html :: logout-form}"></div>
 
 
@@ -85,8 +90,7 @@
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <input id="new-room-name" class="form-control" placeholder="Room name (required)"
-                       style="background-color: var(--cf-dark-bg-primary); color: var(--cf-text-primary); border-color: var(--cf-border-color);"/>
+                <input id="new-room-name" class="form-control" placeholder="Room name (required)" style="background-color: var(--cf-dark-bg-primary); color: var(--cf-text-primary); border-color: var(--cf-border-color);"/>
             </div>
             <div class="modal-footer border-top-0">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -103,14 +107,14 @@
         // helper: format user info from JWT_PAYLOAD
         const payload = getJwtPayload('JWT_PAYLOAD'); // global function
         const userDisplay = payload ? (payload.displayName || payload.name || ('#' + payload.sub)) : 'Guest';
-        document.getElementById('user-info').innerText = `Logged in as ${userDisplay}`; // MODIFIED: Add context
+        document.getElementById('user-info').innerText = `Logged in as ${userDisplay}`;
 
         const roomsList = document.getElementById('rooms-list');
-        // MODIFIED: Use new class for modal initialization
         const modal = new bootstrap.Modal(document.getElementById('createRoomModal'));
 
         async function loadRooms() {
             try {
+                // TODO: API가 참여 인원 수를 포함하도록 수정되어야 합니다.
                 const res = await get('/api/chat/rooms');
                 if (!res.ok) throw new Error('Failed to load rooms');
                 const rooms = await res.json();
@@ -127,14 +131,21 @@
                 return;
             }
             rooms.forEach(r => {
+                // 참가 인원 수 임시 설정 (r.participantsCount가 백엔드에서 제공된다고 가정)
+                const participantCount = r.participantsCount ?? Math.floor(Math.random() * 20) + 1;
+
                 const li = document.createElement('li');
-                // MODIFIED: Add click handler to the whole LI for better UX
                 li.className = 'list-group-item room-item d-flex justify-content-between align-items-center';
                 li.onclick = () => window.location.href = `/pages/rooms/${r.id}`;
 
                 li.innerHTML = `
                   <div class="flex-grow-1">
-                    <div class="fw-bold">${escapeHtml(r.name)}</div>
+                    <div class="fw-bold d-flex align-items-center">
+                        ${escapeHtml(r.name)}
+                        <span class="room-participant-count">
+                           <i class="bi bi-person-fill"></i> ${participantCount}
+                        </span>
+                    </div>
                     <div class="small text-muted mt-1">
                         <i class="bi bi-tag-fill me-1"></i> #${r.id}
                         <span class="ms-3 d-none d-sm-inline">
@@ -161,15 +172,13 @@
             if (!name) return alert('Room name required');
             try {
                 const createdBy = payload ? Number(payload.sub) : null;
-                const res = await post('/api/chat/rooms', {name, createdBy});
+                const res = await post('/api/chat/rooms', { name, createdBy });
                 if (res.ok) {
                     modal.hide();
                     const body = await res.json();
                     if (body && body.id) {
-                        // Redirect immediately to the new room
                         window.location.href = `/pages/rooms/${body.id}`;
                     } else {
-                        // Or reload the list if no ID is returned
                         await loadRooms();
                     }
                 } else {

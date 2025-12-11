@@ -114,7 +114,7 @@ a:hover {
     /* 로고 텍스트 크기 및 색상 */
     font-size: 1.5rem;
     font-weight: bold;
-    color: var(--cf-accent-primary) !important;
+    color: white !important;
 
     /* 이미지 포함을 위한 flex */
     display: flex;
@@ -182,4 +182,13 @@ a:hover {
     height: 16px; /* Header보다 더 작게 설정하여 미니멀함을 강조 */
     vertical-align: middle;
     /* margin은 HTML 태그에 이미 me-1로 적용됨 */
+}
+.cf-toggler-custom .navbar-toggler-icon {
+    /* 이 코드는 Bootstrap의 기본 Toggler 아이콘을 흰색으로 강제 변경합니다. */
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28255, 255, 255, 1%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e") !important;
+}
+
+.cf-toggler-custom:focus {
+    /* 버튼 클릭 시 나타나는 원치 않는 포커스 아웃라인 제거 */
+    box-shadow: none !important;
 }
