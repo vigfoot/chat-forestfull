@@ -72,4 +72,16 @@ public class MemberController {
                 ? ResponseEntity.status(HttpStatus.CONFLICT).build()
                 : ResponseEntity.ok().build();
     }
+
+    @PostMapping("/verify/send/email")
+    ResponseEntity<?> verifySendEmail(@PathVariable MemberDTO.VerifyEmail verifyEmail) {
+
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/verify/check/email")
+    ResponseEntity<?> verifyCheckEmail(@PathVariable MemberDTO.VerifyEmail verifyEmail) {
+
+        return ResponseEntity.ok().build();
+    }
 }

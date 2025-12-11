@@ -5,7 +5,7 @@
     <title>Chat ForestFull | Sign Up</title>
 
     <style>
-        /* CSS Styles (Simplified for brevity, assuming previous CSS is loaded) */
+        /* CSS Styles (중략: 기존 스타일 유지) */
         body { background-color: var(--cf-dark-bg-primary); color: var(--cf-text-primary); }
         .signup-card { max-width: 800px; padding: 40px; border-radius: 6px; border: 1px solid var(--cf-border-color); background: var(--cf-dark-bg-secondary); }
         .form-control-lg { background-color: var(--cf-dark-bg-tertiary); color: var(--cf-text-primary); border: 1px solid var(--cf-border-color); border-radius: 6px; font-size: 1rem; }
@@ -23,11 +23,9 @@
         .profile-image-label { display: block; width: 100%; height: 100%; position: relative; }
         .upload-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.7); color: white; display: flex; justify-content: center; align-items: center; opacity: 0; transition: opacity 0.3s; font-size: 0.9rem; font-weight: 600; }
         .profile-image-container:hover .upload-overlay { opacity: 1; }
-
-        /* 🚩 NEW: Verification code input styling */
         .verification-code-group {
             margin-top: 10px;
-            padding-left: 15px; /* 시각적 들여쓰기 */
+            padding-left: 15px;
             transition: opacity 0.3s ease-in-out;
         }
         .code-timer {
@@ -43,7 +41,7 @@
         <div class="col-12">
             <div class="card signup-card mx-auto">
                 <div class="card-body p-0">
-                    <h2 class="h4 text-center mb-5">Join the Chat ForestFull!</h2>
+                    <h2 class="h4 text-center mb-5">Join the ForestFull Chat!</h2>
 
                     <div class="profile-upload-area text-center mb-5">
                         <div class="profile-image-container mx-auto">
@@ -152,9 +150,11 @@
                                         I agree to the <a href="/document/terms.html" target="_blank" style="color: var(--cf-accent-primary); font-weight: bold;">Terms of Service</a>
                                     </label>
                                 </div>
+
                             </div>
                         </div>
                     </div>
+
 
                     <button type="button" class="btn btn-primary btn-lg w-100 mb-4 fw-bold" onclick="signup()">
                         Sign Up
@@ -182,16 +182,16 @@
     const SIGNUP_API = '/api/auth/signup';
     const CHECK_USERNAME_API_BASE = '/api/auth/check/id';
     const CHECK_NICKNAME_API_BASE = '/api/auth/check/nickname';
-    const EMAIL_SEND_API = '/api/auth/verify/send'; // 🚩 NEW
-    const EMAIL_CHECK_API = '/api/auth/verify/check'; // 🚩 NEW
+    const EMAIL_SEND_API = '/api/auth/verify/send/email';
+    const EMAIL_CHECK_API = '/api/auth/verify/check/email';
     const LOGIN_PAGE = '/';
 
     let isUsernameAvailable = false;
     let isNicknameAvailable = false;
-    let isEmailAvailable = false; // 🚩 NEW: 이메일 중복 없음 및 형식 유효성 통과
-    let isEmailVerified = false; // 🚩 NEW: 이메일 인증 코드 확인 완료
+    let isEmailAvailable = false;
+    let isEmailVerified = false;
     let profileImageFile = null;
-    let timerInterval = null; // 🚩 NEW: 인증 시간 타이머
+    let timerInterval = null;
 
     const STATUS_SUCCESS = 'status-success';
     const STATUS_ERROR = 'status-error';
@@ -204,7 +204,6 @@
         const statusEl = document.getElementById('verificationCodeStatus');
         let remaining = duration;
 
-        // 1초마다 타이머 업데이트
         timerInterval = setInterval(() => {
             const minutes = Math.floor(remaining / 60);
             const seconds = remaining % 60;
@@ -214,7 +213,7 @@
             if (--remaining < 0) {
                 clearInterval(timerInterval);
                 statusEl.innerHTML = '<span class="status-error">Verification code expired. Please re-send.</span>';
-                document.getElementById('emailVerifyBtn').disabled = true; // 버튼 비활성화
+                document.getElementById('emailVerifyBtn').disabled = true;
             }
         }, 1000);
     }
@@ -225,7 +224,6 @@
         document.getElementById('emailCheckBtn').textContent = 'Re-send';
         document.getElementById('emailVerifyBtn').disabled = false;
     }
-
     function hideVerificationCodeInput() {
         document.getElementById('verificationCodeGroup').classList.add('d-none');
         document.getElementById('emailCheckBtn').textContent = 'Verify';
@@ -233,9 +231,7 @@
         if (timerInterval) clearInterval(timerInterval);
     }
 
-    /**
-     * 프로필 이미지 파일을 선택했을 때 미리보기를 표시하고 파일을 저장합니다.
-     */
+
     function handleImageSelect(event) {
         const file = event.target.files[0];
         const preview = document.getElementById('profilePreview');
@@ -249,13 +245,13 @@
             reader.readAsDataURL(file);
         } else {
             profileImageFile = null;
-            preview.src = '/images/default-profile-image.png';
+            preview.src = '/images/default-avatar.png';
         }
     }
 
 
     /**
-     * ID (Username) 중복을 확인합니다. (로직은 이전과 동일)
+     * ID (Username) 중복을 확인합니다.
      */
     async function checkUsername() {
         const username = document.getElementById('username').value.trim();
@@ -293,7 +289,7 @@
     }
 
     /**
-     * 닉네임 중복을 확인합니다. (로직은 이전과 동일)
+     * 닉네임 중복을 확인합니다.
      */
     async function checkNickname() {
         const nickname = document.getElementById('nickname').value.trim();
@@ -331,7 +327,8 @@
     }
 
     /**
-     * 🚩 NEW: 이메일 중복 확인 및 인증 코드 전송을 요청합니다.
+     * 이메일 중복 확인 및 인증 코드 전송을 요청합니다.
+     * (이메일 중복 불허 정책을 따릅니다: 409 응답 시 가입 불가)
      */
     async function checkEmail() {
         const email = document.getElementById('email').value.trim();
@@ -348,19 +345,16 @@
             return;
         }
 
-        // 이메일 형식 유효성 검사 (클라이언트 측)
         if (!/^\S+@\S+\.\S+$/.test(email)) {
             emailStatus.textContent = 'Please enter a valid email address.';
             emailStatus.classList.add(STATUS_ERROR);
             return;
         }
 
-        // 인증 코드 전송 버튼 비활성화 (요청 중)
         document.getElementById('emailCheckBtn').disabled = true;
 
         try {
-            // 🚩 API 요청: 이메일 중복 확인 및 인증 코드 전송 (POST 사용)
-            // body에는 email만 포함하여 서버가 중복 확인과 발송을 동시에 처리하도록 유도
+            // 이메일 중복 확인 및 인증 코드 전송 요청
             const sendResp = await post(EMAIL_SEND_API, { email });
 
             if (sendResp.ok) { // 200 OK (코드 전송 성공 및 이메일 사용 가능)
@@ -372,8 +366,9 @@
                 startTimer(180); // 3분 타이머 시작
 
             } else if (sendResp.status === 409) { // 409 Conflict (이메일 중복)
+                // 🚩 정책 반영: 중복 불허
                 isEmailAvailable = false;
-                emailStatus.textContent = '❌ This email is already registered.';
+                emailStatus.textContent = '❌ This email is already registered and cannot be used.';
                 emailStatus.classList.add(STATUS_ERROR);
                 hideVerificationCodeInput();
             } else {
@@ -392,7 +387,7 @@
     }
 
     /**
-     * 🚩 NEW: 인증 코드를 확인하여 이메일 인증을 완료합니다.
+     * 인증 코드를 확인하여 이메일 인증을 완료합니다.
      */
     async function verifyEmailCode() {
         const email = document.getElementById('email').value.trim();
@@ -409,11 +404,10 @@
             return;
         }
 
-        // 인증 버튼 비활성화 (요청 중)
         document.getElementById('emailVerifyBtn').disabled = true;
 
         try {
-            // 🚩 API 요청: 인증 코드 확인 (POST 사용)
+            // 인증 코드 확인 요청
             const verifyResp = await post(EMAIL_CHECK_API, { email, code });
 
             if (verifyResp.ok) { // 200 OK (인증 성공)
@@ -423,10 +417,10 @@
                 verificationCodeStatus.textContent = '✅ Email successfully verified!';
                 verificationCodeStatus.classList.add(STATUS_SUCCESS);
 
-                document.getElementById('emailCheckBtn').disabled = true; // 이메일 변경 불가
-                document.getElementById('email').disabled = true; // 이메일 필드 잠금
-                document.getElementById('verificationCode').disabled = true; // 코드 필드 잠금
-                document.getElementById('emailVerifyBtn').style.display = 'none'; // 버튼 숨기기
+                document.getElementById('emailCheckBtn').disabled = true;
+                document.getElementById('email').disabled = true;
+                document.getElementById('verificationCode').disabled = true;
+                document.getElementById('emailVerifyBtn').style.display = 'none';
 
             } else if (verifyResp.status === 400 || verifyResp.status === 401) {
                 verificationCodeStatus.textContent = '❌ Invalid or expired code.';
@@ -482,13 +476,13 @@
             if (!isUsernameAvailable) missingCheck += 'ID, ';
             if (!isNicknameAvailable) missingCheck += 'Nickname, ';
             if (!isEmailAvailable) missingCheck += 'Email, ';
-            missingCheck = missingCheck.slice(0, -2); // 마지막 쉼표 제거
+            missingCheck = missingCheck.slice(0, -2);
 
             showModal("Validation Required", `Please check the availability of your ${missingCheck} before signing up.`, null);
             return;
         }
 
-        // 🚩 NEW: 이메일 인증 완료 체크
+        // 5. 이메일 인증 완료 체크
         if (!isEmailVerified) {
             showModal("Email Verification Required", "You must verify your email address using the code before signing up.", null);
             return;
@@ -510,17 +504,16 @@
                 formData.append('profileImage', profileImageFile);
             }
 
-            // 🚩 NEW: 인증 상태를 서버에 전송할 필요가 있다면 (예: 인증 토큰), 여기에 추가합니다.
-            // 현재는 인증된 이메일이므로 이메일 필드만 전송해도 충분하다고 가정합니다.
-
             // httpFileRequest 함수를 사용하여 파일 및 데이터를 POST로 전송
             const signupResp = await httpFileRequest(SIGNUP_API, formData);
 
             if (signupResp.ok) {
+                // 🚩 서버에서 이메일 중복 제거 (기존 계정 NULL 처리) 로직이 처리되었다고 가정
                 showModal("Sign Up Complete", "🎉 Account successfully created! Please log in.", () => {
                     window.location.replace(LOGIN_PAGE);
                 });
             } else if (signupResp.status === 409) {
+                // 이메일이 아닌, 가입하는 시점에 ID/닉네임 중복 발생 시
                 showModal("Sign Up Failed", "❗ The ID or Nickname is already taken. Please check again.", null);
                 isUsernameAvailable = false;
                 isNicknameAvailable = false;
