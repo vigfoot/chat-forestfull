@@ -6,59 +6,101 @@
     <title>Chat ForestFull | My Settings</title>
 
     <style>
-        /* Override light theme defaults for this page */
+        /* CSS 스타일은 이전 응답과 동일합니다. (시인성, 프로필 이미지 등 개선 반영됨) */
         body {
             background-color: var(--cf-dark-bg-primary);
             color: var(--cf-text-primary);
         }
-
-        /* Setting Card/Form Styling */
         .setting-card {
             background: var(--cf-dark-bg-secondary);
             border-radius: 12px;
             padding: 30px;
             box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
             border: 1px solid var(--cf-border-color);
-            /* Login card max-width constraint not applied here, but a similar max-width is good practice */
             max-width: 800px;
-            margin: 0 auto; /* Center the card */
+            margin: 0 auto;
         }
-
         .form-control-custom {
             background-color: var(--cf-dark-bg-tertiary);
             border: 1px solid var(--cf-border-color);
             color: var(--cf-text-primary);
         }
-
         .form-control-custom:focus {
             background-color: var(--cf-dark-bg-tertiary);
             border-color: var(--cf-accent-primary);
             box-shadow: 0 0 0 0.25rem rgba(187, 134, 252, 0.25);
             color: var(--cf-text-primary);
         }
-
         .setting-section {
             border-bottom: 1px solid var(--cf-border-color);
             padding-bottom: 20px;
             margin-bottom: 20px;
         }
-
         .setting-section:last-child {
             border-bottom: none;
             margin-bottom: 0;
             padding-bottom: 0;
         }
-
         .btn-primary-custom {
             background-color: var(--cf-accent-primary);
             border-color: var(--cf-accent-primary);
-            color: var(--cf-text-secondary); /* Dark text on bright button */
+            color: #ffffff !important;
             transition: all 0.2s;
         }
-
         .btn-primary-custom:hover {
             background-color: var(--cf-accent-hover);
             border-color: var(--cf-accent-hover);
+            color: #ffffff !important;
+        }
+        .profile-img-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 30px;
+            position: relative;
+        }
+        .profile-img {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 4px solid var(--cf-accent-primary);
+            box-shadow: 0 0 15px rgba(187, 134, 252, 0.5);
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .profile-img:hover {
+            transform: scale(1.05);
+        }
+        .profile-img-container::after {
+            content: "\f4bf";
+            font-family: "bootstrap-icons";
+            position: absolute;
+            bottom: 0;
+            right: calc(50% - 60px);
+            transform: translateX(calc(100% + 15px));
+            background-color: var(--cf-accent-primary);
+            color: white;
+            border-radius: 50%;
+            padding: 8px;
+            font-size: 1rem;
+            opacity: 0.9;
+            cursor: pointer;
+        }
+        /* 🌟 NEW: TikTok Button Styling */
+        .btn-tiktok {
+            background-color: #000000;
+            color: white;
+            border: 1px solid #ffffff33;
+            width: 100%;
+            padding: 10px;
+            font-weight: bold;
+        }
+        .btn-tiktok:hover {
+            background-color: #222222;
+            color: white;
+        }
+        .btn-tiktok .bi-tiktok {
+            font-size: 1.2rem;
         }
     </style>
 </head>
@@ -72,22 +114,37 @@
 
             <div class="setting-card">
 
-                <h2 class="text-center mb-5 fw-bold" style="color: var(--cf-accent-primary);">
+                <h2 class="text-center mb-4 fw-bold" style="color: var(--cf-accent-primary);">
                     <i class="bi bi-gear-fill me-2"></i> My Settings
                 </h2>
 
+                <div class="profile-img-container">
+                    <img id="profile-image"
+                         src="/images/default-avatar.png"
+                         alt="User Profile"
+                         class="profile-img"
+                         title="Click to change profile picture">
+                    <input type="file" id="profile-file-input" accept="image/*" style="display:none;">
+                </div>
                 <div class="setting-section">
                     <h4 class="mb-3 text-secondary"><i class="bi bi-person me-2"></i> Profile Information</h4>
 
                     <form id="profile-form">
                         <div class="mb-3">
-                            <label for="username" class="form-label">Username</label>
-                            <input type="text" class="form-control form-control-custom" id="username" placeholder="Enter new username">
+                            <label for="username-input" class="form-label">ID (read only)</label>
+                            <input type="text" class="form-control form-control-custom" id="username-input" placeholder="Loading ID..." readonly>
                         </div>
+
                         <div class="mb-3">
-                            <label for="email" class="form-label">Email Address (Read-only)</label>
-                            <input type="email" class="form-control form-control-custom" id="email" value="user@example.com" readonly>
+                            <label for="nickname-input" class="form-label">Nickname (Display Name)</label>
+                            <input type="text" class="form-control form-control-custom" id="nickname-input" placeholder="Loading nickname...">
                         </div>
+
+                        <div class="mb-3">
+                            <label for="email-input" class="form-label">Email Address</label>
+                            <input type="email" class="form-control form-control-custom" id="email-input" placeholder="Loading email...">
+                        </div>
+
                         <div class="text-end">
                             <button type="submit" class="btn btn-primary-custom">Update Profile</button>
                         </div>
@@ -117,6 +174,17 @@
                 </div>
 
                 <div class="setting-section">
+                    <h4 class="mb-3 text-secondary"><i class="bi bi-link-45deg me-2"></i> Account Linkage</h4>
+
+                    <div class="row g-2">
+                        <div class="col-12">
+                            <button type="button" class="btn btn-tiktok" id="link-tiktok-btn">
+                                <i class="bi bi-tiktok me-2"></i> Link with TikTok
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="setting-section">
                     <h4 class="mb-3 text-danger"><i class="bi bi-person-x me-2"></i> Danger Zone</h4>
                     <p class="text-secondary">Permanently delete your account and all associated data.</p>
                     <div class="text-end">
@@ -132,27 +200,80 @@
 <footer th:replace="~{/layout/footer.html}"></footer>
 
 <script>
-    // Placeholder JavaScript for form handling and data fetching
-    document.addEventListener('DOMContentLoaded', () => {
-        // Example: Fetch user data and populate form fields on load
-        // fetchUserData().then(data => { ... });
+    const DEFAULT_AVATAR_PATH = '/images/default-avatar.png';
 
-        // Example: Profile form submission
+    // 🌟 1. User Data Loading via getJwtPayload()
+    function loadUserData() {
+        const payload = getJwtPayload() || {};
+
+        const username = payload.username;
+        const nickname = payload.displayName;
+        const email = payload.email;
+        const profileImageUrl = payload.profileImage;
+
+        const profileImg = document.getElementById('profile-image');
+        profileImg.src = profileImageUrl || DEFAULT_AVATAR_PATH;
+
+        document.getElementById('username-input').value = username || '';
+        document.getElementById('nickname-input').value = nickname || '';
+        document.getElementById('email-input').value = email || '';
+    }
+
+    // 🌟 2. Profile Image Change Logic
+    document.addEventListener('DOMContentLoaded', () => {
+        loadUserData();
+
+        const profileImg = document.getElementById('profile-image');
+        const fileInput = document.getElementById('profile-file-input');
+        const profileContainer = document.querySelector('.profile-img-container');
+
+        // TikTok 연동 버튼 핸들러
+        document.getElementById('link-tiktok-btn').addEventListener('click', () => {
+            // TODO: TikTok OAuth 시작 엔드포인트로 리다이렉트하는 로직 추가
+            alert('Redirecting to TikTok OAuth for account linkage...');
+            // 예시: window.location.href = '/oauth2/authorization/tiktok';
+        });
+
+
+        // 프로필 이미지 핸들러
+        profileImg.addEventListener('click', () => fileInput.click());
+        profileContainer.addEventListener('click', (e) => {
+            if (e.target.id !== 'profile-image' && e.target.tagName !== 'INPUT') {
+                fileInput.click();
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    profileImg.src = event.target.result;
+                    // TODO: 서버에 파일 업로드 API 호출 로직 추가 (Multipart)
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // 3. Form Submission Placeholders (Update/Password/Delete)
         document.getElementById('profile-form').addEventListener('submit', (e) => {
             e.preventDefault();
-            alert('Profile update logic here.');
+            // TODO: 클라이언트 유효성 검사 (닉네임 길이, 이메일 형식) 추가
+            // TODO: API를 호출하여 닉네임, 이메일 등 업데이트 로직
+            alert('Profile update API logic here.');
         });
 
-        // Example: Password change form submission
         document.getElementById('password-form').addEventListener('submit', (e) => {
             e.preventDefault();
-            alert('Password change logic here.');
+            // TODO: 클라이언트 유효성 검사 (비밀번호 일치, 최소 길이) 추가
+            // TODO: API를 호출하여 비밀번호 업데이트 로직
+            alert('Password change API logic here.');
         });
 
-        // Example: Delete account confirmation
         document.getElementById('delete-account-btn').addEventListener('click', () => {
             if (confirm('Are you absolutely sure you want to delete your account? This action is irreversible.')) {
-                alert('Account deletion logic here.');
+                // TODO: API를 호출하여 계정 삭제 로직
+                alert('Account deletion API logic here.');
             }
         });
     });

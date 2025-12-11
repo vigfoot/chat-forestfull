@@ -224,7 +224,7 @@
 
 <script th:inline="javascript">
     const roomId = /*[[${roomId}]]*/ 0;
-    const payload = getJwtPayload('JWT_PAYLOAD');
+    const payload = getJwtPayload();
     const MY_ID = Number(payload?.sub);
     const MY_NAME = payload?.username;
     const MY_DISPLAY_NAME = payload?.displayName || 'Me';

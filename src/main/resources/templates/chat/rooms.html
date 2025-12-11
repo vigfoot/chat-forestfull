@@ -109,7 +109,7 @@
 <script src="/webjars/stomp-websocket/2.3.4/stomp.min.js"></script>
 <script>
     (function () {
-        const payload = getJwtPayload('JWT_PAYLOAD'); // global function
+        const payload = getJwtPayload(); // global function
         const userDisplay = payload ? (payload.displayName || payload.name || ('#' + payload.sub)) : 'Guest';
         document.getElementById('user-info').innerText = `Logged in as ${userDisplay}`;
 
