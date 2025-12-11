@@ -28,7 +28,7 @@ public class SecurityConfig {
     private final PasswordEncoder passwordEncoder;
     private final CustomUserDetailsService customUserDetailsService;
     private static final AntPathMatcher antPathMatcher = new AntPathMatcher();
-    private static final String[] PUBLIC_RESOURCES = {"/", "/favicon.ico", "/css/**", "/js/**", "/images/**", "/webjars/**"};
+    private static final String[] PUBLIC_RESOURCES = {"/", "/favicon.ico", "/css/**", "/js/**", "/images/**", "/webjars/**", "/document/**"};
     private static final String[] ALLOW_PATHS = {"/api/auth/login", "/pages/signup", "/api/auth/signup", "/api/auth/check-username/**"};
 
     public static boolean isPublicResources(String path) {

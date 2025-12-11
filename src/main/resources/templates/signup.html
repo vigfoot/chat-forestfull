@@ -5,106 +5,177 @@
     <title>Chat ForestFull | Sign Up</title>
 
     <style>
-        /* GitHub Style Variables (유지) */
-        :root {
-            --github-dark-bg: #0d1117;
-            --github-card-bg: #161b22;
-            --github-text-primary: #f0f6fc;
-            --github-text-secondary: #8b949e;
-            --github-border: #30363d;
-            --github-accent: #238636;
-            --github-accent-hover: #2ea043;
-            --github-red: #E01E5A;
+        /* 1. 배경 및 기본 폰트 색상 설정 */
+        body {
+            background-color: var(--cf-dark-bg-primary);
+            color: var(--cf-text-primary);
         }
 
-        /* 배경 그라디언트 및 폰트 */
-        .bg-slack-light {
-            background: radial-gradient(circle at top left, #1a232e 0%, var(--github-dark-bg) 70%);
-            min-height: 100vh;
-        }
-
-        .text-muted {
-            color: var(--github-text-secondary) !important;
-            font-size: 1rem;
-        }
-
-        /* **[FIX]** 폼 너비 조정 (Grid로 제어하기 위해 max-width는 다시 좁게 유지) */
-        .login-card-slack {
-            max-width: 440px; /* 적당한 크기로 되돌림 */
-            padding: 30px;
+        /* 2. 폼 카드 스타일 (전역 max-width 800px 적용) */
+        .signup-card {
+            max-width: 800px;
+            padding: 40px;
             border-radius: 6px;
-            box-shadow: none;
-            border: 1px solid var(--github-border);
-            background: var(--github-card-bg);
-            color: var(--github-text-primary);
+            border: 1px solid var(--cf-border-color);
+            background: var(--cf-dark-bg-secondary);
+            color: var(--cf-text-primary);
         }
 
-        .login-card-slack h2 {
-            color: var(--github-text-primary);
-            font-size: 1.5rem;
-            font-weight: 600;
+        .signup-card h2 {
+            color: var(--cf-text-primary);
+            font-size: 1.8rem;
+            font-weight: 700;
         }
 
-        /* 인풋 필드 스타일 조정 */
+        /* 3. 인풋 필드 스타일 */
         .form-control-lg {
-            background-color: var(--github-dark-bg);
-            color: var(--github-text-primary);
-            border: 1px solid var(--github-border);
+            background-color: var(--cf-dark-bg-tertiary);
+            color: var(--cf-text-primary);
+            border: 1px solid var(--cf-border-color);
             border-radius: 6px;
             font-size: 1rem;
         }
 
-        /* ID Check 버튼 스타일 */
+        /* 4. 중복 체크 버튼 스타일 */
         .btn-check-custom {
-            background-color: var(--github-accent);
-            color: white;
-            border-color: var(--github-accent);
-            /* 둥근 모서리는 Bootstrap이 처리하도록 맡김 */
+            background-color: var(--cf-accent-primary) !important;
+            color: var(--cf-text-primary);
+            border-color: var(--cf-accent-primary) !important;
+            font-weight: 600;
+            padding: 0.375rem 0.75rem;
+            border-radius: 0.375rem;
         }
 
-        /* **[FIX]** Input Group에서 버튼이 붙을 때 인풋 필드의 오른쪽 모서리를 기본값으로 */
+        /* 5. 중복 확인 버튼과 인풋 그룹의 둥근 모서리 처리 */
         .input-group > .form-control:not(:first-child):not(.dropdown-toggle) {
-            border-top-right-radius: 6px;
-            border-bottom-right-radius: 6px;
+            border-top-right-radius: 0;
+            border-bottom-right-radius: 0;
+        }
+        .input-group > .btn {
+            border-top-left-radius: 0;
+            border-bottom-left-radius: 0;
         }
 
-        /* **[NEW]** 반응형 그리드 폼 */
-        /* MD 사이즈 이상에서 라벨과 인풋을 인라인으로 정렬 */
+        /* 6. 반응형 그리드 폼 */
         @media (min-width: 768px) {
             .form-row-custom > .form-label-custom {
                 text-align: right;
+                padding-right: 15px;
+            }
+
+            .agreement-offset-md-4 {
+                margin-left: 33.33333333%;
             }
         }
 
-        /* 모바일에서는 라벨과 인풋이 분리되도록 */
         @media (max-width: 767.98px) {
             .form-row-custom > .form-label-custom {
                 text-align: left;
                 margin-bottom: 0.25rem;
             }
         }
+
+        /* 7. 상태 메시지 색상 변수 정의 */
+        .status-success {
+            color: var(--cf-accent-primary) !important;
+        }
+        .status-error {
+            color: var(--cf-accent-red) !important;
+        }
+        .status-info {
+            color: var(--cf-text-secondary) !important;
+        }
+
+        /* 8. 약관 체크박스 스타일 */
+        .form-check-label {
+            color: var(--cf-text-primary) !important;
+        }
+
+        /* 9. 프로필 사진 스타일 🚩 NEW CSS */
+        .profile-upload-area {
+            margin-bottom: 40px !important; /* 아래쪽 간격 확보 */
+        }
+
+        .profile-image-container {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            overflow: hidden;
+            position: relative;
+            border: 3px solid var(--cf-accent-primary); /* 강조 색상 테두리 */
+            background-color: var(--cf-dark-bg-tertiary);
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+
+        .profile-image-preview {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            /* 기본 이미지 스타일 (사용자 아바타 아이콘 등) */
+        }
+
+        .profile-image-label {
+            display: block;
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+
+        .upload-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .profile-image-container:hover .upload-overlay {
+            opacity: 1;
+        }
     </style>
 </head>
-<body class="bg-slack-light d-flex flex-column min-vh-100">
+<body class="d-flex flex-column min-vh-100">
 
 <main class="container my-auto">
     <div class="row justify-content-center">
         <div class="col-12">
-            <div class="card login-card-slack mx-auto">
+            <div class="card signup-card mx-auto">
                 <div class="card-body p-0">
-                    <h2 class="h4 text-center mb-4 fw-bold">Create an Account</h2>
+                    <h2 class="h4 text-center mb-5">Join the ForestFull Chat!</h2>
 
+                    <div class="profile-upload-area text-center mb-5">
+                        <div class="profile-image-container mx-auto">
+                            <label for="profileImageInput" class="profile-image-label">
+                                <img id="profilePreview" src="https://via.placeholder.com/120/161b22/8b949e?text=No+Pic" alt="Profile Image" class="profile-image-preview">
+                                <input type="file" id="profileImageInput" accept="image/*" class="d-none" onchange="handleImageSelect(event)">
+                                <div class="upload-overlay">
+                                    <span>Select Photo</span>
+                                </div>
+                            </label>
+                        </div>
+                        <small class="form-text text-white-50 mt-2">Optional: Click to set your profile picture.</small>
+                    </div>
                     <div class="mb-3">
                         <div class="row form-row-custom align-items-center">
-                            <label for="username" class="col-md-5 col-12 form-label-custom text-muted">ID</label>
+                            <label for="username" class="col-md-4 col-12 form-label-custom text-white">ID</label>
 
-                            <div class="col-md-7 col-12">
+                            <div class="col-md-8 col-12">
                                 <div class="input-group input-group-lg">
-                                    <input id="username" type="text" class="form-control form-control-lg" placeholder="e.g., james"
+                                    <input id="username" type="text" class="form-control form-control-lg" placeholder="e.g., TheFirstLumberjack"
                                            aria-label="ID input"
                                            oninput="isUsernameAvailable = false;" style="z-index: 1;">
 
-                                    <button type="button" class="btn btn-sm btn-check-custom"
+                                    <button type="button" class="btn btn-check-custom"
                                             onclick="checkUsername()">
                                         Check
                                     </button>
@@ -113,8 +184,8 @@
                         </div>
 
                         <div class="row">
-                            <div class="col-md-5 d-none d-md-block"></div>
-                            <div class="col-md-7 col-12">
+                            <div class="col-md-4 d-none d-md-block"></div>
+                            <div class="col-md-8 col-12">
                                 <small id="usernameStatus" class="form-text" style="height: 1.2rem;"></small>
                             </div>
                         </div>
@@ -122,47 +193,85 @@
 
                     <div class="mb-3">
                         <div class="row form-row-custom align-items-center">
-                            <label for="displayName" class="col-md-5 col-12 form-label-custom text-muted">Display Name</label>
-                            <div class="col-md-7 col-12">
-                                <input id="displayName" type="text" class="form-control form-control-lg" placeholder="e.g., Forest King"
-                                       aria-label="Display Name input">
+                            <label for="nickname" class="col-md-4 col-12 form-label-custom text-white">Nickname</label>
+
+                            <div class="col-md-8 col-12">
+                                <div class="input-group input-group-lg">
+                                    <input id="nickname" type="text" class="form-control form-control-lg" placeholder="e.g., RedwoodKing"
+                                           aria-label="Nickname input"
+                                           oninput="isNicknameAvailable = false;" style="z-index: 1;">
+
+                                    <button type="button" class="btn btn-check-custom"
+                                            onclick="checkNickname()">
+                                        Check
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4 d-none d-md-block"></div>
+                            <div class="col-md-8 col-12">
+                                <small id="nicknameStatus" class="form-text" style="height: 1.2rem;"></small>
                             </div>
                         </div>
                     </div>
 
                     <div class="mb-3">
                         <div class="row form-row-custom align-items-center">
-                            <label for="password" class="col-md-5 col-12 form-label-custom text-muted">Password</label>
-                            <div class="col-md-7 col-12">
+                            <label for="password" class="col-md-4 col-12 form-label-custom text-white">Password</label>
+                            <div class="col-md-8 col-12">
                                 <input id="password" type="password" class="form-control form-control-lg" placeholder="Your password"
                                        aria-label="Password input">
                             </div>
                         </div>
                     </div>
 
-
-                    <div class="mb-3">
+                    <div class="mb-4">
                         <div class="row form-row-custom align-items-center">
-                            <label for="password" class="col-md-5 col-12 form-label-custom text-muted">Password Confirm</label>
-                            <div class="col-md-7 col-12">
+                            <label for="passwordConfirm" class="col-md-4 col-12 form-label-custom text-white">Password Confirm</label>
+                            <div class="col-md-8 col-12">
                                 <input id="passwordConfirm" type="password" class="form-control form-control-lg" placeholder="Confirm your password"
                                        aria-label="Confirm Password input">
                             </div>
                         </div>
                     </div>
 
-                    <button type="button" class="btn btn-slack-primary btn-lg w-100 mb-3 fw-bold" onclick="signup()">
+                    <div class="mb-5">
+                        <div class="row form-row-custom">
+                            <div class="col-md-8 col-12 agreement-offset-md-4">
+
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" id="agreePrivacy">
+                                    <label class="form-check-label" for="agreePrivacy">
+                                        I agree to the <a href="/document/privacy-policy.html" target="_blank" style="color: var(--cf-accent-primary); font-weight: bold;">Privacy Policy</a>
+                                    </label>
+                                </div>
+
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="agreeTerms">
+                                    <label class="form-check-label" for="agreeTerms">
+                                        I agree to the <a href="/document/terms.html" target="_blank" style="color: var(--cf-accent-primary); font-weight: bold;">Terms of Service</a>
+                                    </label>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <button type="button" class="btn btn-primary btn-lg w-100 mb-4 fw-bold" onclick="signup()">
                         Sign Up
                     </button>
 
                     <div class="text-center">
-                        <a href="/pages/login" class="text-decoration-none fw-bold" style="color: var(--github-accent);">
+                        <a href="/" class="text-decoration-none fw-bold" style="color: var(--cf-accent-primary);">
                             Already have an account? Sign In
                         </a>
                     </div>
 
                     <div class="text-center mt-3">
-                        <a href="/" class="text-decoration-none fw-bold" style="color: var(--github-text-secondary);">
+                        <a href="/" class="text-decoration-none fw-bold" style="color: var(--cf-text-secondary);">
                             ← Back to Main Page
                         </a>
                     </div>
@@ -175,15 +284,38 @@
 <script>
     const SIGNUP_API = '/api/auth/signup';
     const CHECK_USERNAME_API = '/api/auth/check-username';
-    const LOGIN_PAGE = '/pages/login';
+    const CHECK_NICKNAME_API = '/api/auth/check-nickname';
+    const LOGIN_PAGE = '/';
 
-    // **[NEW]** 중복 확인 상태를 저장하는 전역 변수
     let isUsernameAvailable = false;
+    let isNicknameAvailable = false;
+    let profileImageFile = null; // 🚩 NEW: 프로필 이미지 파일 저장 변수
 
-    // 에러 표시를 위한 색상 변수를 JavaScript에서 사용하기 위해 임시 정의
-    const GITHUB_RED = '#E01E5A';
-    const GITHUB_ACCENT = '#238636';
-    const GITHUB_TEXT_SECONDARY = '#8b949e';
+    const STATUS_SUCCESS = 'status-success';
+    const STATUS_ERROR = 'status-error';
+    const STATUS_INFO = 'status-info';
+
+    /**
+     * 프로필 이미지 파일을 선택했을 때 미리보기를 표시하고 파일을 저장합니다. 🚩 NEW Function
+     */
+    function handleImageSelect(event) {
+        const file = event.target.files[0];
+        const preview = document.getElementById('profilePreview');
+
+        if (file) {
+            profileImageFile = file;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                preview.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        } else {
+            profileImageFile = null;
+            // 파일 선택 취소 시 기본 이미지로 되돌릴 경우 아래 코드를 사용
+            // preview.src = 'https://via.placeholder.com/120/161b22/8b949e?text=No+Pic';
+        }
+    }
+
 
     /**
      * ID (Username) 중복을 확인합니다.
@@ -192,50 +324,93 @@
         const username = document.getElementById('username').value.trim();
         const usernameStatus = document.getElementById('usernameStatus');
 
+        usernameStatus.className = 'form-text';
         usernameStatus.textContent = '';
         isUsernameAvailable = false;
 
         if (!username) {
             usernameStatus.textContent = 'Please enter an ID.';
-            usernameStatus.style.color = GITHUB_TEXT_SECONDARY;
+            usernameStatus.classList.add(STATUS_INFO);
             return;
         }
 
         try {
-            // post 함수가 Promise를 반환한다고 가정하고, 중복 확인은 GET 요청으로 처리
-            const checkResp = await post(`${CHECK_USERNAME_API}/${username}`);
+            const checkResp = await get(`${CHECK_USERNAME_API}/${username}`);
 
             if (checkResp.ok) {
-                // SUCCESS (200 OK): 사용 가능한 ID
                 isUsernameAvailable = true;
                 usernameStatus.textContent = '✅ Available ID.';
-                usernameStatus.style.color = GITHUB_ACCENT;
+                usernameStatus.classList.add(STATUS_SUCCESS);
             } else if (checkResp.status === 409) {
-                // 409 Conflict: 이미 사용 중인 ID
                 isUsernameAvailable = false;
                 usernameStatus.textContent = '❌ ID already taken.';
-                usernameStatus.style.color = GITHUB_RED;
+                usernameStatus.classList.add(STATUS_ERROR);
             } else {
-                // Other errors
-                usernameStatus.textContent = `⚠️ The ID already exists`;
-                usernameStatus.style.color = GITHUB_TEXT_SECONDARY;
+                usernameStatus.textContent = `⚠️ An unexpected error occurred.`;
+                usernameStatus.classList.add(STATUS_INFO);
             }
         } catch (err) {
             console.error(err);
             usernameStatus.textContent = '⚠️ Network error during check.';
-            usernameStatus.style.color = GITHUB_RED;
+            usernameStatus.classList.add(STATUS_ERROR);
         }
     }
 
+    /**
+     * 닉네임 중복을 확인합니다.
+     */
+    async function checkNickname() {
+        const nickname = document.getElementById('nickname').value.trim();
+        const nicknameStatus = document.getElementById('nicknameStatus');
+
+        nicknameStatus.className = 'form-text';
+        nicknameStatus.textContent = '';
+        isNicknameAvailable = false;
+
+        if (!nickname) {
+            nicknameStatus.textContent = 'Please enter a nickname.';
+            nicknameStatus.classList.add(STATUS_INFO);
+            return;
+        }
+
+        try {
+            const checkResp = await get(`${CHECK_NICKNAME_API}/${nickname}`);
+
+            if (checkResp.ok) {
+                isNicknameAvailable = true;
+                nicknameStatus.textContent = '✅ Available Nickname.';
+                nicknameStatus.classList.add(STATUS_SUCCESS);
+            } else if (checkResp.status === 409) {
+                isNicknameAvailable = false;
+                nicknameStatus.textContent = '❌ Nickname already taken.';
+                nicknameStatus.classList.add(STATUS_ERROR);
+            } else {
+                nicknameStatus.textContent = `⚠️ An unexpected error occurred.`;
+                nicknameStatus.classList.add(STATUS_INFO);
+            }
+        } catch (err) {
+            console.error(err);
+            nicknameStatus.textContent = '⚠️ Network error during check.';
+            nicknameStatus.classList.add(STATUS_ERROR);
+        }
+    }
+
+
+    /**
+     * 회원가입을 처리합니다.
+     * 🚩 MODIFIED: 파일 업로드 로직을 위한 FormData 생성 부분 추가
+     */
     async function signup() {
         const username = document.getElementById('username').value.trim();
-        const displayName = document.getElementById('displayName').value.trim();
+        const nickname = document.getElementById('nickname').value.trim();
         const password = document.getElementById('password').value.trim();
         const passwordConfirm = document.getElementById('passwordConfirm').value.trim();
+        const agreePrivacy = document.getElementById('agreePrivacy').checked;
+        const agreeTerms = document.getElementById('agreeTerms').checked;
 
         // 1. 필수 입력값 체크
-        if (!username || !displayName || !password || !passwordConfirm) {
-            showModal("Input Error", "All fields are required.", null);
+        if (!username || !nickname || !password || !passwordConfirm) {
+            showModal("Input Error", "All input fields are required.", null);
             return;
         }
 
@@ -245,34 +420,58 @@
             return;
         }
 
-        // 3. 중복 확인 상태 체크
-        if (!isUsernameAvailable) {
-            showModal("Validation Required", "Please check ID availability before signing up.", null);
+        // 3. 약관 동의 체크 (필수)
+        if (!agreePrivacy || !agreeTerms) {
+            showModal("Agreement Required", "You must agree to both the Privacy Policy and Terms of Service to sign up.", null);
             return;
         }
 
-        const signupBtn = document.querySelector('button.btn-slack-primary');
+        // 4. 중복 확인 상태 체크 (ID 및 닉네임)
+        if (!isUsernameAvailable || !isNicknameAvailable) {
+            const missingCheck = (!isUsernameAvailable ? 'ID' : '') + (!isNicknameAvailable ? (isUsernameAvailable ? ' Nickname' : ' and Nickname') : '');
+            showModal("Validation Required", `Please check the availability of your ${missingCheck} before signing up.`, null);
+            return;
+        }
+
+        const signupBtn = document.querySelector('button.btn-primary');
         signupBtn.disabled = true;
 
         try {
-            const signupData = {
-                name: username,
-                password: password,
-                displayName: displayName
-            };
+            // 파일 업로드를 위해 FormData 사용
+            const formData = new FormData();
+            formData.append('name', username);
+            formData.append('password', password);
+            formData.append('displayName', nickname); // 닉네임을 displayName으로 서버에 전달
 
-            const signupResp = await post(SIGNUP_API, signupData);
+            if (profileImageFile) {
+                // profileImageFile이 있으면 'profileImage'라는 이름으로 추가
+                formData.append('profileImage', profileImageFile);
+            }
+
+            // fetch API를 사용해 FormData를 보냄 (post() 함수가 FormData를 지원하도록 수정 필요)
+            // 임시로 기존 post 함수 대신 fetch 사용 (만약 기존 post 함수가 JSON만 지원한다면)
+            // 서버 API가 파일 업로드(multipart/form-data)를 지원해야 합니다.
+
+            // 파일 업로드 시에는 일반 post 함수 대신 아래처럼 fetch를 사용해야 할 가능성이 높습니다.
+            // (사용자님의 기존 post 함수가 FormData를 지원하는지 확실치 않기 때문에, 파일 업로드 시 표준 fetch를 권장합니다.)
+
+            const signupResp = await fetch(SIGNUP_API, {
+                method: 'POST',
+                body: formData // FormData를 body에 직접 전달하면 Content-Type: multipart/form-data가 자동으로 설정됩니다.
+            });
 
             if (signupResp.ok) {
                 showModal("Sign Up Complete", "🎉 Account successfully created! Please log in.", () => {
-                    showModal('Success Sign Up', 'Please log in');
                     window.location.replace(LOGIN_PAGE);
                 });
             } else if (signupResp.status === 409) {
-                // 409 Conflict: 이미 존재하는 username (중복 확인을 통과했더라도 다시 한 번 서버에서 확인)
-                showModal("Sign Up Failed", "❗ The ID (username) is already taken. Please choose another one.", null);
+                showModal("Sign Up Failed", "❗ The ID or Nickname is already taken. Please check again.", null);
+                isUsernameAvailable = false;
+                isNicknameAvailable = false;
             } else {
-                showModal("Sign Up Failed", `❌ Failed to sign up due to a server error. (Status: ${signupResp.status})`, null);
+                const errorData = await signupResp.json().catch(() => ({}));
+                const errorMessage = errorData.message || `❌ Failed to sign up due to a server error. (Status: ${signupResp.status})`;
+                showModal("Sign Up Failed", errorMessage, null);
             }
         } catch (err) {
             console.error(err);
