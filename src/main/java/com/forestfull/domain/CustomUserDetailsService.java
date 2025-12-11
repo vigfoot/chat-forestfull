@@ -48,9 +48,10 @@ public class CustomUserDetailsService implements UserDetailsService {
                 .collect(Collectors.toList());
     }
 
-    public boolean signup(User request) {
-        request.setPassword(passwordEncoder.encode(request.getPassword()));
-        return userMapper.save(request);
+    public User signup(User user) {
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
+        userMapper.save(user);
+        return user;
     }
 
     public boolean isExistedUsername(String username) {
@@ -59,5 +60,9 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     public boolean isExistedNickname(String displayName) {
         return Boolean.TRUE.equals(userMapper.isExistedNickname(displayName));
+    }
+
+    public void updateProfileImage(Long id, String profileImageUrl) {
+        userMapper.updateProfileImage(id, profileImageUrl);
     }
 }

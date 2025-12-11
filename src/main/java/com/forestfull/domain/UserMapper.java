@@ -1,5 +1,6 @@
 package com.forestfull.domain;
 
+import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
@@ -30,4 +31,7 @@ public interface UserMapper {
 
     @Select("SELECT COUNT(0) > 0 FROM chat_forestfull.member WHERE display_name = #{displayName}")
     Boolean isExistedNickname(String displayName);
+
+    @Insert("UPDATE chat_forestfull.member SET profile_image = #{profileImageUrl} WHERE id = #{id}")
+    void updateProfileImage(Long id, String profileImageUrl);
 }

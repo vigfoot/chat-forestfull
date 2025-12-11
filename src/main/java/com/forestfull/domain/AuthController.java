@@ -117,6 +117,7 @@ public class AuthController {
         return ResponseEntity.ok(Map.of("message", "token refreshed"));
     }
 
+    // 🚩 MODIFIED: 파일 저장 후처리 로직을 포함한 signup 메서드
     @PostMapping("/signup")
     public ResponseEntity<?> signup(@Valid @ModelAttribute User.SignupRequest request) {
         User user = User.builder()
@@ -125,20 +126,34 @@ public class AuthController {
                 .displayName(request.getDisplayName())
                 .build();
 
-        Long profileFileId = null;
-        if (request.getProfileImage() != null && !request.getProfileImage().isEmpty()) {
-            profileFileId = fileService.saveProfileImage(request.getProfileImage(), 0L /* 임시값 */);
+        User savedUser = null;
+        try {
+            savedUser = customUserService.signup(user);
 
-            if (profileFileId == null) {
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                        .body(Map.of("error", "Failed to upload profile image."));
+            if (savedUser == null || savedUser.getId() == null)
+                return ResponseEntity.badRequest().body(Map.of("error", "Sign up failed during database registration."));
+
+
+            if (request.getProfileImage() != null && !request.getProfileImage().isEmpty()) {
+                Long profileFileId = fileService.saveProfileImage(request.getProfileImage(), savedUser.getId());
+
+                if (profileFileId == null) {
+                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                            .body(Map.of("error", "User registered, but failed to upload profile image."));
+                }
+
+                String profileImageUrl = "/file/" + profileFileId;
+
+                customUserService.updateProfileImage(savedUser.getId(), profileImageUrl);
+                savedUser.setProfileImage(profileImageUrl);
             }
-            user.setProfileImage("/file/" + profileFileId);
-        }
 
-        return customUserService.signup(user)
-                ? ResponseEntity.ok(Map.of("message", "Sign up successful"))
-                : ResponseEntity.badRequest().body(Map.of("error", "Sign up failed unexpectedly."));
+            // 5. 최종 성공 응답 반환
+            return ResponseEntity.ok(Map.of("message", "Sign up successful"));
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("error", "An unexpected error occurred during sign up."));
+        }
     }
 
     @PostMapping("/check/id/{username}")
