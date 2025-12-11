@@ -2,7 +2,9 @@
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <script th:replace="~{/layout/config.html}"></script>
-    <title>Chat Forestfull | Login</title>
+
+    <title>Chat Forestfull | Sign In</title>
+
     <script>
         /* Login Page Routes */
         const ADMIN_PAGE = '/pages/admin/dashboard';
@@ -10,7 +12,6 @@
         const LOGIN_API = '/api/auth/login';
 
         document.addEventListener("DOMContentLoaded", () => {
-            // 1. 빠른 라우팅을 위한 쿠키 체크 (DOMContentLoaded에서 한 번 실행)
             const payload = getJwtPayload();
             if (payload?.roles?.includes("ROLE_ADMIN")) {
                 window.location.replace(ADMIN_PAGE);
@@ -18,20 +19,17 @@
                 window.location.replace(ROOMS_PAGE);
             }
 
-            // 2. **[FIX]** password 입력 필드에 이벤트 리스너 추가
             const passwordInput = document.getElementById('password');
             if (passwordInput) {
                 passwordInput.addEventListener('keydown', (event) => {
-                    // 표준적인 key 속성 체크
                     if (event.key === 'Enter') {
-                        event.preventDefault(); // 기본 폼 제출 방지
+                        event.preventDefault();
                         loginOrSignup();
                     }
                 });
             }
         });
 
-        // async 함수는 DOMContentLoaded 바깥에 정의하여 전역적으로 접근 가능하도록 유지
         async function loginOrSignup() {
             const username = document.getElementById('username').value.trim();
             const password = document.getElementById('password').value.trim();
@@ -41,14 +39,13 @@
                 return;
             }
 
-            const joinBtn = document.querySelector('button.btn-slack-primary');
+            const joinBtn = document.querySelector('button.btn-primary');
             joinBtn.disabled = true;
 
             try {
                 const loginResp = await post(LOGIN_API, {username, password});
 
                 if (loginResp.ok) {
-                    // SUCCESS: User is logged in
                     const payload = getJwtPayload();
                     const targetPage = payload.roles?.includes('ROLE_ADMIN') ? ADMIN_PAGE : ROOMS_PAGE;
 
@@ -58,7 +55,6 @@
                     return;
 
                 } else if (loginResp.status === 401 || loginResp.status === 404) {
-                    // **[CHANGED]** 아이디 없음 (404) 또는 비밀번호 오류 (401) 모두 통합 처리
                     showModal("Login Failed", "❗ The ID or password you entered is incorrect.", null);
 
                 } else {
@@ -72,88 +68,94 @@
             }
         }
     </script>
+
     <style>
-        /* GitHub Style Variables */
-        :root {
-            --github-dark-bg: #0d1117;       /* 짙은 배경 */
-            --github-card-bg: #161b22;       /* 카드/폼 배경 (약간 밝음) */
-            --github-text-primary: #f0f6fc;  /* 주 텍스트 (밝은 흰색) */
-            --github-text-secondary: #8b949e; /* 보조 텍스트 */
-            --github-border: #30363d;        /* 경계선 */
-            --github-accent: #238636;        /* GitHub Green (버튼/액센트 컬러) */
-            --github-accent-hover: #2ea043;
+        /* 1. 배경 로고 적용 및 불투명 처리 */
+        body {
+            background-color: var(--cf-dark-bg-primary, #121212);
+            background-image: url('/images/forestfull.svg');
+            background-repeat: no-repeat;
+            background-position: center center;
+            background-size: 90%;
+            background-attachment: fixed;
         }
 
-        .bg-slack-light { /* 기존 클래스를 재활용하여 배경색 변경 */
-            background-color: var(--github-dark-bg);
+        /* 2. 카드 배경색을 반투명하게 설정 */
+        .card.bg-secondary-theme {
+            background-color: rgba(30, 30, 30, 0.9) !important;
+            backdrop-filter: blur(5px);
         }
 
-        /* **[CHANGE]** 로그인 카드 스타일: 각진 모서리, 어두운 배경, 그림자 제거 */
-        .login-card-slack {
-            max-width: 400px;
-            padding: 40px;
-            border-radius: 6px; /* Slack보다 각지게 */
-            box-shadow: none; /* 그림자 제거 */
-            border: 1px solid var(--github-border); /* 옅은 테두리 */
-            background: var(--github-card-bg);
-            color: var(--github-text-primary);
+        /* 3. 입력 필드 배경색도 반투명하게 설정 */
+        .form-control {
+            background-color: rgba(42, 42, 42, 0.85) !important;
+            border-color: rgba(56, 56, 56, 0.5) !important;
         }
 
-        .login-card-slack h2 {
-            color: var(--github-text-primary);
+        /* 포커스 시에도 투명도 유지 */
+        .form-control:focus {
+            background-color: rgba(42, 42, 42, 0.85) !important;
         }
 
-        /* 입력 필드 스타일 */
-        .form-control-lg {
-            background-color: var(--github-dark-bg); /* 입력 필드는 배경색에 가깝게 */
-            color: var(--github-text-primary);
-            border: 1px solid var(--github-border);
-            border-radius: 6px;
-        }
-        .form-control-lg::placeholder {
-            color: var(--github-text-secondary);
-        }
-        .form-control-lg:focus {
-            border-color: var(--github-accent); /* GitHub Green 포커스 */
-            box-shadow: 0 0 0 0.2rem rgba(35, 134, 54, 0.4);
-            background-color: var(--github-dark-bg);
-            color: var(--github-text-primary);
+        /* 4. Jump back into the conversation. 문구 크기 조정 */
+        .login-subtitle {
+            font-size: 1.1rem;
+            font-weight: 500;
+            color: var(--cf-text-secondary);
         }
 
-        /* **[CHANGE]** 버튼 스타일: GitHub Green 적용 */
-        .btn-slack-primary {
-            background-color: var(--github-accent);
-            border-color: var(--github-accent);
-            color: #ffffff;
-            font-weight: 600 !important; /* GitHub 버튼은 굵은 폰트 사용 */
-            transition: background-color 0.1s;
+        /* 5. 인라인 로고 스타일 및 줄바꿈 방지 */
+        .chat-logo-container {
+            /* 🚩 NEW: Flexbox로 자식 요소(이미지+텍스트)를 한 줄에 정렬 */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            /* 🚩 NEW: 컨테이너가 줄바꿈되는 것을 방지 */
+            white-space: nowrap;
+            overflow: hidden; /* 넘치는 내용 숨기기 (줄바꿈이 안되도록 강제) */
+            text-overflow: ellipsis;
+            /* 텍스트 크기 */
+            font-size: var(--bs-fs-1); /* 기본 크기는 fs-1 유지 */
         }
 
-        .btn-slack-primary:hover {
-            background-color: var(--github-accent-hover);
-            border-color: var(--github-accent-hover);
-            color: #ffffff;
+        /* 🚩 NEW: 모바일 환경에서 텍스트 크기 축소 */
+        @media (max-width: 576px) {
+            .chat-logo-container {
+                /* 작은 화면에서 텍스트 크기를 h4(1.5rem) 정도로 줄여서 한 줄에 들어가도록 함 */
+                font-size: 1.5rem !important;
+            }
+            .inline-logo {
+                /* 텍스트 크기에 맞춰 로고 높이도 줄임 */
+                height: 30px !important;
+            }
         }
 
-        /* 텍스트 링크 색상 */
-        .text-decoration-none {
-            color: var(--github-accent) !important;
+        .inline-logo {
+            height: 40px;
+            vertical-align: sub;
+            margin-right: 0;
+            padding: 0;
+            /* 텍스트와 이미지 사이의 간격을 없애기 위해 마진 제거 */
+            margin-right: 0.25rem;
         }
     </style>
 </head>
-<body class="bg-slack-light d-flex flex-column min-vh-100">
+<body class="d-flex flex-column min-vh-100">
 
 <main class="container my-auto">
     <div class="row justify-content-center">
         <div class="col-12">
-            <div class="text-center mb-5 mt-5">
-                <span class="github-logo-text">Chat ForestFull</span>
-                <p class="text-muted mt-2 fw-semibold">Sign in to your workspace.</p>
-            </div>
-
-            <div class="card login-card-slack mx-auto">
+            <div class="card bg-secondary-theme mx-auto" style="max-width: 800px; padding: 40px;">
                 <div class="card-body p-0">
-                    <h2 class="h4 text-center mb-4 fw-bold">Sign in with your Email Address</h2>
+
+                    <div class="text-center mb-4">
+                        <div class="fw-bold d-block chat-logo-container" style="color: var(--cf-text-primary);">
+                            <img src="/images/forestfull.svg" alt="Chat ForestFull Logo" class="inline-logo">
+                            Chat ForestFull
+                        </div>
+
+                        <p class="login-subtitle mt-2" style="color: var(--cf-text-secondary);">Jump back into the conversation.</p>
+                    </div>
 
                     <div class="mb-3">
                         <label for="username" class="form-label visually-hidden">Username</label>
@@ -165,13 +167,13 @@
                                onkeydown="if(event.key === 'Enter') loginOrSignup()">
                     </div>
 
-                    <button type="button" class="btn btn-slack-primary btn-lg w-100 mb-3 fw-bold" onclick="loginOrSignup()">
+                    <button type="button" class="btn btn-primary btn-lg w-100 mb-3 fw-bold" onclick="loginOrSignup()">
                         Sign In
                     </button>
 
                     <div class="text-center">
-                        <p class="text-muted mb-0">Don't have an account?</p>
-                        <a href="/pages/signup" class="text-decoration-none fw-bold" style="color: var(--slack-purple);">
+                        <p class="text-muted mb-0" style="color: var(--cf-text-secondary) !important;">Don't have an account?</p>
+                        <a href="/pages/signup" class="text-decoration-none fw-bold" style="color: var(--cf-accent-primary);">
                             Sign Up
                         </a>
                     </div>
