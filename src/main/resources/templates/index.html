@@ -24,13 +24,13 @@
                 passwordInput.addEventListener('keydown', (event) => {
                     if (event.key === 'Enter') {
                         event.preventDefault();
-                        loginOrSignup();
+                        login();
                     }
                 });
             }
         });
 
-        async function loginOrSignup() {
+        async function login() {
             const username = document.getElementById('username').value.trim();
             const password = document.getElementById('password').value.trim();
 
@@ -52,17 +52,16 @@
                     showModal("Login Successful", "Welcome! Redirecting to the service.", () => {
                         window.location.replace(targetPage);
                     });
-                    return;
 
                 } else if (loginResp.status === 401 || loginResp.status === 404) {
-                    showModal("Login Failed", "❗ The ID or password you entered is incorrect.", null);
+                    showModal("Login Failed", "❗ The ID or password you entered is incorrect.", () => window.location.reload());
 
                 } else {
-                    showModal("Login Failed", `❌ Failed to log in due to a server error. (Status: ${loginResp.status})`, null);
+                    showModal("Login Failed", `❌ Failed to log in due to a server error. (Status: ${loginResp.status})`, () => window.location.reload());
                 }
             } catch (err) {
                 console.error(err);
-                showModal("Communication Error", "⚠️ An issue occurred while communicating with the server. Please check your network status.", null);
+                showModal("Communication Error", "⚠️ An issue occurred while communicating with the server. Please check your network status.", () => window.location.reload());
             } finally {
                 joinBtn.disabled = false;
             }
@@ -162,10 +161,10 @@
                     <div class="mb-4">
                         <label for="password" class="form-label visually-hidden">Password</label>
                         <input id="password" type="password" class="form-control form-control-lg" placeholder="Enter your password"
-                               onkeydown="if(event.key === 'Enter') loginOrSignup()">
+                               onkeydown="if(event.key === 'Enter') login()">
                     </div>
 
-                    <button type="button" class="btn btn-primary btn-lg w-100 mb-3 fw-bold" onclick="loginOrSignup()">
+                    <button type="button" class="btn btn-primary btn-lg w-100 mb-3 fw-bold" onclick="login()">
                         Sign In
                     </button>
 

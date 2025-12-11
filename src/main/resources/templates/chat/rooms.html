@@ -10,6 +10,7 @@
             border: 1px solid var(--cf-border-color);
             color: var(--cf-text-primary);
         }
+
         .cf-rooms-card .list-group-item {
             background-color: transparent !important; /* Make items inherit card color */
             border-color: var(--cf-border-color);
@@ -17,12 +18,15 @@
             padding: 1.25rem 1rem;
             cursor: pointer;
         }
+
         .cf-rooms-card .list-group-item:hover {
             background-color: var(--cf-hover-dark) !important;
         }
+
         .cf-rooms-card .text-muted {
             color: var(--cf-text-secondary) !important;
         }
+
         /* Styling for the Primary Enter Button */
         .btn-enter {
             background-color: var(--cf-accent-primary) !important;
@@ -31,9 +35,11 @@
             font-weight: bold;
             min-width: 90px;
         }
+
         .btn-enter:hover {
             filter: brightness(1.1);
         }
+
         /* Room participant count style */
         .room-participant-count {
             color: var(--cf-accent-primary);
@@ -53,7 +59,8 @@
     <div class="row justify-content-center">
         <div class="col-sm-12 col-md-10 col-lg-8">
             <div class="card cf-rooms-card p-4">
-                <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3" style="border-color: var(--cf-border-color) !important;">
+                <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3"
+                     style="border-color: var(--cf-border-color) !important;">
                     <h4 class="mb-0 fw-bold">🌳Room</h4>
 
                     <div class="d-flex align-items-center">
@@ -92,7 +99,8 @@
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <input id="new-room-name" class="form-control" placeholder="Room name (required)" style="background-color: var(--cf-dark-bg-primary); color: var(--cf-text-primary); border-color: var(--cf-border-color);"/>
+                <input id="new-room-name" class="form-control" placeholder="Room name (required)"
+                       style="background-color: var(--cf-dark-bg-primary); color: var(--cf-text-primary); border-color: var(--cf-border-color);"/>
             </div>
             <div class="modal-footer border-top-0">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -122,10 +130,6 @@
                 if (!res.ok) throw new Error('Failed to load rooms');
                 const rooms = await res.json();
                 renderRooms(rooms);
-                // 방 목록 로드 후 STOMP 연결 시도
-                if (stompClient === null) {
-                    connectToStomp();
-                }
             } catch (e) {
                 console.error(e);
             }

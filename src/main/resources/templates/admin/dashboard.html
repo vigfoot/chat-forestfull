@@ -1,80 +1,136 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard - Chat Forestfull</title>
-    <link rel="stylesheet" href="/webjars/bootstrap/5.3.8/css/bootstrap.min.css">
-    <script src="/webjars/bootstrap/5.3.8/js/bootstrap.bundle.min.js"></script>
-    <script src="/js/script.js"></script> <!-- 공통함수 로드 -->
-</head>
-<body class="bg-light">
+    <script th:replace="~{/layout/config.html}"></script>
 
-<div class="container py-5">
-    <h2 class="text-center mb-5">Admin Dashboard</h2>
-
-    <div class="row g-4 justify-content-center">
-
-        <!-- 이모지 관리 -->
-        <div class="col-md-4">
-            <div class="card shadow-sm h-100">
-                <div class="card-header text-center">이모지 관리</div>
-                <div class="card-body d-flex flex-column justify-content-center align-items-center">
-                    <p class="text-center">업로드 / 삭제 / 확인 가능한 이모지 관리 페이지</p>
-                    <a href="/pages/admin/emoji" class="btn btn-primary w-100">이모지 관리로 이동</a>
-                </div>
-            </div>
-        </div>
-
-        <!-- 회원 관리 -->
-        <div class="col-md-4">
-            <div class="card shadow-sm h-100">
-                <div class="card-header text-center">회원 관리</div>
-                <div class="card-body d-flex flex-column justify-content-center align-items-center">
-                    <p class="text-center">회원 조회 / 역할 변경 / 삭제 가능</p>
-                    <a href="/pages/admin/users" class="btn btn-secondary w-100">회원 관리로 이동</a>
-                </div>
-            </div>
-        </div>
-
-        <!-- 채팅 룸 -->
-        <div class="col-md-4">
-            <div class="card shadow-sm h-100">
-                <div class="card-header text-center">채팅 룸</div>
-                <div class="card-body d-flex flex-column justify-content-center align-items-center">
-                    <p class="text-center">일반 회원용 채팅 룸 페이지 접속</p>
-                    <a href="/pages/rooms" class="btn btn-success w-100">채팅 룸으로 이동</a>
-                </div>
-            </div>
-        </div>
-
-    </div>
-
-    <!-- 로그아웃 버튼 -->
-    <div class="row mt-5">
-        <div class="col-md-4 offset-md-4">
-            <button class="btn btn-danger w-100" onclick="handleLogout()">로그아웃</button>
-        </div>
-    </div>
-
-</div>
-
-<script>
-    async function handleLogout() {
-        try {
-            const response = await post('/api/auth/logout', null); // POST body 없음
-            if (response.ok) {
-                alert('로그아웃 되었습니다.');
-                window.location.href = '/';
-            } else {
-                alert('로그아웃 중 오류 발생');
-            }
-        } catch (err) {
-            console.error(err);
-            alert('서버와 통신 중 오류 발생');
+    <style>
+        /* Admin Dashboard 전용 스타일 */
+        body {
+            background-color: var(--cf-dark-bg-primary); /* Dark Theme Background */
+            color: var(--cf-text-primary);
         }
-    }
-</script>
+
+        /* 카드 스타일 */
+        .admin-card {
+            background-color: var(--cf-dark-bg-secondary) !important;
+            border: 1px solid var(--cf-border-color);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .admin-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5) !important;
+        }
+
+        .card-header {
+            background-color: var(--cf-dark-bg-secondary);
+            border-bottom: 1px solid var(--cf-border-color);
+            font-weight: bold;
+            color: var(--cf-text-primary);
+            font-size: 1.1rem;
+        }
+
+        .card-body p {
+            color: var(--cf-text-secondary);
+        }
+
+        /* 아이콘 스타일 */
+        .admin-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            color: var(--cf-accent-primary); /* ForestFull Primary Color */
+        }
+
+        /* 버튼 스타일 */
+        .btn-logout {
+            background-color: #dc3545; /* Red */
+            border-color: #dc3545;
+            color: white;
+            font-weight: bold;
+        }
+        .btn-logout:hover {
+            background-color: #c82333;
+            border-color: #bd2130;
+        }
+    </style>
+
+    <title>Chat ForestFull | Admin Dashboard</title>
+</head>
+<body class="d-flex flex-column min-vh-100">
+
+<header th:replace="~{/layout/header.html :: header}"></header>
+
+<main class="container py-5 flex-grow-1">
+    <div class="row justify-content-center">
+        <div class="col-sm-12 col-lg-10">
+            <h2 class="text-center mb-5 fw-bold" style="color: var(--cf-accent-primary);">
+                <i class="bi bi-gear-fill me-2"></i> Administration Panel
+            </h2>
+
+            <div class="row g-4 justify-content-center">
+
+                <div class="col-md-4">
+                    <div class="card shadow-lg h-100 admin-card">
+                        <div class="card-header text-center">Emoji Management</div>
+                        <div class="card-body d-flex flex-column justify-content-center align-items-center">
+                            <i class="bi bi-emoji-sunglasses admin-icon"></i>
+                            <p class="text-center mb-4">Manage, upload, and delete custom emoji packs for the chat environment.</p>
+                            <a href="/pages/admin/emoji" class="btn btn-primary w-100 fw-bold">
+                                <i class="bi bi-arrow-right-circle me-1"></i> Go to Management
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="card shadow-lg h-100 admin-card">
+                        <div class="card-header text-center">User Management</div>
+                        <div class="card-body d-flex flex-column justify-content-center align-items-center">
+                            <i class="bi bi-people-fill admin-icon" style="color: #17a2b8;"></i> <p class="text-center mb-4">View user list, change roles, and handle user deletion.</p>
+                            <a href="/pages/admin/users" class="btn btn-info w-100 fw-bold">
+                                <i class="bi bi-person-lines-fill me-1"></i> Go to Management
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="card shadow-lg h-100 admin-card">
+                        <div class="card-header text-center">Chat Rooms (User View)</div>
+                        <div class="card-body d-flex flex-column justify-content-center align-items-center">
+                            <i class="bi bi-chat-dots-fill admin-icon" style="color: #28a745;"></i> <p class="text-center mb-4">Access the main chat rooms page as a regular user.</p>
+                            <a href="/pages/rooms" class="btn btn-success w-100 fw-bold">
+                                <i class="bi bi-box-arrow-in-up-right me-1"></i> Go to Chat Rooms
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="mt-5 p-4 admin-card">
+                <h5 class="fw-bold mb-3">System Overview (Future Feature)</h5>
+                <p class="text-muted small">Real-time statistics like Active Users, Total Rooms, and Server Load will be displayed here.</p>
+                <div class="progress" style="height: 10px;">
+                    <div class="progress-bar bg-warning" role="progressbar" style="width: 75%;" aria-valuenow="75" aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+            </div>
+
+            <div class="row mt-5">
+                <div class="col-md-6 offset-md-3 col-lg-4 offset-lg-4">
+                    <button class="btn btn-danger w-100 btn-logout" onclick="handleLogout()">
+                        <i class="bi bi-box-arrow-right me-2"></i> Log Out
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</main>
+
+<footer th:replace="~{/layout/footer.html :: footer}"></footer>
+<div th:replace="~{/layout/footer.html :: common-ui}"></div>
+<div th:replace="~{/layout/header.html :: logout-form}"></div>
 
 </body>
 </html>

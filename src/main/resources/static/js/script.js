@@ -229,3 +229,20 @@ function showModal(title, bodyHtml, confirmAction = null) {
     const modal = new bootstrap.Modal(modalEl);
     modal.show();
 }
+async function handleLogout() {
+    try {
+        // POST request to the logout endpoint
+        const response = await post('/api/auth/logout', null);
+        if (response.ok) {
+            // Remove JWT/local storage items if necessary (assuming handled by common script/backend)
+            alert('Logged out successfully.');
+            // Redirect to home or login page
+            window.location.href = '/';
+        } else {
+            alert('Error occurred during logout.');
+        }
+    } catch (err) {
+        console.error(err);
+        alert('Communication error with the server.');
+    }
+}
