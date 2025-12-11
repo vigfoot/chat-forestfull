@@ -11,14 +11,14 @@
         const ROOMS_PAGE = '/pages/rooms';
         const LOGIN_API = '/api/auth/login';
 
-        document.addEventListener("DOMContentLoaded", () => {
-            const payload = getJwtPayload();
-            if (payload?.roles?.includes("ROLE_ADMIN")) {
-                window.location.replace(ADMIN_PAGE);
-            } else if(payload?.roles?.startsWith("ROLE_")){
-                window.location.replace(ROOMS_PAGE);
-            }
+        const payload = getJwtPayload();
+        if (payload?.roles?.includes("ROLE_ADMIN")) {
+            window.location.replace(ADMIN_PAGE);
+        } else if(payload?.roles?.startsWith("ROLE_")){
+            window.location.replace(ROOMS_PAGE);
+        }
 
+        document.addEventListener("DOMContentLoaded", () => {
             const passwordInput = document.getElementById('password');
             if (passwordInput) {
                 passwordInput.addEventListener('keydown', (event) => {
@@ -135,8 +135,6 @@
             vertical-align: sub;
             margin-right: 0;
             padding: 0;
-            /* 텍스트와 이미지 사이의 간격을 없애기 위해 마진 제거 */
-            margin-right: 0.25rem;
         }
     </style>
 </head>
