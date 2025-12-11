@@ -2,27 +2,40 @@
     <nav th:fragment="header" class="navbar navbar-expand-lg cf-navbar-custom sticky-top">
         <div class="container-fluid">
             <div class="d-flex align-items-center">
-                <a class="nav-link btn btn-sm" href="#" onclick="handleLogout();">
-                    <img src="/images/logout.svg" width="30" alt="logout">
-                </a>
+                <button class="btn btn-sm btn-outline-secondary me-3 d-lg-none" onclick="history.back()" style="border: 0px; color: var(--cf-text-secondary) !important; padding: 0;">
+                    <i class="bi bi-arrow-left" style="font-size: 2rem;"></i>
+                </button>
             </div>
 
-            <h3 class="mb-0 fw-bold text-center" style="color: var(--cf-accent-primary); font-family: 'Arial Black', sans-serif;">
-                <img src="/images/forestfull.svg" alt="chat forestfull" width="40">
+            <h3 class="mb-0 fw-bold text-center flex-grow-1" style="color: var(--cf-accent-primary); font-family: 'Arial Black', sans-serif;">
+                <a href="/"> <img src="/images/forestfull.svg" alt="chat forestfull" width="40"> </a>
             </h3>
 
             <div class="d-flex align-items-center">
+                <button class="btn btn-sm btn-outline-secondary me-3 d-none d-lg-block"
+                        onclick="history.back()"
+                        style="border: 0px; color: var(--cf-text-secondary) !important;">
+                    <i class="bi bi-arrow-left-circle me-1"></i> Back
+                </button>
+
                 <button class="navbar-toggler cf-navbar-toggler-dark" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
                         aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation"
                         style="padding: 0.25rem; border: 0px;">
                     <span class="navbar-toggler-icon"></span>
                 </button>
-
-                <div class="d-none d-lg-block" style="width: 50px;"></div>
             </div>
         </div>
+
         <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
             <ul class="navbar-nav ms-2 mb-2 mb-lg-0">
+
+                <li class="nav-item d-lg-none">
+                    <a class="nav-link text-danger" href="#" onclick="handleLogout();">
+                        <i class="bi bi-box-arrow-right me-1"></i> Logout
+                    </a>
+                    <hr class="dropdown-divider d-lg-none">
+                </li>
+
                 <li class="nav-item">
                     <a class="nav-link" th:href="@{/pages/rooms}"
                        th:classappend="${currentUri != null and currentUri.startsWith('/pages/rooms') ? 'active' : ''}">Chat Rooms</a>
