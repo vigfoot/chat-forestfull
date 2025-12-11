@@ -22,9 +22,9 @@ public class MemberController {
 
     // 🚩 MODIFIED: 파일 저장 후처리 로직을 포함한 signup 메서드
     @PostMapping("/signup")
-    public ResponseEntity<?> signup(@Valid @ModelAttribute User.SignupRequest request) {
+    public ResponseEntity<?> signup(@Valid @ModelAttribute MemberDTO request) {
         User user = User.builder()
-                .name(request.getName())
+                .name(request.getUsername())
                 .password(request.getPassword())
                 .displayName(request.getDisplayName())
                 .build();

@@ -1,8 +1,5 @@
 package com.forestfull.domain;
 
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Pattern;
-import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -10,7 +7,6 @@ import lombok.experimental.SuperBuilder;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.nio.file.attribute.UserPrincipal;
 import java.time.LocalDateTime;
@@ -71,31 +67,5 @@ public class User implements UserDetails, UserPrincipal {
     @Override
     public boolean isEnabled() {
         return UserDetails.super.isEnabled();
-    }
-    // ----------------------------------------------------
-
-
-    // 🚩 ADDED: Inner Static Class로 SignupRequest 구현
-    @Data
-    public static class SignupRequest {
-        // ID (Username)
-        @NotBlank(message = "ID is required.")
-        @Size(min = 4, max = 50, message = "ID must be between 4 and 20 characters.")
-        // 🚩 MODIFIED: 영어 대소문자와 숫자만 허용하는 정규식 추가
-        @Pattern(regexp = "^[a-zA-Z0-9]*$", message = "ID must contain only English letters and numbers.")
-        private String name;
-
-        // Password
-        @NotBlank(message = "Password is required.")
-        @Size(min = 8, max = 50, message = "Password must be between 8 and 50 characters.")
-        private String password;
-
-        // Nickname
-        @NotBlank(message = "Nickname is required.")
-        @Size(min = 2, max = 30, message = "Nickname must be between 2 and 30 characters.")
-        private String displayName;
-
-        // Profile Image File (Optional)
-        private MultipartFile profileImage;
     }
 }

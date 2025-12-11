@@ -5,141 +5,34 @@
     <title>Chat ForestFull | Sign Up</title>
 
     <style>
-        /* 1. 배경 및 기본 폰트 색상 설정 */
-        body {
-            background-color: var(--cf-dark-bg-primary);
-            color: var(--cf-text-primary);
-        }
+        /* CSS Styles (Simplified for brevity, assuming previous CSS is loaded) */
+        body { background-color: var(--cf-dark-bg-primary); color: var(--cf-text-primary); }
+        .signup-card { max-width: 800px; padding: 40px; border-radius: 6px; border: 1px solid var(--cf-border-color); background: var(--cf-dark-bg-secondary); }
+        .form-control-lg { background-color: var(--cf-dark-bg-tertiary); color: var(--cf-text-primary); border: 1px solid var(--cf-border-color); border-radius: 6px; font-size: 1rem; }
+        .btn-check-custom { background-color: var(--cf-accent-primary) !important; color: var(--cf-text-primary); border-color: var(--cf-accent-primary) !important; font-weight: 600; padding: 0.375rem 0.75rem; border-radius: 0.375rem; }
+        .input-group > .form-control:not(:first-child):not(.dropdown-toggle) { border-top-right-radius: 0; border-bottom-right-radius: 0; }
+        .input-group > .btn { border-top-left-radius: 0; border-bottom-left-radius: 0; }
+        @media (min-width: 768px) { .form-row-custom > .form-label-custom { text-align: right; padding-right: 15px; } .agreement-offset-md-4 { margin-left: 33.33333333%; } }
+        @media (max-width: 767.98px) { .form-row-custom > .form-label-custom { text-align: left; margin-bottom: 0.25rem; } }
+        .status-success { color: var(--cf-accent-primary) !important; }
+        .status-error { color: var(--cf-accent-red) !important; }
+        .status-info { color: var(--cf-text-secondary) !important; }
+        .profile-upload-area { margin-bottom: 40px !important; }
+        .profile-image-container { width: 120px; height: 120px; border-radius: 50%; overflow: hidden; position: relative; border: 3px solid var(--cf-accent-primary); background-color: var(--cf-dark-bg-tertiary); cursor: pointer; box-shadow: 0 0 10px rgba(0, 0, 0, 0.5); }
+        .profile-image-preview { width: 100%; height: 100%; object-fit: cover; }
+        .profile-image-label { display: block; width: 100%; height: 100%; position: relative; }
+        .upload-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.7); color: white; display: flex; justify-content: center; align-items: center; opacity: 0; transition: opacity 0.3s; font-size: 0.9rem; font-weight: 600; }
+        .profile-image-container:hover .upload-overlay { opacity: 1; }
 
-        /* 2. 폼 카드 스타일 (전역 max-width 800px 적용) */
-        .signup-card {
-            max-width: 800px;
-            padding: 40px;
-            border-radius: 6px;
-            border: 1px solid var(--cf-border-color);
-            background: var(--cf-dark-bg-secondary);
-            color: var(--cf-text-primary);
+        /* 🚩 NEW: Verification code input styling */
+        .verification-code-group {
+            margin-top: 10px;
+            padding-left: 15px; /* 시각적 들여쓰기 */
+            transition: opacity 0.3s ease-in-out;
         }
-
-        .signup-card h2 {
-            color: var(--cf-text-primary);
-            font-size: 1.8rem;
-            font-weight: 700;
-        }
-
-        /* 3. 인풋 필드 스타일 */
-        .form-control-lg {
-            background-color: var(--cf-dark-bg-tertiary);
-            color: var(--cf-text-primary);
-            border: 1px solid var(--cf-border-color);
-            border-radius: 6px;
-            font-size: 1rem;
-        }
-
-        /* 4. 중복 체크 버튼 스타일 */
-        .btn-check-custom {
-            background-color: var(--cf-accent-primary) !important;
-            color: var(--cf-text-primary);
-            border-color: var(--cf-accent-primary) !important;
-            font-weight: 600;
-            padding: 0.375rem 0.75rem;
-            border-radius: 0.375rem;
-        }
-
-        /* 5. 중복 확인 버튼과 인풋 그룹의 둥근 모서리 처리 */
-        .input-group > .form-control:not(:first-child):not(.dropdown-toggle) {
-            border-top-right-radius: 0;
-            border-bottom-right-radius: 0;
-        }
-        .input-group > .btn {
-            border-top-left-radius: 0;
-            border-bottom-left-radius: 0;
-        }
-
-        /* 6. 반응형 그리드 폼 */
-        @media (min-width: 768px) {
-            .form-row-custom > .form-label-custom {
-                text-align: right;
-                padding-right: 15px;
-            }
-
-            .agreement-offset-md-4 {
-                margin-left: 33.33333333%;
-            }
-        }
-
-        @media (max-width: 767.98px) {
-            .form-row-custom > .form-label-custom {
-                text-align: left;
-                margin-bottom: 0.25rem;
-            }
-        }
-
-        /* 7. 상태 메시지 색상 변수 정의 */
-        .status-success {
-            color: var(--cf-accent-primary) !important;
-        }
-        .status-error {
-            color: var(--cf-accent-red) !important;
-        }
-        .status-info {
-            color: var(--cf-text-secondary) !important;
-        }
-
-        /* 8. 약관 체크박스 스타일 */
-        .form-check-label {
-            color: var(--cf-text-primary) !important;
-        }
-
-        /* 9. 프로필 사진 스타일 */
-        .profile-upload-area {
-            margin-bottom: 40px !important;
-        }
-
-        .profile-image-container {
-            width: 120px;
-            height: 120px;
-            border-radius: 50%;
-            overflow: hidden;
-            position: relative;
-            border: 3px solid var(--cf-accent-primary);
-            background-color: var(--cf-dark-bg-tertiary);
-            cursor: pointer;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-        }
-
-        .profile-image-preview {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .profile-image-label {
-            display: block;
-            width: 100%;
-            height: 100%;
-            position: relative;
-        }
-
-        .upload-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.7);
-            color: white;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            opacity: 0;
-            transition: opacity 0.3s;
-            font-size: 0.9rem;
-            font-weight: 600;
-        }
-
-        .profile-image-container:hover .upload-overlay {
-            opacity: 1;
+        .code-timer {
+            font-weight: bold;
+            color: var(--cf-accent-red);
         }
     </style>
 </head>
@@ -150,12 +43,12 @@
         <div class="col-12">
             <div class="card signup-card mx-auto">
                 <div class="card-body p-0">
-                    <h2 class="h4 text-center mb-5">Join the ForestFull Chat!</h2>
+                    <h2 class="h4 text-center mb-5">Join the Chat ForestFull!</h2>
 
                     <div class="profile-upload-area text-center mb-5">
                         <div class="profile-image-container mx-auto">
                             <label for="profileImageInput" class="profile-image-label">
-                                <img id="profilePreview" src="https://via.placeholder.com/120x120/161b22/8b949e?text=No+Pic" alt="" class="profile-image-preview">
+                                <img id="profilePreview" src="/images/default-avatar.png" alt="" class="profile-image-preview">
                                 <input type="file" id="profileImageInput" accept="image/*" class="d-none" onchange="handleImageSelect(event)">
                                 <div class="upload-overlay">
                                     <span>Select Photo</span>
@@ -168,55 +61,60 @@
                     <div class="mb-3">
                         <div class="row form-row-custom align-items-center">
                             <label for="username" class="col-md-4 col-12 form-label-custom text-white">ID</label>
-
                             <div class="col-md-8 col-12">
                                 <div class="input-group input-group-lg">
                                     <input id="username" type="text" class="form-control form-control-lg" placeholder="e.g., TheFirstLumberjack"
                                            aria-label="ID input"
                                            oninput="isUsernameAvailable = false;" style="z-index: 1;">
-
-                                    <button type="button" class="btn btn-check-custom"
-                                            onclick="checkUsername()">
-                                        Check
-                                    </button>
+                                    <button type="button" class="btn btn-check-custom" onclick="checkUsername()">Check</button>
                                 </div>
                             </div>
                         </div>
-
-                        <div class="row">
-                            <div class="col-md-4 d-none d-md-block"></div>
-                            <div class="col-md-8 col-12">
-                                <small id="usernameStatus" class="form-text" style="height: 1.2rem;"></small>
-                            </div>
-                        </div>
+                        <div class="row"><div class="col-md-4 d-none d-md-block"></div><div class="col-md-8 col-12"><small id="usernameStatus" class="form-text" style="height: 1.2rem;"></small></div></div>
                     </div>
 
                     <div class="mb-3">
                         <div class="row form-row-custom align-items-center">
                             <label for="nickname" class="col-md-4 col-12 form-label-custom text-white">Nickname</label>
-
                             <div class="col-md-8 col-12">
                                 <div class="input-group input-group-lg">
                                     <input id="nickname" type="text" class="form-control form-control-lg" placeholder="e.g., RedwoodKing"
                                            aria-label="Nickname input"
                                            oninput="isNicknameAvailable = false;" style="z-index: 1;">
-
-                                    <button type="button" class="btn btn-check-custom"
-                                            onclick="checkNickname()">
-                                        Check
-                                    </button>
+                                    <button type="button" class="btn btn-check-custom" onclick="checkNickname()">Check</button>
                                 </div>
                             </div>
                         </div>
+                        <div class="row"><div class="col-md-4 d-none d-md-block"></div><div class="col-md-8 col-12"><small id="nicknameStatus" class="form-text" style="height: 1.2rem;"></small></div></div>
+                    </div>
 
+                    <div class="mb-3">
+                        <div class="row form-row-custom align-items-center">
+                            <label for="email" class="col-md-4 col-12 form-label-custom text-white">Email Address</label>
+                            <div class="col-md-8 col-12">
+                                <div class="input-group input-group-lg">
+                                    <input id="email" type="email" class="form-control form-control-lg" placeholder="e.g., your@email.com"
+                                           aria-label="Email input"
+                                           oninput="isEmailAvailable = false; isEmailVerified = false; hideVerificationCodeInput();" style="z-index: 1;">
+                                    <button type="button" class="btn btn-check-custom" id="emailCheckBtn" onclick="checkEmail()">Verify</button>
+                                </div>
+                            </div>
+                        </div>
                         <div class="row">
                             <div class="col-md-4 d-none d-md-block"></div>
                             <div class="col-md-8 col-12">
-                                <small id="nicknameStatus" class="form-text" style="height: 1.2rem;"></small>
+                                <small id="emailStatus" class="form-text" style="height: 1.2rem;"></small>
+
+                                <div id="verificationCodeGroup" class="input-group verification-code-group d-none">
+                                    <input id="verificationCode" type="text" class="form-control form-control-lg" placeholder="Enter verification code" aria-label="Verification Code input">
+                                    <button type="button" class="btn btn-check-custom" id="emailVerifyBtn" onclick="verifyEmailCode()">
+                                        Verify Code
+                                    </button>
+                                </div>
+                                <small id="verificationCodeStatus" class="form-text mt-1 d-block"></small>
                             </div>
                         </div>
                     </div>
-
                     <div class="mb-3">
                         <div class="row form-row-custom align-items-center">
                             <label for="password" class="col-md-4 col-12 form-label-custom text-white">Password</label>
@@ -254,11 +152,9 @@
                                         I agree to the <a href="/document/terms.html" target="_blank" style="color: var(--cf-accent-primary); font-weight: bold;">Terms of Service</a>
                                     </label>
                                 </div>
-
                             </div>
                         </div>
                     </div>
-
 
                     <button type="button" class="btn btn-primary btn-lg w-100 mb-4 fw-bold" onclick="signup()">
                         Sign Up
@@ -284,18 +180,58 @@
 <script>
     // API Endpoints
     const SIGNUP_API = '/api/auth/signup';
-    // 🚩 MODIFIED: URI 변경 반영
     const CHECK_USERNAME_API_BASE = '/api/auth/check/id';
     const CHECK_NICKNAME_API_BASE = '/api/auth/check/nickname';
+    const EMAIL_SEND_API = '/api/auth/verify/send'; // 🚩 NEW
+    const EMAIL_CHECK_API = '/api/auth/verify/check'; // 🚩 NEW
     const LOGIN_PAGE = '/';
 
     let isUsernameAvailable = false;
     let isNicknameAvailable = false;
+    let isEmailAvailable = false; // 🚩 NEW: 이메일 중복 없음 및 형식 유효성 통과
+    let isEmailVerified = false; // 🚩 NEW: 이메일 인증 코드 확인 완료
     let profileImageFile = null;
+    let timerInterval = null; // 🚩 NEW: 인증 시간 타이머
 
     const STATUS_SUCCESS = 'status-success';
     const STATUS_ERROR = 'status-error';
     const STATUS_INFO = 'status-info';
+
+    // 타이머 UI 관리 함수
+    function startTimer(duration) {
+        if (timerInterval) clearInterval(timerInterval);
+
+        const statusEl = document.getElementById('verificationCodeStatus');
+        let remaining = duration;
+
+        // 1초마다 타이머 업데이트
+        timerInterval = setInterval(() => {
+            const minutes = Math.floor(remaining / 60);
+            const seconds = remaining % 60;
+
+            statusEl.innerHTML = `<span class="code-timer">${minutes}:${seconds.toString().padStart(2, '0')}</span> remaining.`;
+
+            if (--remaining < 0) {
+                clearInterval(timerInterval);
+                statusEl.innerHTML = '<span class="status-error">Verification code expired. Please re-send.</span>';
+                document.getElementById('emailVerifyBtn').disabled = true; // 버튼 비활성화
+            }
+        }, 1000);
+    }
+
+    // 인증 코드 입력 필드 가시성 제어
+    function showVerificationCodeInput() {
+        document.getElementById('verificationCodeGroup').classList.remove('d-none');
+        document.getElementById('emailCheckBtn').textContent = 'Re-send';
+        document.getElementById('emailVerifyBtn').disabled = false;
+    }
+
+    function hideVerificationCodeInput() {
+        document.getElementById('verificationCodeGroup').classList.add('d-none');
+        document.getElementById('emailCheckBtn').textContent = 'Verify';
+        document.getElementById('verificationCodeStatus').textContent = '';
+        if (timerInterval) clearInterval(timerInterval);
+    }
 
     /**
      * 프로필 이미지 파일을 선택했을 때 미리보기를 표시하고 파일을 저장합니다.
@@ -313,13 +249,13 @@
             reader.readAsDataURL(file);
         } else {
             profileImageFile = null;
-            preview.src = 'https://via.placeholder.com/120x120/161b22/8b949e?text=No+Pic';
+            preview.src = '/images/default-profile-image.png';
         }
     }
 
 
     /**
-     * ID (Username) 중복을 확인합니다.
+     * ID (Username) 중복을 확인합니다. (로직은 이전과 동일)
      */
     async function checkUsername() {
         const username = document.getElementById('username').value.trim();
@@ -336,14 +272,12 @@
         }
 
         try {
-            // POST 요청을 사용하여 중복 확인
             const checkResp = await post(`${CHECK_USERNAME_API_BASE}/${username}`);
-
-            if (checkResp.ok) { // 200 OK
+            if (checkResp.ok) {
                 isUsernameAvailable = true;
                 usernameStatus.textContent = '✅ Available ID.';
                 usernameStatus.classList.add(STATUS_SUCCESS);
-            } else if (checkResp.status === 409) { // 409 Conflict 처리
+            } else if (checkResp.status === 409) {
                 isUsernameAvailable = false;
                 usernameStatus.textContent = '❌ ID already taken.';
                 usernameStatus.classList.add(STATUS_ERROR);
@@ -359,7 +293,7 @@
     }
 
     /**
-     * 닉네임 중복을 확인합니다.
+     * 닉네임 중복을 확인합니다. (로직은 이전과 동일)
      */
     async function checkNickname() {
         const nickname = document.getElementById('nickname').value.trim();
@@ -376,20 +310,18 @@
         }
 
         try {
-            // POST 요청을 사용하여 중복 확인
             const checkResp = await post(`${CHECK_NICKNAME_API_BASE}/${nickname}`);
-
-            if (checkResp.ok) { // 200 OK
+            if (checkResp.ok) {
                 isNicknameAvailable = true;
                 nicknameStatus.textContent = '✅ Available Nickname.';
                 nicknameStatus.classList.add(STATUS_SUCCESS);
-            } else if (checkResp.status === 409) { // 409 Conflict 처리
+            } else if (checkResp.status === 409) {
                 isNicknameAvailable = false;
                 nicknameStatus.textContent = '❌ Nickname already taken.';
                 nicknameStatus.classList.add(STATUS_ERROR);
             } else {
-                usernameStatus.textContent = `⚠️ An unexpected error occurred.`;
-                usernameStatus.classList.add(STATUS_INFO);
+                nicknameStatus.textContent = `⚠️ An unexpected error occurred.`;
+                nicknameStatus.classList.add(STATUS_INFO);
             }
         } catch (err) {
             console.error(err);
@@ -398,6 +330,121 @@
         }
     }
 
+    /**
+     * 🚩 NEW: 이메일 중복 확인 및 인증 코드 전송을 요청합니다.
+     */
+    async function checkEmail() {
+        const email = document.getElementById('email').value.trim();
+        const emailStatus = document.getElementById('emailStatus');
+
+        emailStatus.className = 'form-text';
+        emailStatus.textContent = '';
+        isEmailAvailable = false;
+        isEmailVerified = false;
+
+        if (!email) {
+            emailStatus.textContent = 'Please enter an email address.';
+            emailStatus.classList.add(STATUS_INFO);
+            return;
+        }
+
+        // 이메일 형식 유효성 검사 (클라이언트 측)
+        if (!/^\S+@\S+\.\S+$/.test(email)) {
+            emailStatus.textContent = 'Please enter a valid email address.';
+            emailStatus.classList.add(STATUS_ERROR);
+            return;
+        }
+
+        // 인증 코드 전송 버튼 비활성화 (요청 중)
+        document.getElementById('emailCheckBtn').disabled = true;
+
+        try {
+            // 🚩 API 요청: 이메일 중복 확인 및 인증 코드 전송 (POST 사용)
+            // body에는 email만 포함하여 서버가 중복 확인과 발송을 동시에 처리하도록 유도
+            const sendResp = await post(EMAIL_SEND_API, { email });
+
+            if (sendResp.ok) { // 200 OK (코드 전송 성공 및 이메일 사용 가능)
+                isEmailAvailable = true;
+                emailStatus.textContent = '✅ Verification code sent to your email!';
+                emailStatus.classList.add(STATUS_SUCCESS);
+
+                showVerificationCodeInput(); // 인증 코드 입력 필드 표시
+                startTimer(180); // 3분 타이머 시작
+
+            } else if (sendResp.status === 409) { // 409 Conflict (이메일 중복)
+                isEmailAvailable = false;
+                emailStatus.textContent = '❌ This email is already registered.';
+                emailStatus.classList.add(STATUS_ERROR);
+                hideVerificationCodeInput();
+            } else {
+                emailStatus.textContent = `⚠️ Failed to send code. Try again.`;
+                emailStatus.classList.add(STATUS_INFO);
+                hideVerificationCodeInput();
+            }
+        } catch (err) {
+            console.error(err);
+            emailStatus.textContent = '⚠️ Network error during email check/send.';
+            emailStatus.classList.add(STATUS_ERROR);
+            hideVerificationCodeInput();
+        } finally {
+            document.getElementById('emailCheckBtn').disabled = false;
+        }
+    }
+
+    /**
+     * 🚩 NEW: 인증 코드를 확인하여 이메일 인증을 완료합니다.
+     */
+    async function verifyEmailCode() {
+        const email = document.getElementById('email').value.trim();
+        const code = document.getElementById('verificationCode').value.trim();
+        const verificationCodeStatus = document.getElementById('verificationCodeStatus');
+
+        verificationCodeStatus.className = 'form-text mt-1 d-block';
+        verificationCodeStatus.textContent = '';
+        isEmailVerified = false;
+
+        if (!code || code.length === 0) {
+            verificationCodeStatus.textContent = 'Please enter the verification code.';
+            verificationCodeStatus.classList.add(STATUS_INFO);
+            return;
+        }
+
+        // 인증 버튼 비활성화 (요청 중)
+        document.getElementById('emailVerifyBtn').disabled = true;
+
+        try {
+            // 🚩 API 요청: 인증 코드 확인 (POST 사용)
+            const verifyResp = await post(EMAIL_CHECK_API, { email, code });
+
+            if (verifyResp.ok) { // 200 OK (인증 성공)
+                isEmailVerified = true;
+
+                if (timerInterval) clearInterval(timerInterval);
+                verificationCodeStatus.textContent = '✅ Email successfully verified!';
+                verificationCodeStatus.classList.add(STATUS_SUCCESS);
+
+                document.getElementById('emailCheckBtn').disabled = true; // 이메일 변경 불가
+                document.getElementById('email').disabled = true; // 이메일 필드 잠금
+                document.getElementById('verificationCode').disabled = true; // 코드 필드 잠금
+                document.getElementById('emailVerifyBtn').style.display = 'none'; // 버튼 숨기기
+
+            } else if (verifyResp.status === 400 || verifyResp.status === 401) {
+                verificationCodeStatus.textContent = '❌ Invalid or expired code.';
+                verificationCodeStatus.classList.add(STATUS_ERROR);
+            } else {
+                verificationCodeStatus.textContent = `⚠️ An unexpected error occurred.`;
+                verificationCodeStatus.classList.add(STATUS_INFO);
+            }
+        } catch (err) {
+            console.error(err);
+            verificationCodeStatus.textContent = '⚠️ Network error during verification.';
+            verificationCodeStatus.classList.add(STATUS_ERROR);
+        } finally {
+            if (!isEmailVerified) {
+                document.getElementById('emailVerifyBtn').disabled = false;
+            }
+        }
+    }
 
     /**
      * 회원가입을 처리합니다.
@@ -405,13 +452,14 @@
     async function signup() {
         const username = document.getElementById('username').value.trim();
         const nickname = document.getElementById('nickname').value.trim();
+        const email = document.getElementById('email').value.trim();
         const password = document.getElementById('password').value.trim();
         const passwordConfirm = document.getElementById('passwordConfirm').value.trim();
         const agreePrivacy = document.getElementById('agreePrivacy').checked;
         const agreeTerms = document.getElementById('agreeTerms').checked;
 
         // 1. 필수 입력값 체크
-        if (!username || !nickname || !password || !passwordConfirm) {
+        if (!username || !nickname || !email || !password || !passwordConfirm) {
             showModal("Input Error", "All input fields are required.", null);
             return;
         }
@@ -428,12 +476,24 @@
             return;
         }
 
-        // 4. 중복 확인 상태 체크 (ID 및 닉네임)
-        if (!isUsernameAvailable || !isNicknameAvailable) {
-            const missingCheck = (!isUsernameAvailable ? 'ID' : '') + (!isNicknameAvailable ? (isUsernameAvailable ? ' Nickname' : ' and Nickname') : '');
+        // 4. 중복 및 인증 상태 체크 (ID, 닉네임, 이메일)
+        if (!isUsernameAvailable || !isNicknameAvailable || !isEmailAvailable) {
+            let missingCheck = '';
+            if (!isUsernameAvailable) missingCheck += 'ID, ';
+            if (!isNicknameAvailable) missingCheck += 'Nickname, ';
+            if (!isEmailAvailable) missingCheck += 'Email, ';
+            missingCheck = missingCheck.slice(0, -2); // 마지막 쉼표 제거
+
             showModal("Validation Required", `Please check the availability of your ${missingCheck} before signing up.`, null);
             return;
         }
+
+        // 🚩 NEW: 이메일 인증 완료 체크
+        if (!isEmailVerified) {
+            showModal("Email Verification Required", "You must verify your email address using the code before signing up.", null);
+            return;
+        }
+
 
         const signupBtn = document.querySelector('button.btn-primary');
         signupBtn.disabled = true;
@@ -441,13 +501,17 @@
         try {
             // 파일 업로드를 위해 FormData 사용
             const formData = new FormData();
-            formData.append('name', username);
+            formData.append('username', username);
             formData.append('password', password);
+            formData.append('email', email);
             formData.append('displayName', nickname);
 
             if (profileImageFile) {
                 formData.append('profileImage', profileImageFile);
             }
+
+            // 🚩 NEW: 인증 상태를 서버에 전송할 필요가 있다면 (예: 인증 토큰), 여기에 추가합니다.
+            // 현재는 인증된 이메일이므로 이메일 필드만 전송해도 충분하다고 가정합니다.
 
             // httpFileRequest 함수를 사용하여 파일 및 데이터를 POST로 전송
             const signupResp = await httpFileRequest(SIGNUP_API, formData);
