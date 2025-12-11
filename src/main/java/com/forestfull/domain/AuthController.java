@@ -1,10 +1,12 @@
 package com.forestfull.domain;
 
+import com.forestfull.common.file.FileService;
 import com.forestfull.common.token.CookieUtil;
 import com.forestfull.common.token.JwtUtil;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -29,6 +31,7 @@ public class AuthController {
     private final JwtUtil jwtUtil;
     private final JwtUtil.Refresh refreshJwtUtil;
     private final CookieUtil cookieUtil;
+    private final FileService fileService;
     private final CustomUserDetailsService customUserService;
     private final AuthenticationManager authenticationManager;
 
@@ -115,17 +118,40 @@ public class AuthController {
     }
 
     @PostMapping("/signup")
-    ResponseEntity<?> signup(@RequestBody User member) {
-        return customUserService.signup(member) ? ResponseEntity.ok().build() : ResponseEntity.badRequest().build();
+    public ResponseEntity<?> signup(@Valid @ModelAttribute User.SignupRequest request) {
+        User user = User.builder()
+                .name(request.getName())
+                .password(request.getPassword())
+                .displayName(request.getDisplayName())
+                .build();
+
+        Long profileFileId = null;
+        if (request.getProfileImage() != null && !request.getProfileImage().isEmpty()) {
+            profileFileId = fileService.saveProfileImage(request.getProfileImage(), 0L /* 임시값 */);
+
+            if (profileFileId == null) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body(Map.of("error", "Failed to upload profile image."));
+            }
+            user.setProfileImage("/file/" + profileFileId);
+        }
+
+        return customUserService.signup(user)
+                ? ResponseEntity.ok(Map.of("message", "Sign up successful"))
+                : ResponseEntity.badRequest().body(Map.of("error", "Sign up failed unexpectedly."));
     }
 
-    @PostMapping("/check-username/{username}")
+    @PostMapping("/check/id/{username}")
     ResponseEntity<?> checkUsername(@PathVariable String username) {
-        try {
-            customUserService.loadUserByUsername(username);
-            return ResponseEntity.unprocessableEntity().build();
-        }catch (UsernameNotFoundException e) {
-            return ResponseEntity.ok().build();
-        }
+        return customUserService.isExistedUsername(username)
+                ? ResponseEntity.status(HttpStatus.CONFLICT).build()
+                : ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/check/nickname/{displayName}")
+    ResponseEntity<?> checkNickname(@PathVariable String displayName) {
+        return customUserService.isExistedNickname(displayName)
+                ? ResponseEntity.status(HttpStatus.CONFLICT).build()
+                : ResponseEntity.ok().build();
     }
 }

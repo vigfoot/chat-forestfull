@@ -1,11 +1,10 @@
 package com.forestfull.common.file;
 
-import com.forestfull.common.ResponseException;
+import com.forestfull.common.CommonResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.io.FileSystemResource;
-import org.springframework.core.io.Resource;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
@@ -22,6 +21,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
+@Slf4j
 @Configuration
 @RequiredArgsConstructor
 public class FileService implements WebMvcConfigurer {
@@ -83,12 +83,12 @@ public class FileService implements WebMvcConfigurer {
      * - basePath.startsWith 체크
      * - 폴더 생성은 Files.createDirectories 사용
      */
-    public ResponseException saveFile(MultipartFile filePart, String type, String fileName) {
+    public CommonResponse saveFile(MultipartFile filePart, String type, String fileName) {
         String safeFileName;
         try {
             safeFileName = sanitizeFilename(fileName);
         } catch (IllegalArgumentException ex) {
-            return ResponseException.fail(ex.getMessage());
+            return CommonResponse.fail(ex.getMessage());
         }
 
         final LocalDateTime now = LocalDateTime.now(Clock.systemUTC());
@@ -102,7 +102,7 @@ public class FileService implements WebMvcConfigurer {
                 .resolve(UUID.randomUUID() + "_" + safeFileName);
 
         Path targetPath = basePath.resolve(targetRelative).normalize();
-        if (!targetPath.startsWith(basePath)) return ResponseException.fail("Invalid file path");
+        if (!targetPath.startsWith(basePath)) return CommonResponse.fail("Invalid file path");
 
 
         try {
@@ -121,23 +121,23 @@ public class FileService implements WebMvcConfigurer {
                             .directory(dbDirectory)
                             .build()
             );
-            return ResponseException.ok();
+            return CommonResponse.ok();
         } catch (IOException e) {
-            return ResponseException.fail("Failed to create directories: " + e.getMessage());
+            return CommonResponse.fail("Failed to create directories: " + e.getMessage());
         } catch (Exception e) {
-            return ResponseException.fail("Failed to save file: " + e.getMessage());
+            return CommonResponse.fail("Failed to save file: " + e.getMessage());
         }
     }
 
-    public ResponseException deleteFile(Long id) {
+    public CommonResponse deleteFile(Long id) {
         FileDTO fileById = getFileById(id);
-        if (Objects.isNull(fileById)) return ResponseException.fail("Invalid file id");
+        if (Objects.isNull(fileById)) return CommonResponse.fail("Invalid file id");
 
         File file;
         try {
             file = safePath(fileById.getDirectory());
         } catch (SecurityException ex) {
-            return ResponseException.fail("Invalid file path");
+            return CommonResponse.fail("Invalid file path");
         }
 
         // DB 먼저 삭제하거나 트랜잭션 전략에 따라 조정
@@ -147,9 +147,75 @@ public class FileService implements WebMvcConfigurer {
             if (file.exists()) Files.deleteIfExists(file.toPath());
         } catch (IOException e) {
             // 파일 삭제 실패는 로그로 남기고 실패 응답 반환 가능
-            return ResponseException.fail("Failed to delete physical file: " + e.getMessage());
+            return CommonResponse.fail("Failed to delete physical file: " + e.getMessage());
         }
 
-        return ResponseException.ok();
+        return CommonResponse.ok();
+    }
+
+    // 🚩 MODIFIED: 프로필 이미지 저장을 위한 특화 메서드
+
+    /**
+     * 프로필 이미지를 저장하고 성공 시 DB ID를 반환합니다.
+     *
+     * @param filePart 업로드된 파일
+     * @param userId   사용자 ID (FileDTO에 저장할 용도)
+     * @return 저장 성공 시 FileDTO의 ID를, 실패 시 null을 반환합니다.
+     */
+    // FileService.java (수정된 saveProfileImage 메서드)
+    public Long saveProfileImage(MultipartFile filePart, Long userId) {
+        if (filePart == null || filePart.isEmpty()) return null;
+        if (userId == null || userId <= 0) return null;
+
+        // 1. 파일명 처리
+        String originalFilename = StringUtils.cleanPath(Objects.requireNonNull(filePart.getOriginalFilename()));
+        String uniqueFileName = UUID.randomUUID() + "_" + originalFilename;
+
+        String safeFileName;
+        try {
+            safeFileName = sanitizeFilename(uniqueFileName);
+        } catch (IllegalArgumentException ex) {
+            // 파일명 검증 실패 시
+            return null;
+        }
+
+        final Path basePath = Paths.get(absolutePath).toAbsolutePath().normalize();
+
+        // 2. 🚩 MODIFIED: 디렉토리 구조 변경: /profiles/{userId}/filename
+        Path targetRelative = Paths.get("profiles")
+                // 🚩 MODIFIED: userId를 폴더명으로 사용
+                .resolve(String.valueOf(userId))
+                .resolve(safeFileName);
+
+        Path targetPath = basePath.resolve(targetRelative).normalize();
+        if (!targetPath.startsWith(basePath)) return null;
+
+        try {
+            // 3. 파일 저장
+            Files.createDirectories(targetPath.getParent());
+            File dest = targetPath.toFile();
+            filePart.transferTo(dest);
+
+            // 4. DB 저장
+            String dbDirectory = basePath.relativize(targetPath).toString().replace('\\', '/');
+
+            FileDTO fileDto = FileDTO.builder()
+                    .type("PROFILE")
+                    .name(safeFileName)
+                    .directory(dbDirectory)
+                    .build();
+
+            fileMapper.saveFile(fileDto);
+
+            return fileDto.getId();
+        } catch (IOException e) {
+            // 실패 시 로깅
+            log.error("File save failed (IOException): " + e.getMessage());
+            return null;
+        } catch (Exception e) {
+            // 기타 실패 시 로깅
+            log.error("File save failed (Exception): " + e.getMessage());
+            return null;
+        }
     }
 }

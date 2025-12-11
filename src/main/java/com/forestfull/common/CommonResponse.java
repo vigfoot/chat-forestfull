@@ -6,17 +6,17 @@ import lombok.Getter;
 
 @Getter
 @Builder
-public class ResponseException {
+public class CommonResponse {
     private boolean success;
     private String message;
     private Object data;
 
-    public static ResponseException ok(){
-        return ResponseException.builder().success(true).build();
+    public static CommonResponse ok(){
+        return CommonResponse.builder().success(true).build();
     }
 
-    public static ResponseException fail(String message){
-        return ResponseException.builder()
+    public static CommonResponse fail(String message){
+        return CommonResponse.builder()
                 .success(false)
                 .message(message)
                 .build();

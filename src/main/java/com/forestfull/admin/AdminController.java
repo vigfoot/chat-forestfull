@@ -1,6 +1,6 @@
 package com.forestfull.admin;
 
-import com.forestfull.common.ResponseException;
+import com.forestfull.common.CommonResponse;
 import com.forestfull.common.file.FILE_TYPE;
 import com.forestfull.common.file.FileService;
 import com.forestfull.domain.User;
@@ -38,18 +38,18 @@ public class AdminController {
     }
 
     @PostMapping(value = "/emoji/{filename}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<ResponseException> saveEmoji(@RequestPart("file") MultipartFile filePart, @PathVariable String filename) {
-        if (filePart.isEmpty()) return ResponseEntity.badRequest().body(ResponseException.fail("empty"));
+    public ResponseEntity<CommonResponse> saveEmoji(@RequestPart("file") MultipartFile filePart, @PathVariable String filename) {
+        if (filePart.isEmpty()) return ResponseEntity.badRequest().body(CommonResponse.fail("empty"));
 
-        ResponseException responseException = fileService.saveFile(filePart, FILE_TYPE.EMOJI.name(), filename);
-        return responseException.isSuccess()
-                ? ResponseEntity.ok(responseException)
-                : ResponseEntity.badRequest().body(responseException);
+        CommonResponse commonResponse = fileService.saveFile(filePart, FILE_TYPE.EMOJI.name(), filename);
+        return commonResponse.isSuccess()
+                ? ResponseEntity.ok(commonResponse)
+                : ResponseEntity.badRequest().body(commonResponse);
     }
 
     @DeleteMapping("/emoji/{id}")
-    ResponseEntity<ResponseException> deleteEmoji(@PathVariable Long id) {
-        final ResponseException result = fileService.deleteFile(id);
+    ResponseEntity<CommonResponse> deleteEmoji(@PathVariable Long id) {
+        final CommonResponse result = fileService.deleteFile(id);
         return result.isSuccess() ? ResponseEntity.ok(result) : ResponseEntity.badRequest().body(result);
     }
 }

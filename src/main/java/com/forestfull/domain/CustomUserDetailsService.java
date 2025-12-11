@@ -52,4 +52,12 @@ public class CustomUserDetailsService implements UserDetailsService {
         request.setPassword(passwordEncoder.encode(request.getPassword()));
         return userMapper.save(request);
     }
+
+    public boolean isExistedUsername(String username) {
+        return Boolean.TRUE.equals(userMapper.isExistedUsername(username));
+    }
+
+    public boolean isExistedNickname(String displayName) {
+        return Boolean.TRUE.equals(userMapper.isExistedNickname(displayName));
+    }
 }

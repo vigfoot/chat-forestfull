@@ -2,6 +2,7 @@ package com.forestfull.domain;
 
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Select;
 
 import java.util.List;
 
@@ -23,4 +24,10 @@ public interface UserMapper {
     Boolean deleteById(Long userId);
 
     User getRolesByUserId(Long userId);
+
+    @Select("SELECT COUNT(0) > 0 FROM chat_forestfull.member WHERE name = #{username}")
+    Boolean isExistedUsername(String username);
+
+    @Select("SELECT COUNT(0) > 0 FROM chat_forestfull.member WHERE display_name = #{displayName}")
+    Boolean isExistedNickname(String displayName);
 }
