@@ -49,7 +49,6 @@ public class ChatRoomRestController {
 
     @PostMapping("/{roomId}/enter")
     public ResponseEntity<Void> enterRoom(@PathVariable Long roomId, @RequestParam Long memberId) {
-
         boolean ok = chatRoomService.enterRoom(roomId, memberId);
         return ok ? ResponseEntity.ok().build() : ResponseEntity.status(HttpStatus.CONFLICT).build();
     }

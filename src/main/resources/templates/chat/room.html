@@ -182,6 +182,8 @@
     const payload = getJwtPayload(); // JWT_PAYLOAD 읽기
     const MY_ID = Number(payload?.sub);
     const MY_NAME = payload?.username;
+    const MY_DISPLAY_NAME = payload?.displayName;
+    const MY_PROFILE_IMAGE = payload?.profileImage;
     let reconnectInterval = 5000;
 
     function connectWebSocket() {
@@ -204,12 +206,13 @@
                 updateUsers(users);
             });
 
-            // 입장 이벤트 전송
             stompClient.send("/app/chat.enter", {}, JSON.stringify({
                 roomId,
                 user: {
                     id: MY_ID,
                     name: MY_NAME,
+                    displayName: MY_DISPLAY_NAME,
+                    profileImage: MY_PROFILE_IMAGE,
                 }
             }));
         }, error => {
@@ -218,12 +221,15 @@
         });
     }
 
+    // **[FIX]** disconnectWebSocket 함수: STOMP 연결을 종료합니다.
     function disconnectWebSocket() {
-        if (stompClient) {
+        if (stompClient && stompClient.connected) {
             stompClient.disconnect(() => {
                 console.log("WebSocket 연결 종료");
             });
         }
+        // STOMP 객체 자체를 초기화하여 재연결 방지 (선택적)
+        stompClient = null;
     }
 
     function sendMessage(text) {
@@ -233,19 +239,26 @@
             user: {
                 id: MY_ID,
                 name: MY_NAME,
+                displayName: MY_DISPLAY_NAME,
+                profileImage: MY_PROFILE_IMAGE,
             },
             type: "TALK",
             message: text
         }));
     }
 
+    // **[FIX]** leaveRoom 함수: 서버에 퇴장 메시지를 전송합니다.
     function leaveRoom() {
-        if (!stompClient) return;
+        if (!stompClient || !stompClient.connected) return;
+
+        // 서버에 LEAVE 메시지를 보냄
         stompClient.send("/app/chat.leave", {}, JSON.stringify({
             roomId: roomId,
             user: {
                 id: MY_ID,
                 name: MY_NAME,
+                displayName: MY_DISPLAY_NAME,
+                profileImage: MY_PROFILE_IMAGE,
             }
         }));
     }
@@ -293,7 +306,6 @@
             const name = document.createElement("span");
             name.textContent = u.user.name;
 
-
             div.appendChild(avatar);
             div.appendChild(name);
             container.appendChild(div);
@@ -328,9 +340,16 @@
             }
         });
 
-        window.addEventListener("beforeunload", () => {
-            leaveRoom();
-        });
+        const handleLeave = () => {
+            leaveRoom();// 1. 서버에 퇴장 메시지를 보냄 (필수)
+            disconnectWebSocket();// 2. WebSocket 연결을 끊음 (선택적이지만 권장)
+        };
+
+        // 기존 beforeunload 대신 pagehide를 사용합니다.
+        // **[FIX]** beforeunload를 pagehide로 변경하거나, 둘 다 사용
+        window.addEventListener("pagehide", handleLeave);
+        // beforeunload는 탭/창을 닫을 때 확실히 동작하도록 유지
+        window.addEventListener("beforeunload", handleLeave);
     });
 </script>
 </body>
