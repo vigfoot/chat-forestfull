@@ -16,6 +16,6 @@ public interface MemberMapper {
     @Insert("UPDATE chat_forestfull.member SET profile_image = #{profileImageUrl} WHERE id = #{id}")
     int updateProfileImage(Long id, String profileImageUrl);
 
-    @Select("SELECT COUNT(0) > 1 FROM chat_forestfull.member WHERE email = #{email}")
+    @Select("SELECT COUNT(0) > 0 FROM chat_forestfull.member WHERE email = #{email}")
     boolean isEmailRegistered(String email);
 }

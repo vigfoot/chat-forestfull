@@ -119,9 +119,8 @@ public class MemberController {
         if (!StringUtils.hasText(email)) return ResponseEntity.badRequest().build();
 
         // 1. 이메일 중복 검사 (요청하신 '이메일 중복 불허' 정책)
-        if (memberService.isEmailRegistered(email)) {
+        if (memberService.isEmailRegistered(email))
             return ResponseEntity.status(HttpStatus.CONFLICT).build();
-        }
 
         try {
             // 2. 인증 코드 발송 및 코드 저장
