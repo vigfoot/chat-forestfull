@@ -18,6 +18,7 @@
     <select id="findByUserId" resultType="com.forestfull.domain.User" parameterType="long">
         SELECT m.id
              , m.name
+             , m.password
              , m.roles
              , m.email
              , m.display_name

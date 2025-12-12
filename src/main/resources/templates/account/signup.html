@@ -375,9 +375,8 @@
                 startTimer(180); // 3분 타이머 시작
 
                 // 🚩 MODIFIED: 스팸함 확인 안내 모달 추가
-                showModal("Check Your Email",
-                    "Verification code sent! Please check your inbox. If you don't receive it shortly, please check your **Spam or Junk folder**.",
-                    null);
+                showAndRedirectModal("Check Your Email",
+                    "Verification code sent! Please check your inbox. If you don't receive it shortly, please check your **Spam or Junk folder**.");
 
 
             } else if (sendResp.status === 409) { // 409 Conflict (이메일 중복)
@@ -470,19 +469,19 @@
 
         // 1. 필수 입력값 체크
         if (!username || !nickname || !email || !password || !passwordConfirm) {
-            showModal("Input Error", "All input fields are required.", null);
+            showAndRedirectModal("Input Error", "All input fields are required.", () => {});
             return;
         }
 
         // 2. 비밀번호 일치 체크
         if (password !== passwordConfirm) {
-            showModal("Password Mismatch", "Password and confirmation password do not match.", null);
+            showAndRedirectModal("Password Mismatch", "Password and confirmation password do not match.");
             return;
         }
 
         // 3. 약관 동의 체크 (필수)
         if (!agreePrivacy || !agreeTerms) {
-            showModal("Agreement Required", "You must agree to both the Privacy Policy and Terms of Service to sign up.", null);
+            showAndRedirectModal("Agreement Required", "You must agree to both the Privacy Policy and Terms of Service to sign up.");
             return;
         }
 
@@ -494,13 +493,13 @@
             if (!isEmailAvailable) missingCheck += 'Email, ';
             missingCheck = missingCheck.slice(0, -2);
 
-            showModal("Validation Required", `Please check the availability of your ${missingCheck} before signing up.`, null);
+            showAndRedirectModal("Validation Required", `Please check the availability of your ${missingCheck} before signing up.`);
             return;
         }
 
         // 5. 이메일 인증 완료 체크
         if (!isEmailVerified) {
-            showModal("Email Verification Required", "You must verify your email address using the code before signing up.", null);
+            showAndRedirectModal("Email Verification Required", "You must verify your email address using the code before signing up.");
             return;
         }
 
@@ -535,29 +534,29 @@
                 if (errorData.validationErrors && errorData.validationErrors.length > 0) {
                     // 유효성 검사 오류 메시지를 모아서 출력
                     const messages = errorData.validationErrors.map(err => `[${err.field}]: ${err.message}`).join('<br>');
-                    showModal("Validation Error", messages, null);
+                    showAndRedirectModal("Validation Error", messages);
                 } else {
                     // 기타 400 Bad Request
                     const errorMessage = errorData.error || `❌ Failed to sign up due to invalid input.`;
-                    showModal("Sign Up Failed", errorMessage, null);
+                    showAndRedirectModal("Sign Up Failed", errorMessage);
                 }
             }
             else if (signupResp.status === 409) {
                 // 이메일이 아닌, 가입하는 시점에 ID/닉네임 중복 발생 시
-                showModal("Sign Up Failed", "❗ The ID or Nickname is already taken. Please check again.", null);
+                showAndRedirectModal("Sign Up Failed", "❗ The ID or Nickname is already taken. Please check again.");
                 isUsernameAvailable = false;
                 isNicknameAvailable = false;
             } else if (signupResp.status === 401) {
                 // 이메일 인증 만료 등
-                showModal("Sign Up Failed", "Email verification status has expired. Please verify your email again.", null);
+                showAndRedirectModal("Sign Up Failed", "Email verification status has expired. Please verify your email again.");
             } else {
                 const errorData = await signupResp.json().catch(() => ({}));
                 const errorMessage = errorData.message || `❌ Failed to sign up due to a server error. (Status: ${signupResp.status})`;
-                showModal("Sign Up Failed", errorMessage, null);
+                showAndRedirectModal("Sign Up Failed", errorMessage);
             }
         } catch (err) {
             console.error(err);
-            showModal("Communication Error", "⚠️ An issue occurred while communicating with the server. Please check your network status.", null);
+            showAndRedirectModal("Communication Error", "⚠️ An issue occurred while communicating with the server. Please check your network status.");
         } finally {
             signupBtn.disabled = false;
         }

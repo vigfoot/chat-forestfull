@@ -7,10 +7,33 @@
 
     <style>
         /* CSS Styles */
-        body { background-color: var(--cf-dark-bg-primary); color: var(--cf-text-primary); }
-        .setting-card { background: var(--cf-dark-bg-secondary); border-radius: 12px; padding: 30px; box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4); border: 1px solid var(--cf-border-color); max-width: 800px; margin: 0 auto; }
-        .form-control-custom { background-color: var(--cf-dark-bg-tertiary); border: 1px solid var(--cf-border-color); color: var(--cf-text-primary); }
-        .form-control-custom:focus { background-color: var(--cf-dark-bg-tertiary); border-color: var(--cf-accent-primary); box-shadow: 0 0 0 0.25rem rgba(187, 134, 252, 0.25); color: var(--cf-text-primary); }
+        body {
+            background-color: var(--cf-dark-bg-primary);
+            color: var(--cf-text-primary);
+        }
+
+        .setting-card {
+            background: var(--cf-dark-bg-secondary);
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--cf-border-color);
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .form-control-custom {
+            background-color: var(--cf-dark-bg-tertiary);
+            border: 1px solid var(--cf-border-color);
+            color: var(--cf-text-primary);
+        }
+
+        .form-control-custom:focus {
+            background-color: var(--cf-dark-bg-tertiary);
+            border-color: var(--cf-accent-primary);
+            box-shadow: 0 0 0 0.25rem rgba(187, 134, 252, 0.25);
+            color: var(--cf-text-primary);
+        }
 
         /* 🚩 MODIFIED: Disabled Input Style (ID 필드 등 읽기 전용 필드에 적용) */
         .form-control-custom[readonly], .form-control:disabled {
@@ -19,33 +42,96 @@
             opacity: 0.7;
         }
 
-        .setting-section { border-bottom: 1px solid var(--cf-border-color); padding-bottom: 20px; margin-bottom: 20px; }
-        .setting-section:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
-        .btn-primary-custom { background-color: var(--cf-accent-primary); border-color: var(--cf-accent-primary); color: #ffffff !important; transition: all 0.2s; }
-        .btn-primary-custom:hover { background-color: var(--cf-accent-hover); border-color: var(--cf-accent-hover); color: #ffffff !important; }
-        .profile-img-container { display: flex; justify-content: center; margin-bottom: 30px; position: relative; }
-        .profile-img { width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 4px solid var(--cf-accent-primary); box-shadow: 0 0 15px rgba(187, 134, 252, 0.5); cursor: pointer; transition: transform 0.2s; }
-        .profile-img:hover { transform: scale(1.05); }
-        .btn-tiktok { background-color: #000000; color: white; border: 1px solid #ffffff33; width: 100%; padding: 10px; font-weight: bold; }
-        .btn-tiktok:hover { background-color: #222222; color: white; }
-        .btn-tiktok .bi-tiktok { font-size: 1.2rem; }
+        .setting-section {
+            border-bottom: 1px solid var(--cf-border-color);
+            padding-bottom: 20px;
+            margin-bottom: 20px;
+        }
+
+        .setting-section:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .btn-primary-custom {
+            background-color: var(--cf-accent-primary);
+            border-color: var(--cf-accent-primary);
+            color: #ffffff !important;
+            transition: all 0.2s;
+        }
+
+        .btn-primary-custom:hover {
+            background-color: var(--cf-accent-hover);
+            border-color: var(--cf-accent-hover);
+            color: #ffffff !important;
+        }
+
+        .profile-img-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 30px;
+            position: relative;
+        }
+
+        .profile-img {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 4px solid var(--cf-accent-primary);
+            box-shadow: 0 0 15px rgba(187, 134, 252, 0.5);
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .profile-img:hover {
+            transform: scale(1.05);
+        }
+
+        .btn-tiktok {
+            background-color: #000000;
+            color: white;
+            border: 1px solid #ffffff33;
+            width: 100%;
+            padding: 10px;
+            font-weight: bold;
+        }
+
+        .btn-tiktok:hover {
+            background-color: #222222;
+            color: white;
+        }
+
+        .btn-tiktok .bi-tiktok {
+            font-size: 1.2rem;
+        }
 
         /* 🚩 NEW: Verification Code styles */
         .verification-code-group {
             margin-top: 10px;
             transition: opacity 0.3s ease-in-out;
         }
+
         .code-timer {
             font-weight: bold;
             color: var(--cf-text-secondary);
         }
-        .status-success { color: var(--cf-accent-primary) !important; }
-        .status-error { color: darkred !important; }
-        .status-info { color: var(--cf-text-secondary) !important; }
+
+        .status-success {
+            color: var(--cf-accent-primary) !important;
+        }
+
+        .status-error {
+            color: darkred !important;
+        }
+
+        .status-info {
+            color: var(--cf-text-secondary) !important;
+        }
     </style>
 </head>
 <body class="d-flex flex-column min-vh-100">
-
 <header th:replace="~{/layout/header.html :: header}"></header>
 
 <main class="container py-5 flex-grow-1">
@@ -80,7 +166,9 @@
                             <div class="input-group">
                                 <input type="text" class="form-control form-control-custom" id="nickname-input" placeholder="Loading nickname..."
                                        oninput="isNicknameAvailable = false; document.getElementById('nickname-status').textContent = '';">
-                                <button type="button" class="btn btn-primary-custom" id="nickname-check-btn" onclick="checkNicknameForUpdate()">Check</button>
+                                <button type="button" class="btn btn-primary-custom" id="nickname-check-btn" onclick="checkNicknameForUpdate()">
+                                    Check
+                                </button>
                             </div>
                             <small id="nickname-status" class="form-text"></small>
                         </div>
@@ -90,12 +178,14 @@
                             <div class="input-group">
                                 <input type="email" class="form-control form-control-custom" id="email-input" placeholder="Loading email..."
                                        oninput="isEmailVerified = false; document.getElementById('email-status').textContent = ''; hideVerificationCodeInput();">
-                                <button type="button" class="btn btn-primary-custom" id="email-check-btn" onclick="checkEmailForUpdate()">Verify</button>
+                                <button type="button" class="btn btn-primary-custom" id="email-check-btn" onclick="checkEmailForUpdate()">Verify
+                                </button>
                             </div>
                             <small id="email-status" class="form-text"></small>
 
                             <div id="verification-code-group" class="input-group verification-code-group d-none">
-                                <input id="verification-code" type="text" class="form-control form-control-custom" placeholder="Enter verification code" aria-label="Verification Code input">
+                                <input id="verification-code" type="text" class="form-control form-control-custom"
+                                       placeholder="Enter verification code" aria-label="Verification Code input">
                                 <button type="button" class="btn btn-primary-custom" id="email-verify-btn" onclick="verifyEmailCodeForUpdate()">
                                     Verify Code
                                 </button>
@@ -160,33 +250,22 @@
 <script>
     // Constants and Global State
     const DEFAULT_AVATAR_PATH = '/images/default-avatar.png';
-    const LOGIN_PAGE = '/';
 
     // 🚩 API Endpoints for Settings Page (Extracted to variables)
-    // 1. 프로필 업데이트 (이미지 포함 통합)
-    const UPDATE_PROFILE_API = '/api/auth/users/profile'; // 🚩 POST 요청으로 사용
-
-    // 2. 패스워드 변경
-    const UPDATE_PASSWORD_API = '/api/auth/users/password'; // PUT 요청
-
-    // 3. 회원 탈퇴
-    const DELETE_ACCOUNT_API = '/api/auth/users'; // DELETE 요청
-
-    // 4. 보류: 틱톡 연동
+    const UPDATE_PROFILE_API = '/api/auth/users/profile';
+    const UPDATE_PASSWORD_API = '/api/auth/users/password';
+    const DELETE_ACCOUNT_API = '/api/auth/users';
     const LINK_TIKTOK_OAUTH_URL = '/oauth2/authorization/tiktok';
-
-    // --- 유효성 검사 관련 (기존 signup 로직 재사용) ---
     const CHECK_NICKNAME_API_BASE = '/api/auth/check/nickname';
     const EMAIL_SEND_API = '/api/auth/verify/send/email';
     const EMAIL_CHECK_API = '/api/auth/verify/check/email';
-
 
     let isNicknameAvailable = true;
     let isEmailVerified = true;
     let initialEmail = '';
     let timerInterval = null;
 
-    // --- 타이머 및 인증 UI 함수 (수정 없음) ---
+    // --- 타이머 및 인증 UI 함수 ---
     function startTimer(duration) {
         if (timerInterval) clearInterval(timerInterval);
         const statusEl = document.getElementById('verification-code-status');
@@ -209,6 +288,7 @@
         document.getElementById('email-verify-btn').disabled = false;
         document.getElementById('verification-code').disabled = false;
     }
+
     function hideVerificationCodeInput() {
         document.getElementById('verification-code-group').classList.add('d-none');
         document.getElementById('email-check-btn').textContent = 'Verify';
@@ -236,14 +316,7 @@
         isEmailVerified = true;
     }
 
-    function redirectToLogin() {
-        if (typeof clearAuthToken === 'function') {
-            clearAuthToken();
-        }
-        window.location.replace(LOGIN_PAGE);
-    }
-
-    // --- [ Nickname Check Logic (수정 없음) ] -----------------------------------
+    // --- [ Nickname Check Logic ] -----------------------------------
     async function checkNicknameForUpdate() {
         const nickname = document.getElementById('nickname-input').value.trim();
         const nicknameStatus = document.getElementById('nickname-status');
@@ -285,7 +358,7 @@
         }
     }
 
-    // --- [ Email Verification Logic (수정 없음) ] -------------------------------
+    // --- [ Email Verification Logic ] -------------------------------
     async function checkEmailForUpdate() {
         const email = document.getElementById('email-input').value.trim();
         const emailStatus = document.getElementById('email-status');
@@ -312,16 +385,17 @@
         document.getElementById('email-check-btn').disabled = true;
 
         try {
-            const sendResp = await post(EMAIL_SEND_API, { email });
+            const sendResp = await post(EMAIL_SEND_API, {email});
 
             if (sendResp.ok) {
                 emailStatus.textContent = '✅ Verification code sent to your email!';
                 emailStatus.className = 'form-text status-success';
                 showVerificationCodeInput();
                 startTimer(180);
-                showModal("Check Your Email",
-                    "Verification code sent! Please check your inbox. If you don't receive it shortly, please check your **Spam or Junk folder**.",
-                    null);
+                showAndRedirectModal("Check Your Email",
+                    "Verification code sent! Please check your inbox. If you don't receive it shortly, please check your **Spam or Junk folder**."
+                    , () => {}
+                );
             } else if (sendResp.status === 409) {
                 isEmailVerified = false;
                 emailStatus.textContent = '❌ This email is already registered and cannot be used.';
@@ -359,7 +433,7 @@
         document.getElementById('email-verify-btn').disabled = true;
 
         try {
-            const verifyResp = await post(EMAIL_CHECK_API, { email, code });
+            const verifyResp = await post(EMAIL_CHECK_API, {email, code});
 
             if (verifyResp.ok) {
                 isEmailVerified = true;
@@ -396,7 +470,7 @@
     document.addEventListener('DOMContentLoaded', () => {
         loadUserData();
 
-        // --- [ A. Profile Image Click Preview (수정 없음) ] ----------------------
+        // --- [ A. Profile Image Click Preview ] ----------------------
         const profileImg = document.getElementById('profile-image');
         const fileInput = document.getElementById('profile-file-input');
         const profileContainer = document.querySelector('.profile-img-container');
@@ -413,7 +487,9 @@
             if (!file) return;
             // 미리보기 업데이트 (업로드는 폼 제출 시 통합)
             const reader = new FileReader();
-            reader.onload = (event) => { profileImg.src = event.target.result; };
+            reader.onload = (event) => {
+                profileImg.src = event.target.result;
+            };
             reader.readAsDataURL(file);
         });
 
@@ -449,48 +525,26 @@
             }
 
             // 4. 실제로 변경된 값이 있는지 확인 (파일 변경 여부도 포함해야 하지만, 서버에서 처리하는 것이 일반적이므로 일단은 폼 제출 진행)
-            // if (nickname === currentNickname && email === currentEmail && !file) {
-            //     showAlert('No changes detected in profile information.', 'info');
-            //     return;
-            // }
 
             // 🚩 데이터 통합: FormData 생성 (이미지, 닉네임, 이메일)
             const formData = new FormData();
             if (file) {
                 formData.append('profileImage', file);
-            } else {
-                // 💡 파일이 없는 경우 서버에 닉네임/이메일만 업데이트하도록 Signal을 보낼 수 있지만,
-                // 현재는 파일이 없으면 필드 자체를 안 보내고 서버에서 판단하도록 구현합니다.
             }
-            // 닉네임과 이메일은 항상 전송
-            formData.append('nickname', nickname);
+            formData.append('displayName', nickname); // 필드명 수정: 'nickname' -> 'displayName'
             formData.append('email', email);
-
-            // 💡 서버에서 JWT를 재발급해야 클라이언트 측의 닉네임이 즉시 업데이트됩니다.
 
             try {
                 // 🚩 API 요청: 프로필 정보 업데이트 (POST 요청, httpFileRequest 사용)
                 const response = await httpFileRequest(UPDATE_PROFILE_API, formData);
 
                 if (response.ok) {
-                    showAlert('Profile updated successfully.', 'success');
-
-                    // 업데이트 성공 후 상태 초기화 (새 닉네임/이메일을 현재 값으로 설정)
-                    initialEmail = email;
-                    isNicknameAvailable = true;
-                    isEmailVerified = true;
-
-                    // 이메일 필드 잠금 해제 (새로운 수정이 가능하도록)
-                    document.getElementById('email-input').disabled = false;
-                    document.getElementById('email-check-btn').disabled = false;
-                    document.getElementById('email-verify-btn').style.display = 'inline-block';
-
-                    // 파일 인풋 초기화 (같은 파일 재선택 가능하게)
-                    document.getElementById('profile-file-input').value = null;
-
+                    showAndRedirectModal('Profile Updated', 'Your profile information has been updated successfully.');
                 } else if (response.status === 409) {
                     const error = await response.json().catch(() => ({}));
                     showAlert(`Update failed: ${error.message || 'Nickname or email already in use.'}`, 'danger');
+                } else if (response.status === 403) {
+                    showAlert(`Update failed: Please verify your new email address first.`, 'danger');
                 } else {
                     showAlert('Failed to update profile. Please try again.', 'danger');
                 }
@@ -508,20 +562,21 @@
             const current = document.getElementById('current-password').value;
             const newPass = document.getElementById('new-password').value;
             const confirmPass = document.getElementById('confirm-password').value;
-            // (유효성 검사는 수정 없이 유지)
+
             if (!current || !newPass || !confirmPass || newPass.length < 8 || newPass !== confirmPass) {
                 showAlert('Please check your current and new password fields.', 'warning');
                 return;
             }
 
-            const body = { currentPassword: current, newPassword: newPass };
+            const body = {password: current, newPassword: newPass};
 
             try {
                 // 🚩 URI 변수 사용 (PUT 요청)
                 const response = await put(UPDATE_PASSWORD_API, body);
 
                 if (response.ok) {
-                    showAlert('Password changed successfully. Please re-login if prompted.', 'success');
+                    // 🚩 수정: 새로운 모달 함수 사용
+                    showAndRedirectModal('Password Changed', 'Your password has been successfully updated. Please log in with your new password.');
                     document.getElementById('password-form').reset();
                 } else if (response.status === 401) {
                     showAlert('Password change failed: Current password is incorrect.', 'danger');
@@ -537,13 +592,11 @@
 
         // --- [ 3. Delete Account Logic ] -----------------------------------
         document.getElementById('delete-account-btn').addEventListener('click', () => {
-            const confirmAction = async () => {
+            const deleteAction = async () => {
                 try {
-                    // 🚩 URI 변수 사용 (DELETE 요청)
                     const response = await del(DELETE_ACCOUNT_API);
                     if (response.ok) {
-                        showAlert('Account successfully deleted. Redirecting...', 'success');
-                        setTimeout(redirectToLogin, 1500);
+                        showAndRedirectModal('Account Deleted', 'Your account has been successfully deleted.');
                     } else if (response.status === 403) {
                         showAlert('Deletion failed: You do not have permission.', 'danger');
                     } else {
@@ -554,13 +607,10 @@
                     showAlert('Communication error with the server.', 'danger');
                 }
             };
-            showModal(
-                'Confirm Account Deletion',
-                '<p class="text-danger fw-bold">Warning: This action is irreversible.</p><p>All your data, including chat history and profile information, will be permanently deleted.</p><p>Do you wish to proceed?</p>',
-                confirmAction
-            );
-        });
 
+            // 🚩 모달 컨펌 없이 바로 삭제 액션 실행
+            deleteAction();
+        });
 
         // --- [ 4. Link TikTok Logic (보류 유지) ] -----------------------------------
         document.getElementById('link-tiktok-btn').addEventListener('click', () => {

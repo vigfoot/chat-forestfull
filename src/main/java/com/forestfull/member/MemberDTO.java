@@ -12,15 +12,13 @@ public class MemberDTO {
 
     private String roles = "ROLE_USER";
 
-    @NotBlank(message = "ID is required.")
     @Size(min = 4, max = 50, message = "ID must be between 4 and 20 characters.")
     @Pattern(regexp = "^[a-zA-Z0-9]*$", message = "ID must contain only English letters and numbers.")
     private String username;
 
-    @NotBlank(message = "Password is required.")
     @Size(min = 8, max = 50, message = "Password must be between 8 and 50 characters.")
     private String password;
-    @NotBlank(message = "new Password is required.")
+
     @Size(min = 8, max = 50, message = "new Password must be between 8 and 50 characters.")
     private String newPassword;
 
@@ -30,7 +28,6 @@ public class MemberDTO {
     private String email;
 
     // Nickname
-    @NotBlank(message = "Nickname is required.")
     @Size(min = 2, max = 30, message = "Nickname must be between 2 and 30 characters.")
     private String displayName;
 

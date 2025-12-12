@@ -114,9 +114,10 @@
         document.getElementById('user-info').innerText = `Logged in as ${userDisplay}`;
 
         const roomsList = document.getElementById('rooms-list');
+        const modal = new bootstrap.Modal(document.getElementById('createRoomModal'));
 
         // 🚩 ADDED: STOMP Client
-        let stompClient = null;
+        stompClient = null;
 
         async function loadRooms() {
             try {
@@ -170,7 +171,35 @@
             });
         }
 
-        // ... (Create room 로직은 변경 없음) ...
+        // Create room
+        document.getElementById('btn-create-room').addEventListener('click', () => {
+            modal.show();
+            document.getElementById('new-room-name').value = '';
+            setTimeout(() => document.getElementById('new-room-name').focus(), 200);
+        });
+        document.getElementById('create-room-submit').addEventListener('click', async () => {
+            const name = document.getElementById('new-room-name').value.trim();
+            if (!name) return alert('Room name required');
+            try {
+                const createdBy = payload ? Number(payload.sub) : null;
+                const res = await post('/api/chat/rooms', { name, createdBy });
+                if (res.ok) {
+                    modal.hide();
+                    const body = await res.json();
+                    if (body && body.id) {
+                        window.location.href = `/pages/rooms/${body.id}`;
+                    } else {
+                        await loadRooms();
+                    }
+                } else {
+                    const text = await res.text();
+                    alert('Create failed: ' + text);
+                }
+            } catch (e) {
+                console.error(e);
+                alert('Create failed');
+            }
+        });
 
         // escape helper
         function escapeHtml(s) {

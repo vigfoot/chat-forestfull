@@ -22,7 +22,6 @@
 </footer>
 
 <div th:fragment="common-ui">
-
     <div id="top-alert-area" class="alert alert-warning alert-dismissible fade show d-none" role="alert"
          style="position: fixed; top: 0; left: 0; right: 0; z-index: 1050; margin: 0; border-radius: 0;">
         <span id="top-alert-message">Announcement Message</span>
@@ -41,6 +40,23 @@
                 </div>
                 <div class="modal-footer border-top-0" id="commonModalFooter">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="redirectModal" tabindex="-1" aria-labelledby="redirectModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content bg-dark">
+                <div class="modal-header border-bottom-0">
+                    <h5 class="modal-title" id="redirectModalLabel" style="color: var(--cf-accent-primary);"></h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-white">
+                    <p id="redirectModalMessage"></p>
+                </div>
+                <div class="modal-footer border-top-0">
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Confirm</button>
                 </div>
             </div>
         </div>

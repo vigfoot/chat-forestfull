@@ -427,7 +427,7 @@
             fetchEmojiList(); // Refresh list on success
         } catch (e) {
             console.error('deleteEmoji Error:', e);
-            alert('Delete failed (Server error).');
+            showAndRedirectModal('deleteEmoji Error', 'Delete failed (Server error).');
         }
     }
 
@@ -726,7 +726,7 @@
         };
         img.onerror = (e) => {
             console.error('Image load failed', e);
-            alert('Image load failed');
+            showAndRedirectModal('fail', 'Image load failed');
         };
         img.src = URL.createObjectURL(file);
     }
@@ -759,7 +759,7 @@
                     fetchEmojiList();
                     closePopup();
                 } catch (err) {
-                    alert('Upload failed: ' + (err.message || err));
+                    showAndRedirectModal('fail', 'Upload failed: ' + (err.message || err));
                 }
             }, 'image/png'); // Always use PNG for transparency
         } catch (e) {

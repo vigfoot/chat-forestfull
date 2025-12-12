@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
 import java.util.Objects;
 
 @Slf4j
@@ -94,11 +95,11 @@ public class MemberService {
         if (profileImage != null && !profileImage.isEmpty()) {
             // 🚩 규칙 1 반영: 기존 파일을 삭제하는 로직은 제거 (보관)
 
-            final Long fileId = fileService.saveProfileImage(profileImage, userId);
+            final File file = fileService.saveProfileImage(profileImage, userId);
 
-            if (fileId == null) throw new RuntimeException("Failed to save new profile image.");
+            if (!file.exists()) throw new RuntimeException("Failed to save new profile image.");
 
-            newProfileImageUrl = "/file/" + fileId;
+            newProfileImageUrl = "/file/profiles/" + userId + "/" + file.getName();
         }
 
         memberMapper.updateProfile(userId, newNickname, newEmail, newProfileImageUrl);
@@ -129,7 +130,7 @@ public class MemberService {
     // ---------------------------------------------------------------------------------
     @Transactional
     public void deleteUser(Long userId) {
-        User user = userMapper.findByUserId(userId);
+        final User user = userMapper.findByUserId(userId);
         if (user == null) return;
 
         userMapper.deleteById(userId);

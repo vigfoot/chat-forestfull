@@ -19,6 +19,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.File;
 import java.util.Map;
 import java.util.Optional;
 
@@ -84,14 +85,14 @@ public class MemberController {
             }
 
             if (request.getProfileImage() != null && !request.getProfileImage().isEmpty()) {
-                Long profileFileId = fileService.saveProfileImage(request.getProfileImage(), savedUser.getId());
+                File file = fileService.saveProfileImage(request.getProfileImage(), savedUser.getId());
 
-                if (profileFileId == null) {
+                if (!file.exists()) {
                     return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                             .body(Map.of("error", "User registered, but failed to upload profile image."));
                 }
 
-                String profileImageUrl = "/file/" + profileFileId;
+                String profileImageUrl = "/file/profiles/" + savedUser.getId() + "/" + file.getName();
                 memberService.updateProfileImage(savedUser.getId(), profileImageUrl);
             }
 

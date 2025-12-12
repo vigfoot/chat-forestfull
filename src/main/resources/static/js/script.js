@@ -157,10 +157,6 @@ function getCookie(name) {
     return match ? match[2] : null;
 }
 
-// src/main/resources/static/js/script.js (추가/수정 필요)
-
-// ... (기존의 post, get, getJwtPayload 함수 등) ...
-
 /**
  * Global function to display the top alert.
  * @param {string} message Message to display
@@ -229,20 +225,58 @@ function showModal(title, bodyHtml, confirmAction = null) {
     const modal = new bootstrap.Modal(modalEl);
     modal.show();
 }
+
+// Constants
+const INDEX_PAGE = '/';
+let redirectModalInstance; // Bootstrap Modal 객체 인스턴스 저장
+
+function redirectUser() {
+    if (typeof clearAuthToken === 'function') {
+        clearAuthToken();
+    }
+    window.location.replace(INDEX_PAGE);
+}
+
+/**
+ * @English: Displays a success modal and redirects to the root page ('/')
+ * after the user closes the modal (by button, X, or backdrop).
+ * @Korean: 성공 모달을 표시하고, 사용자가 모달을 닫는 순간 (버튼, X, 배경)
+ * 루트 페이지('/')로 리디렉션합니다.
+ * @param {string} title - Modal Title
+ * @param {string} message - Modal body content (HTML allowed)
+ * @param redirect
+ */
+function showAndRedirectModal(title, message, redirect = redirectUser) {
+    // 모달 내용 설정
+    document.getElementById('redirectModalLabel').textContent = title;
+    document.getElementById('redirectModalMessage').innerHTML = message;
+
+    // 모달 인스턴스가 없으면 새로 생성하고, 닫힘 이벤트를 연결합니다.
+    if (!redirectModalInstance) {
+        const modalElement = document.getElementById('redirectModal');
+        redirectModalInstance = new bootstrap.Modal(modalElement, {
+            backdrop: 'static',
+            keyboard: false
+        });
+
+        // 모달이 닫힐 때 발생하는 이벤트를 잡아 리디렉션 함수 실행 (핵심)
+        modalElement.addEventListener('hidden.bs.modal', redirect);
+    }
+
+    redirectModalInstance.show();
+}
+
 async function handleLogout() {
     try {
         // POST request to the logout endpoint
         const response = await post('/api/auth/logout', null);
         if (response.ok) {
-            // Remove JWT/local storage items if necessary (assuming handled by common script/backend)
-            alert('Logged out successfully.');
-            // Redirect to home or login page
-            window.location.href = '/';
+            showAndRedirectModal('Log Out', 'Logged out successfully.');
         } else {
-            alert('Error occurred during logout.');
+            showAndRedirectModal('Log Out', 'Error occurred during logout.');
         }
     } catch (err) {
         console.error(err);
-        alert('Communication error with the server.');
+        showAndRedirectModal('Log Out', 'Communication error with the server.');
     }
 }

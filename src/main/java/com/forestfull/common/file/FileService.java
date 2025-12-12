@@ -163,7 +163,7 @@ public class FileService implements WebMvcConfigurer {
      * @return 저장 성공 시 FileDTO의 ID를, 실패 시 null을 반환합니다.
      */
     // FileService.java (수정된 saveProfileImage 메서드)
-    public Long saveProfileImage(MultipartFile filePart, Long userId) {
+    public File saveProfileImage(MultipartFile filePart, Long userId) {
         if (filePart == null || filePart.isEmpty()) return null;
         if (userId == null || userId <= 0) return null;
 
@@ -207,7 +207,7 @@ public class FileService implements WebMvcConfigurer {
 
             fileMapper.saveFile(fileDto);
 
-            return fileDto.getId();
+            return dest;
         } catch (IOException e) {
             // 실패 시 로깅
             log.error("File save failed (IOException): " + e.getMessage());
