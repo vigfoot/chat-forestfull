@@ -1,12 +1,16 @@
 package com.forestfull.member;
 
 import com.forestfull.common.file.FileService;
+import com.forestfull.common.smtp.EmailVerificationService;
+import com.forestfull.common.smtp.VerificationEmail;
 import com.forestfull.domain.CustomUserDetailsService;
 import com.forestfull.domain.User;
+import jakarta.mail.MessagingException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -19,6 +23,7 @@ public class MemberController {
     private final FileService fileService;
     private final MemberService memberService;
     private final CustomUserDetailsService customUserService;
+    private final EmailVerificationService emailVerificationService;
 
     // 🚩 MODIFIED: 파일 저장 후처리 로직을 포함한 signup 메서드
     @PostMapping("/signup")
@@ -74,14 +79,34 @@ public class MemberController {
     }
 
     @PostMapping("/verify/send/email")
-    ResponseEntity<?> verifySendEmail(@PathVariable MemberDTO.VerifyEmail verifyEmail) {
+    public ResponseEntity<Void> sendVerificationCode(@RequestBody VerificationEmail verificationEmail) {
+        final String email = verificationEmail.getEmail();
+        if (!StringUtils.hasText(email)) return ResponseEntity.badRequest().build();
 
-        return ResponseEntity.ok().build();
+        // 1. 🚩 ACTIVATED: 이메일 중복 검사 (요청하신 '이메일 중복 불허' 정책)
+        if (memberService.isEmailRegistered(email))
+            return ResponseEntity.status(HttpStatus.CONFLICT).build();
+
+        try {
+            // 2. 인증 코드 발송
+            emailVerificationService.sendVerificationCode(email);
+            return ResponseEntity.ok().build();
+        } catch (MessagingException e) {
+            // 메일 서버 오류 또는 설정 오류
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 
     @PostMapping("/verify/check/email")
-    ResponseEntity<?> verifyCheckEmail(@PathVariable MemberDTO.VerifyEmail verifyEmail) {
+    public ResponseEntity<Void> checkVerificationCode(@RequestBody VerificationEmail verificationEmail) {
+        final String email = verificationEmail.getEmail();
+        final String code = verificationEmail.getCode();
 
-        return ResponseEntity.ok().build();
+        if (!StringUtils.hasText(email) || !StringUtils.hasText(code))
+            return ResponseEntity.badRequest().build();
+
+        return emailVerificationService.verifyCode(email, code)
+                ? ResponseEntity.ok().build()
+                : ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
     }
 }

@@ -27,4 +27,8 @@ public class MemberService {
 
         memberMapper.updateProfileImage(userId, profileImageUrl);
     }
+
+    public boolean isEmailRegistered(String email) {
+        return memberMapper.isEmailRegistered(email);
+    }
 }

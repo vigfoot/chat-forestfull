@@ -33,12 +33,4 @@ public class MemberDTO {
 
     // Profile Image File (Optional)
     private MultipartFile profileImage;
-
-    public static class VerifyEmail {
-        // Email Address (Optional)
-        @Size(min = 10, max = 100, message = "Email Address must be between 10 and 100 characters.")
-        @Pattern(regexp = "^\\S+@\\S+\\.\\S+$", message = "Not allow characters.")
-        private String email;
-        private String code;
-    }
 }
