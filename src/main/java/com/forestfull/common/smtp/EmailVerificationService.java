@@ -116,7 +116,7 @@ public class EmailVerificationService {
             LocalDateTime successExpiryTime = LocalDateTime.now().plusSeconds(successTimeoutSeconds);
             verifiedEmailStore.put(email, successExpiryTime);
 
-            log.info("Email {} successfully verified and marked for signup.", email);
+            log.info("Email {} successfully verified and marked for signup/update.", email);
             return true;
         }
 
@@ -129,6 +129,21 @@ public class EmailVerificationService {
      * Used by the /api/auth/signup endpoint.
      */
     public boolean isVerifiedForSignup(String email) {
+        return checkVerifiedStatus(email, "Signup");
+    }
+
+    /**
+     * 🚩 [추가됨] Checks if the email is currently marked as verified for general use (e.g., profile update).
+     * Used by the /api/auth/users/profile endpoint.
+     */
+    public boolean isVerified(String email) {
+        return checkVerifiedStatus(email, "General use/Profile update");
+    }
+
+    /**
+     * Common logic to check the verified status in the store.
+     */
+    private boolean checkVerifiedStatus(String email, String context) {
         LocalDateTime expiryTime = verifiedEmailStore.get(email);
 
         if (expiryTime == null) {
@@ -138,7 +153,7 @@ public class EmailVerificationService {
         if (LocalDateTime.now().isAfter(expiryTime)) {
             // Expired, clean up and return false
             verifiedEmailStore.remove(email);
-            log.warn("Signup attempt failed for {}: Verified status expired.", email);
+            log.warn("{} attempt failed for {}: Verified status expired.", context, email);
             return false;
         }
 
@@ -146,12 +161,12 @@ public class EmailVerificationService {
     }
 
     /**
-     * Removes the verified status after successful user registration.
-     * Used by the /api/auth/signup endpoint.
+     * Removes the verified status after successful user registration or profile update.
+     * Used by the /api/auth/signup endpoint or profile update.
      */
     public void removeVerificationStatus(String email) {
         verifiedEmailStore.remove(email);
-        log.info("Verified status removed for {} after successful signup.", email);
+        log.info("Verified status removed for {} after successful process.", email);
     }
 
     /**

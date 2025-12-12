@@ -1,19 +1,26 @@
 package com.forestfull.member;
 
+import com.auth0.jwt.interfaces.DecodedJWT;
 import com.forestfull.common.file.FileService;
 import com.forestfull.common.smtp.EmailVerificationService;
 import com.forestfull.common.smtp.VerificationEmail;
+import com.forestfull.common.token.CookieUtil;
+import com.forestfull.common.token.JwtUtil;
 import com.forestfull.domain.CustomUserDetailsService;
 import com.forestfull.domain.User;
 import jakarta.mail.MessagingException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -21,20 +28,40 @@ import java.util.Map;
 public class MemberController {
 
     private final FileService fileService;
-    private final MemberService memberService; // ID/Nickname 중복 확인 및 Profile Image 업데이트 담당 (가정)
-    private final CustomUserDetailsService customUserService; // 회원 DB 저장 로직 담당 (가정)
-    private final EmailVerificationService emailVerificationService; // 이메일 인증 상태 관리 담당
+    private final MemberService memberService;
+    private final CustomUserDetailsService customUserService;
+    private final EmailVerificationService emailVerificationService;
+    private final JwtUtil jwtUtil;
+    private final JwtUtil.Refresh jwtRefreshUtil;
+    private final CookieUtil cookieUtil;
+
+    // ---------------------------------------------------------------------------------
+    // [ Private Utility: JWT에서 ID 추출 ]
+    // ---------------------------------------------------------------------------------
 
     /**
-     * 최종 회원가입 및 프로필 이미지 저장 로직을 처리합니다.
-     * 인증 성공 상태와 트랜잭션 관리가 필요합니다.
-     *
-     * URI: POST /api/auth/signup
+     * HttpServletRequest에서 JWT를 파싱하여 사용자 ID를 추출합니다.
+     * ID 추출 실패 시 null을 반환합니다.
      */
+    private Long extractUserIdFromRequest(HttpServletRequest request) {
+        final Optional<DecodedJWT> decodedJWTOptional = jwtUtil.getJwtToken(request);
+        if (decodedJWTOptional.isEmpty()) {
+            return null;
+        }
+        try {
+            return Long.valueOf(decodedJWTOptional.get().getSubject());
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+
+    // ---------------------------------------------------------------------------------
+    // [ 인증 및 회원가입 관련 API ] (변경 없음)
+    // ---------------------------------------------------------------------------------
+
     @PostMapping("/signup")
     public ResponseEntity<?> signup(@Valid @ModelAttribute MemberDTO request) {
-
-        // 1. 이메일 인증 상태 검사: 인증 코드 확인을 통과했는지, 그리고 상태가 만료되지 않았는지 확인
         if (!emailVerificationService.isVerifiedForSignup(request.getEmail())) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("error", "Email verification is required or has expired."));
@@ -50,93 +77,62 @@ public class MemberController {
 
         User savedUser = null;
         try {
-            // 2. 사용자 등록 (DB 트랜잭션 시작 지점 - CustomUserDetailsService 내부에서 처리 가정)
             savedUser = customUserService.signup(user);
 
             if (savedUser == null || savedUser.getId() == null) {
                 return ResponseEntity.badRequest().body(Map.of("error", "Sign up failed during database registration."));
             }
 
-            // 3. 프로필 이미지 처리
             if (request.getProfileImage() != null && !request.getProfileImage().isEmpty()) {
                 Long profileFileId = fileService.saveProfileImage(request.getProfileImage(), savedUser.getId());
 
                 if (profileFileId == null) {
-                    // 파일 저장 실패 시, DB에 저장된 user를 롤백(삭제)하는 로직이 customUserService/MemberService에 있어야 함.
                     return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                             .body(Map.of("error", "User registered, but failed to upload profile image."));
                 }
 
                 String profileImageUrl = "/file/" + profileFileId;
                 memberService.updateProfileImage(savedUser.getId(), profileImageUrl);
-                savedUser.setProfileImage(profileImageUrl);
             }
 
-            // 4. 인증 완료 상태 제거 (재가입 방지, 일회성)
             emailVerificationService.removeVerificationStatus(request.getEmail());
 
-            // 5. 최종 성공 응답 반환
             return ResponseEntity.ok(Map.of("message", "Sign up successful"));
 
         } catch (Exception e) {
-            // 예외 발생 시 트랜잭션 롤백 처리 필요
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("error", "An unexpected error occurred during sign up."));
         }
     }
 
-    /**
-     * 사용자 ID(Username) 중복을 확인합니다.
-     *
-     * URI: POST /api/auth/check/id/{username}
-     */
+    // (중복 확인 및 이메일 인증 API는 생략)
     @PostMapping("/check/id/{username}")
     ResponseEntity<?> checkUsername(@PathVariable String username) {
         return memberService.isExistedUsername(username)
-                ? ResponseEntity.status(HttpStatus.CONFLICT).build() // 중복
-                : ResponseEntity.ok().build(); // 사용 가능
+                ? ResponseEntity.status(HttpStatus.CONFLICT).build()
+                : ResponseEntity.ok().build();
     }
 
-    /**
-     * 닉네임(DisplayName) 중복을 확인합니다.
-     *
-     * URI: POST /api/auth/check/nickname/{displayName}
-     */
     @PostMapping("/check/nickname/{displayName}")
     ResponseEntity<?> checkNickname(@PathVariable String displayName) {
         return memberService.isExistedNickname(displayName)
-                ? ResponseEntity.status(HttpStatus.CONFLICT).build() // 중복
-                : ResponseEntity.ok().build(); // 사용 가능
+                ? ResponseEntity.status(HttpStatus.CONFLICT).build()
+                : ResponseEntity.ok().build();
     }
 
-    /**
-     * 이메일 중복 확인 후, 인증 코드를 발송합니다.
-     *
-     * URI: POST /api/auth/verify/send
-     */
     @PostMapping("/verify/send/email")
     public ResponseEntity<Void> sendVerificationCode(@RequestBody VerificationEmail verificationEmail) {
         final String email = verificationEmail.getEmail();
         if (!StringUtils.hasText(email)) return ResponseEntity.badRequest().build();
-
-        // 1. 이메일 중복 검사 (요청하신 '이메일 중복 불허' 정책)
-        if (memberService.isEmailRegistered(email))
-            return ResponseEntity.status(HttpStatus.CONFLICT).build();
+        if (memberService.isEmailRegistered(email)) return ResponseEntity.status(HttpStatus.CONFLICT).build();
 
         try {
-            // 2. 인증 코드 발송 및 코드 저장
             emailVerificationService.sendVerificationCode(email);
             return ResponseEntity.ok().build();
         } catch (MessagingException e) {
-            // 메일 서버 연결/설정 오류 등
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
-    /**
-     * 사용자 입력 인증 코드를 검증합니다. 성공 시, 해당 이메일을 '인증 완료 상태'로 만듭니다.
-     *
-     * URI: POST /api/auth/verify/check
-     */
     @PostMapping("/verify/check/email")
     public ResponseEntity<Void> checkVerificationCode(@RequestBody VerificationEmail verificationEmail) {
         final String email = verificationEmail.getEmail();
@@ -145,11 +141,128 @@ public class MemberController {
         if (!StringUtils.hasText(email) || !StringUtils.hasText(code))
             return ResponseEntity.badRequest().build();
 
-        // 코드 검증 (성공 시 EmailVerificationService 내부에서 Verified Store에 상태 저장)
         boolean verified = emailVerificationService.verifyCode(email, code);
 
         return verified
                 ? ResponseEntity.ok().build()
-                : ResponseEntity.status(HttpStatus.UNAUTHORIZED).build(); // 코드 불일치, 만료 등
+                : ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+    }
+
+
+    // ---------------------------------------------------------------------------------
+    // [ 로그인 사용자 관리 API ] - 마이페이지 기능 통합
+    // ---------------------------------------------------------------------------------
+
+    /**
+     * 1. Profile Information Update (Image, Nickname, Email)
+     * URI: POST /api/auth/users/profile (Multipart/form-data)
+     */
+    @PreAuthorize("isAuthenticated()")
+    @PostMapping("/users/profile")
+    public ResponseEntity<?> updateProfile(@Valid @ModelAttribute MemberDTO request, HttpServletRequest httpRequest, HttpServletResponse response) { // 🚩 HttpServletRequest 추가
+        final Long userId = extractUserIdFromRequest(httpRequest); // 🚩 ID 추출
+        if (userId == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build(); // 인증 실패 시 401 반환
+
+        // 1. 닉네임 유효성 검증
+        if (!memberService.isNicknameAvailableForUpdate(userId, request.getDisplayName())) { // 🚩 userId 사용
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(Map.of("error", "Nickname already taken by another user."));
+        }
+
+        // 2. 이메일 유효성 및 인증 검증
+        if (request.getEmail() != null && !request.getEmail().isEmpty()) {
+            if (memberService.isNewEmail(userId, request.getEmail())) { // 🚩 userId 사용
+                if (!emailVerificationService.isVerified(request.getEmail())) {
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                            .body(Map.of("error", "The new email address must be verified first."));
+                }
+                if (memberService.isEmailRegisteredByOtherUser(userId, request.getEmail())) { // 🚩 userId 사용
+                    return ResponseEntity.status(HttpStatus.CONFLICT)
+                            .body(Map.of("error", "This email is already used by another user."));
+                }
+            }
+        }
+
+        try {
+            memberService.updateProfile(
+                    userId, // 🚩 userId 사용
+                    request.getDisplayName(),
+                    request.getEmail(),
+                    request.getProfileImage()
+            );
+
+            final User user = customUserService.loadUserByUserId(userId);
+            final String accessToken = jwtUtil.generateToken(user);
+            final String refreshToken = jwtRefreshUtil.generateToken(user);
+            jwtRefreshUtil.save(user.getId(), refreshToken);
+
+            cookieUtil.addAccessToken(response, accessToken);
+            cookieUtil.addPayload(response, accessToken);
+            cookieUtil.addRefreshToken(response, refreshToken);
+
+            return ResponseEntity.ok(Map.of("message", "Profile updated successfully."));
+
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Failed to process profile update."));
+        }
+    }
+
+    /**
+     * 2. Change Password
+     * URI: PUT /api/auth/users/password
+     */
+    @PreAuthorize("isAuthenticated()")
+    @PutMapping("/users/password")
+    public ResponseEntity<?> changePassword(@Valid @RequestBody MemberDTO request, HttpServletRequest httpRequest, HttpServletResponse response) { // 🚩 HttpServletRequest 추가
+        final Long userId = extractUserIdFromRequest(httpRequest); // 🚩 ID 추출
+        if (userId == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build(); // 인증 실패 시 401 반환
+
+        if (request.getPassword() == null || request.getNewPassword() == null)
+            return ResponseEntity.badRequest().body(Map.of("error", "Current and new passwords are required."));
+
+        try {
+            memberService.changePassword(userId, request.getPassword(), request.getNewPassword()); // 🚩 userId 사용
+            jwtRefreshUtil.deleteTokenByUserId(userId); // 🚩 userId 사용
+            cookieUtil.deleteAuthCookies(response);
+
+            return ResponseEntity.ok(Map.of("message", "Password changed successfully. Please re-login."));
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Current password is incorrect."));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Failed to change password."));
+        }
+    }
+
+    /**
+     * 3. Delete Account (회원 탈퇴)
+     * URI: DELETE /api/auth/users
+     */
+    @PreAuthorize("isAuthenticated()")
+    @DeleteMapping("/users")
+    public ResponseEntity<?> deleteAccount(HttpServletRequest request, HttpServletResponse response) {
+        final Long userId = extractUserIdFromRequest(request); // 🚩 ID 추출 유틸리티 사용
+        if (userId == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build(); // 인증 실패 시 401 반환
+
+        try {
+            // 1. Refresh Token DB에서 삭제
+            jwtRefreshUtil.deleteTokenByUserId(userId);
+
+            // 2. 사용자 DB에서 삭제 (파일 시스템상의 프로필 이미지 파일도 삭제해야 함)
+            memberService.deleteUser(userId);
+
+            // 3. 인증 관련 쿠키 삭제
+            cookieUtil.deleteAuthCookies(response);
+
+            return ResponseEntity.ok(Map.of("message", "Account successfully deleted."));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Failed to delete account."));
+        }
     }
 }

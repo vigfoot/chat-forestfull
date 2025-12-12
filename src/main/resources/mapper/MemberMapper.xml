@@ -2,5 +2,47 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
 <mapper namespace="com.forestfull.member.MemberMapper">
+    <update id="updateProfileImage">
+        UPDATE chat_forestfull.member
+        SET profile_image = #{profileImageUrl}
+        WHERE id = #{id}
+    </update>
 
+    <select id="isNicknameTakenByOtherUser" resultType="Boolean">
+        SELECT COUNT(0) > 0
+        FROM chat_forestfull.member
+        WHERE display_name = #{nickname}
+          AND id != #{userId}
+    </select>
+
+    <select id="isEmailTakenByOtherUser" resultType="Boolean">
+        SELECT COUNT(0) > 0
+        FROM chat_forestfull.member
+        WHERE email = #{email}
+          AND id != #{userId}
+    </select>
+
+    <update id="updateProfile">
+        UPDATE chat_forestfull.member
+        <set>
+            updated_at = NOW(),
+            <if test="newNickname != null">
+                display_name = #{newNickname},
+            </if>
+            <if test="newEmail != null">
+                email = #{newEmail},
+            </if>
+            <if test="newProfileImageUrl != null">
+                profile_image = #{newProfileImageUrl}
+            </if>
+        </set>
+        WHERE id = #{userId}
+    </update>
+
+    <update id="updatePassword">
+        UPDATE chat_forestfull.member
+        SET password = #{encodedPassword},
+            updated_at = NOW()
+        WHERE id = #{userId}
+    </update>
 </mapper>

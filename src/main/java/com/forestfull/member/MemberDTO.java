@@ -20,6 +20,9 @@ public class MemberDTO {
     @NotBlank(message = "Password is required.")
     @Size(min = 8, max = 50, message = "Password must be between 8 and 50 characters.")
     private String password;
+    @NotBlank(message = "new Password is required.")
+    @Size(min = 8, max = 50, message = "new Password must be between 8 and 50 characters.")
+    private String newPassword;
 
     // Email Address (Optional)
     @Size(min = 10, max = 100, message = "Email Address must be between 10 and 100 characters.")
