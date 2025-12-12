@@ -79,7 +79,7 @@ public class EmailVerificationService {
 
         helper.setFrom(fromAddress);
         helper.setTo(email);
-        helper.setSubject("[ForestFull Chat] Email Verification Code");
+        helper.setSubject("[Chat ForestFull] Email Verification Code");
 
         // HTML email content
         String htmlContent = buildEmailContent(code, codeTimeoutSeconds / 60);
@@ -159,7 +159,7 @@ public class EmailVerificationService {
      */
     private String buildEmailContent(String code, long minutes) {
         return "<div style='font-family: Arial, sans-serif; padding: 20px; border: 1px solid #eee; max-width: 600px; margin: auto;'>"
-                + "<h2 style='color: #21b021;'>ForestFull Chat Email Verification</h2>"
+                + "<h2 style='color: #21b021;'>Chat ForestFull Email Verification</h2>"
                 + "<p>Thank you for signing up! Please use the following code to verify your email address:</p>"
                 + "<div style='background: #f4f4f4; padding: 15px; text-align: center; border-radius: 5px; font-size: 24px; font-weight: bold; letter-spacing: 5px;'>"
                 + code

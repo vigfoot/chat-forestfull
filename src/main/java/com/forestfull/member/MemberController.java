@@ -43,6 +43,7 @@ public class MemberController {
         User user = User.builder()
                 .name(request.getUsername())
                 .password(request.getPassword())
+                .roles("ROLE_USER")
                 .displayName(request.getDisplayName())
                 .email(request.getEmail())
                 .build();
