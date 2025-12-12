@@ -11,6 +11,7 @@
         <result property="createdAt" column="created_at"/>
         <result property="user.id" column="member_id"/>
         <result property="user.name" column="username"/>
+        <result property="user.email" column="email"/>
         <result property="user.displayName" column="display_name"/>
         <result property="user.profileImage" column="profile_image"/>
     </resultMap>
@@ -29,6 +30,7 @@
              , msg.created_at
              , msg.member_id
              , m.name AS username
+             , m.email
              , m.display_name
              , m.profile_image
         FROM chat_forestfull.chat_message msg

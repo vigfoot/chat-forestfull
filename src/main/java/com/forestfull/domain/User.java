@@ -23,6 +23,7 @@ public class User implements UserDetails, UserPrincipal {
     private Long id;
     private String name;
     private String password;
+    private String email;
     private String roles = "ROLE_USER";
     private String displayName;
     private String profileImage;

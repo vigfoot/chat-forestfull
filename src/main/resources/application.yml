@@ -8,18 +8,23 @@ spring:
     port: 587
     username: ENC(+hHnwEa3Z+owRFZCEIAZJZZLs7B+7zrhlVZmgOXcLhI=)
     password: ENC(e7D2kzz9X8U4+tBnPY5FWl24qBLplWPl)
+    default-encoding: UTF-8
     properties:
       mail:
         smtp:
           auth: true
           starttls:
             enable: true
-    default-encoding: UTF-8
-  app:
-    email:
-      verification-code-length: 6
-      verification-timeout-seconds: 180
-      from-address: ENC(HqAkDnz1tmvodK6VdbcB33058MOmGjtoWf69Qtegt0U=)
+            required: true
+          ssl:
+            checkserveridentity: false
+            trust: "*"
+          debug: true
+app:
+  email:
+    verification-code-length: 6
+    verification-timeout-seconds: 180
+    from-address: ENC(HqAkDnz1tmvodK6VdbcB33058MOmGjtoWf69Qtegt0U=)
 jasypt:
   encryptor:
     password: ${key}

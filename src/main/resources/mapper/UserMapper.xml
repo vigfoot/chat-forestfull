@@ -7,6 +7,7 @@
         SELECT m.id
              , m.name
              , m.password
+             , m.email
              , m.roles
              , m.display_name
              , m.profile_image
@@ -18,6 +19,7 @@
         SELECT m.id
              , m.name
              , m.roles
+             , m.email
              , m.display_name
              , m.profile_image
              , m.created_at
@@ -37,21 +39,22 @@
 
     <!-- 회원 생성 -->
     <insert id="save" parameterType="com.forestfull.domain.User" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO chat_forestfull.member (name, password, roles, display_name, profile_image, created_by, updated_by)
-        VALUES (#{name}, #{password}, #{roles}, #{displayName}, #{profileImage}, #{createdBy}, #{updatedBy})
+        INSERT INTO chat_forestfull.member (name, password, email, roles, display_name, profile_image, created_by, updated_by)
+        VALUES (#{name}, #{password}, #{email}, #{roles}, #{displayName}, #{profileImage}, #{createdBy}, #{updatedBy})
     </insert>
 
     <!-- 모든 회원 조회 -->
     <select id="findAllUsers" resultType="com.forestfull.domain.User">
         SELECT m.id,
-               name,
-               roles,
-               display_name,
-               profile_image,
-               created_at,
-               updated_at,
-               created_by,
-               updated_by
+               m.name,
+               m.roles,
+               m.email,
+               m.display_name,
+               m.profile_image,
+               m.created_at,
+               m.updated_at,
+               m.created_by,
+               m.updated_by
         FROM chat_forestfull.member m
     </select>
 

@@ -18,47 +18,62 @@ import java.util.concurrent.ConcurrentMap;
 @Service
 @RequiredArgsConstructor
 public class EmailVerificationService {
-    private final JavaMailSender mailSender;
-    private final Random random = new Random(); // Random 인스턴스를 재사용합니다.
 
+    private final JavaMailSender mailSender;
+    private final Random random = new Random();
+
+    // 🚩 Configuration Values from application.yml
     @Value("${app.email.verification-code-length:6}")
     private int codeLength;
 
     @Value("${app.email.verification-timeout-seconds:180}")
-    private long timeoutSeconds;
+    private long codeTimeoutSeconds; // Verification code validity (e.g., 3 minutes)
+
+    @Value("${app.email.verification-success-timeout-seconds:600}")
+    private long successTimeoutSeconds; // Verified status validity (e.g., 10 minutes)
 
     @Value("${app.email.from-address}")
     private String fromAddress;
 
+    // 🚩 Store 1: Stores the code and its expiry time for verification
+    // Key: email address, Value: VerificationEmail (contains code and expiryTime)
     private final ConcurrentMap<String, VerificationEmail> verificationStore = new ConcurrentHashMap<>();
 
+    // 🚩 Store 2: Stores the final 'verified' status for signup eligibility
+    // Key: email address, Value: Verified status expiry time
+    private final ConcurrentMap<String, LocalDateTime> verifiedEmailStore = new ConcurrentHashMap<>();
+
+
     /**
-     * 🚩 MODIFIED: 무작위 인증 코드를 생성하는 방식 최적화 (6자리 기준)
+     * Generates a random numeric verification code.
+     * @return The generated code string
      */
     private String generateRandomCode() {
-        // 6자리 코드를 생성하는 표준 방식 (더 간결함)
         int min = (int) Math.pow(10, codeLength - 1);
         int max = (int) Math.pow(10, codeLength) - 1;
         int codeInt = random.nextInt(max - min + 1) + min;
-
-        // 길이에 맞춰 포맷팅
         return String.format("%0" + codeLength + "d", codeInt);
     }
 
     /**
-     * 인증 코드를 생성하고 이메일로 발송합니다.
+     * Generates a code, saves it to the verification store, and sends it via email.
+     *
+     * @param email The recipient's email address
+     * @throws MessagingException Thrown if mail sending fails
      */
     public void sendVerificationCode(String email) throws MessagingException {
+        // 1. Code generation and expiry time setting
         String code = generateRandomCode();
-        LocalDateTime expiryTime = LocalDateTime.now().plusSeconds(timeoutSeconds);
+        LocalDateTime expiryTime = LocalDateTime.now().plusSeconds(codeTimeoutSeconds);
 
-        // 인증 스토어에 저장
+        // 2. Save to verification store (overwrites existing code for resend logic)
         verificationStore.put(email, VerificationEmail.builder()
-                .email(email) // email 필드도 저장하는 것이 추후 디버깅에 유리
+                .email(email)
                 .code(code)
                 .expiryTime(expiryTime).build());
         log.info("Verification code generated for {}: {}", email, code);
 
+        // 3. Email sending
         MimeMessage message = mailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
@@ -66,7 +81,8 @@ public class EmailVerificationService {
         helper.setTo(email);
         helper.setSubject("[ForestFull Chat] Email Verification Code");
 
-        String htmlContent = buildEmailContent(code, timeoutSeconds / 60);
+        // HTML email content
+        String htmlContent = buildEmailContent(code, codeTimeoutSeconds / 60);
 
         helper.setText(htmlContent, true);
 
@@ -75,26 +91,32 @@ public class EmailVerificationService {
     }
 
     /**
-     * 인증 코드를 검증합니다.
+     * Verifies the user-input code against the stored code.
+     * On success, marks the email as verified for signup eligibility.
+     *
+     * @param email The email address to verify
+     * @param code The code input by the user
+     * @return True if verification is successful, false otherwise
      */
     public boolean verifyCode(String email, String code) {
         VerificationEmail data = verificationStore.get(email);
 
-        if (data == null) {
-            log.warn("Verification attempt failed for {}: Code not found.", email);
+        // 1. Check if data exists or if the code has expired
+        if (data == null || LocalDateTime.now().isAfter(data.getExpiryTime())) {
+            verificationStore.remove(email); // Clean up expired data
+            log.warn("Verification attempt failed for {}: Code not found or expired.", email);
             return false;
         }
 
-        // 🚩 MODIFIED: 만료 확인 로직
-        if (LocalDateTime.now().isAfter(data.getExpiryTime())) {
-            verificationStore.remove(email);
-            log.warn("Verification attempt failed for {}: Code expired.", email);
-            return false;
-        }
-
+        // 2. Check for code match
         if (data.getCode().equals(code)) {
-            verificationStore.remove(email);
-            log.info("Email {} successfully verified.", email);
+            verificationStore.remove(email); // Remove code from store 1 (one-time use)
+
+            // 3. Mark as verified in Store 2
+            LocalDateTime successExpiryTime = LocalDateTime.now().plusSeconds(successTimeoutSeconds);
+            verifiedEmailStore.put(email, successExpiryTime);
+
+            log.info("Email {} successfully verified and marked for signup.", email);
             return true;
         }
 
@@ -103,7 +125,37 @@ public class EmailVerificationService {
     }
 
     /**
-     * 간단한 HTML 메일 템플릿입니다.
+     * Checks if the email is currently marked as verified and eligible for signup.
+     * Used by the /api/auth/signup endpoint.
+     */
+    public boolean isVerifiedForSignup(String email) {
+        LocalDateTime expiryTime = verifiedEmailStore.get(email);
+
+        if (expiryTime == null) {
+            return false; // Not verified or already removed
+        }
+
+        if (LocalDateTime.now().isAfter(expiryTime)) {
+            // Expired, clean up and return false
+            verifiedEmailStore.remove(email);
+            log.warn("Signup attempt failed for {}: Verified status expired.", email);
+            return false;
+        }
+
+        return true; // Validly verified
+    }
+
+    /**
+     * Removes the verified status after successful user registration.
+     * Used by the /api/auth/signup endpoint.
+     */
+    public void removeVerificationStatus(String email) {
+        verifiedEmailStore.remove(email);
+        log.info("Verified status removed for {} after successful signup.", email);
+    }
+
+    /**
+     * Simple HTML email template builder.
      */
     private String buildEmailContent(String code, long minutes) {
         return "<div style='font-family: Arial, sans-serif; padding: 20px; border: 1px solid #eee; max-width: 600px; margin: auto;'>"
