@@ -318,6 +318,23 @@
     let resizing = false;
     let resizeCorner = null; // 'tl','tr','bl','br'
 
+    /**
+     * 파일 이름의 확장자를 .png로 변경합니다.
+     * @param {string} originalName - 원본 파일 이름 (예: image.jpg, my_icon.svg)
+     * @returns {string} - 변경된 파일 이름 (예: image.png, my_icon.png)
+     */
+    function changeExtensionToPng(originalName) {
+        if (!originalName) return 'emoji.png';
+        // 마지막 '.' 이후 문자열을 찾아 '.png'로 대체합니다.
+        const lastDotIndex = originalName.lastIndexOf('.');
+        if (lastDotIndex === -1) {
+            // 확장자가 없으면 그냥 붙입니다.
+            return originalName + '.png';
+        }
+        // 확장자만 대체합니다.
+        return originalName.substring(0, lastDotIndex) + '.png';
+    }
+
     /* Helpers */
     function encodePathForSrc(directory) {
         if (!directory) return directory;
@@ -755,7 +772,10 @@
             // Create Blob and Upload
             tmp.toBlob(async (blob) => {
                 try {
-                    const res = await uploadBlobWithFilename(blob, uploadedFile.name);
+                    // 🚩 수정된 부분: 확장자를 .png로 변경합니다.
+                    const finalFilename = changeExtensionToPng(uploadedFile.name);
+
+                    const res = await uploadBlobWithFilename(blob, finalFilename);
                     fetchEmojiList();
                     closePopup();
                 } catch (err) {
@@ -782,7 +802,6 @@
 
     /* Initial Load */
     fetchEmojiList();
-
 </script>
 </body>
 </html>
