@@ -2,6 +2,58 @@ let stompClient = null;
 let connectedRoomId = null;
 const DEFAULT_AVATAR_PATH = '/images/default-avatar.png';
 
+/**
+ * UTC ISO 문자열을 받아 클라이언트의 로컬 타임존 기준으로
+ * "YYYY-MM-DD HH:mm:ss" 형식의 문자열로 포맷하여 반환합니다.
+ * * @param {string} utcIsoString UTC ISO 8601 형식의 시간 문자열
+ * @returns {string} 포맷된 로컬 시간 문자열 (예: 2025-12-14 04:16:02)
+ */
+function getDateTimeFormat(utcIsoString) {
+    if (!utcIsoString) return '';
+    try {
+        const date = new Date(utcIsoString);
+
+        // Date 객체가 유효하지 않은 경우 처리
+        if (isNaN(date)) {
+            return 'Invalid Date';
+        }
+
+        // 🚩 년, 월, 일, 시, 분, 초를 모두 포함하는 포맷팅 옵션
+        const options = {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: false // 24시간 형식 (HH:mm:ss)
+            // timeZoneName 옵션은 제거하여 깔끔하게 시간만 출력
+        };
+
+        // toLocaleString을 사용하여 날짜와 시간을 로컬 타임존으로 포맷
+        // 예: 'ko-KR' 로케일에서 '2025. 12. 14. 오전 04:16:02' 와 같이 출력될 수 있습니다.
+        const formattedDate = date.toLocaleString(navigator.language, options);
+
+        // 🚩 최종적으로 YYYY-MM-DD HH:mm:ss 형식으로 변환하는 후처리 로직 (권장)
+
+        // 1. 날짜와 시간을 분리 (로케일에 따라 분리자 다름: 2025-12-14, 2025. 12. 14., 12/14/2025 등)
+
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+
+        const hour = String(date.getHours()).padStart(2, '0');
+        const minute = String(date.getMinutes()).padStart(2, '0');
+        const second = String(date.getSeconds()).padStart(2, '0');
+
+        return `${year}-${month}-${day} ${hour}:${minute}:${second}`;
+
+    } catch (e) {
+        console.error("Failed to format date:", e);
+        return 'Time N/A';
+    }
+}
+
 /** WebSocket 연결 */
 function connectWebSocket(callback) {
     if (stompClient !== null && stompClient.connected) {

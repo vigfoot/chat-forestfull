@@ -67,7 +67,13 @@
             background-color: var(--cf-dark-bg-primary);
         }
 
-        /* 메시지 스타일 */
+        /* 🚩 메시지 래퍼 스타일 (시간과 메시지를 flex로 묶어 정렬) */
+        .message-wrap {
+            /* 메시지 래퍼는 message 클래스를 대체하며, 시간과 메시지 본체를 담습니다. */
+            max-width: 100%; /* 전체 너비를 사용 */
+        }
+
+        /* 메시지 스타일 (메시지 본체) */
         .message {
             padding: 10px 14px;
             border-radius: 12px;
@@ -75,6 +81,13 @@
             font-size: 0.95rem;
             word-wrap: break-word;
             line-height: 1.4;
+        }
+
+        /* 🚩 메시지 시간 스타일 */
+        .message-time {
+            font-size: 0.75rem !important; /* 글씨 크기 더 작게 */
+            white-space: nowrap; /* 줄바꿈 방지 */
+            opacity: 0.7; /* 약간 흐리게 */
         }
 
         .mine {
@@ -233,8 +246,8 @@
 
     <title th:text="${'Chat ForestFull - ' + room.name}"></title>
 </head>
-<body class="d-flex flex-column min-vh-100" style="height: 100vh;">
-<div class="d-flex flex-column flex-grow-1">
+<body class="d-flex flex-column min-vh-100">
+<div class="d-flex flex-column flex-grow-1" style="height: 100vh;">
     <div class="d-flex align-items-center justify-content-between p-3"
          style="background-color: var(--cf-dark-bg-secondary); border-bottom: 1px solid var(--cf-border-color);">
 
@@ -288,17 +301,10 @@
 <footer th:replace="~{/layout/footer.html}"></footer>
 
 <script th:inline="javascript">
-    // 전역 함수/변수 (connectWebSocket, get, getJwtPayload, showModal 등)는 config.html에서 제공됨을 가정
-
     const roomId = /*[[${roomId}]]*/ 0;
     const payload = getJwtPayload();
-
-    const MY_USER_ID = Number(payload?.sub);
     const MY_USERNAME = payload?.username;
-    const MY_DISPLAY_NAME = payload?.displayName || 'Me';
-    const MY_PROFILE_IMAGE = payload?.profileImage;
 
-    let reconnectInterval = 5000;
     let participants = [];
     let isFileBeingSent = false;
 
@@ -380,6 +386,9 @@
         const div = document.createElement("div");
         const user = message.user;
 
+        // 🚩 작성 시간 포맷팅
+        const formattedTime = getDateTimeFormat(message.createdAt);
+
         if (message.type === "ENTER" || message.type === "LEAVE") {
             const userName = user?.displayName || 'A user';
             div.textContent = `${userName} has ${message.type === "ENTER" ? "joined" : "left"}`;
@@ -387,28 +396,45 @@
         } else { // TALK
             const isMine = MY_USERNAME === user?.username;
 
-            div.classList.add("message");
-            div.classList.add(isMine ? "mine" : "other");
+            div.classList.add("message-wrap", "d-flex", "align-items-end", isMine ? "justify-content-end" : "justify-content-start");
 
             const userInfoStr = getUserInfoString(user);
+
+            // 🚩 시간 표시 영역 추가
+            const timeDiv = document.createElement('div');
+            timeDiv.className = 'message-time small';
+            timeDiv.innerText = formattedTime;
+
+            // 🚩 메시지 내용 DIV
+            const messageDiv = document.createElement("div");
+            messageDiv.classList.add("message");
+            messageDiv.classList.add(isMine ? "mine" : "other");
 
             if (!isMine) {
                 const userName = user?.displayName || 'User';
                 const avatarUrl = renderAvatar(user?.profileImage);
 
-                div.innerHTML = `
-                    <div class="avatar-wrap">
-                        <img src="${avatarUrl}"
-                             onclick="showUserInfoModal(JSON.parse(unescapeHtml('${userInfoStr}')))"
-                             alt="Avatar" class="user-avatar">
-                    </div>
-                    <div class="message-content">
-                        <span class="sender-name">${userName}</span>
-                        <span class="text-break">${escapeHtml(message.message)}</span>
-                    </div>
-                `;
+                messageDiv.innerHTML = `
+                <div class="avatar-wrap">
+                    <img src="${avatarUrl}"
+                         onclick="showUserInfoModal(JSON.parse(unescapeHtml('${userInfoStr}')))"
+                         alt="Avatar" class="user-avatar">
+                </div>
+                <div class="message-content">
+                    <span class="sender-name">${userName}</span>
+                    <span class="text-break">${escapeHtml(message.message)}</span>
+                    ${timeDiv.outerHTML}
+                </div>
+            `;
+
+                div.appendChild(messageDiv);
+
             } else {
-                div.innerHTML = `<span class="text-break">${escapeHtml(message.message)}</span>`;
+                messageDiv.innerHTML = `<span class="text-break">${escapeHtml(message.message)}</span>`;
+
+                // 🚩 'mine' 메시지는 [시간] [메시지] 순서
+                messageDiv.appendChild(timeDiv);
+                div.appendChild(messageDiv);
             }
         }
 
@@ -470,7 +496,7 @@
             <div class="text-center">
                 <img src="${avatarUrl}" alt="Profile" class="user-modal-avatar mb-3">
                 <h4 class="fw-bold mb-1">${userData.displayName || 'N/A'}</h4>
-                <p class="text-muted small mb-3">@${userData.username || 'Unknown'}</p>
+                <p class="small mb-3">@${userData.username || 'Unknown'}</p>
                 ${userData.id ? `<p class="small mb-0">Member ID: ${userData.id}</p>` : ''}
             </div>
         `;
@@ -544,7 +570,7 @@
         }
 
         const bodyHtml = `
-            <p id="fileNameDisplay" class="mb-2 text-muted small">${file.name}</p>
+            <p id="fileNameDisplay" class="mb-2 small">${file.name}</p>
             <div id="previewContent" class="d-flex justify-content-center align-items-center preview-content">
                 ${mediaHtml}
             </div>

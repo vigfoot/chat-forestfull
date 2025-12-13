@@ -12,6 +12,8 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import java.security.Principal;
+import java.time.Clock;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Controller
@@ -33,8 +35,9 @@ public class ChatController {
 
         message.setUser(user);
         message.setType(ChatDTO.Message.MessageType.TALK);
-
         ChatDTO.Message saved = chatMessageService.saveMessage(message);
+        message.setCreatedAt(LocalDateTime.now(Clock.systemUTC()));
+
         simpMessagingTemplate.convertAndSend("/topic/rooms/" + saved.getRoomId(), saved);
     }
 
