@@ -492,3 +492,12 @@ function showMediaModal(url, type) {
         }
     );
 }
+
+/* Helpers */
+function encodePathForSrc(directory) {
+    if (!directory) return directory;
+    const parts = directory.split('/');
+    const last = encodeURIComponent(parts.pop());
+    // Assumes '/file/' endpoint serves static files
+    return '/file/' + (parts.length ? (parts.join('/') + '/' + last) : last);
+}

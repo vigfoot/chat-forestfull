@@ -242,6 +242,56 @@
                 position: relative;
             }
         }
+
+        /* ------------------------------------
+   [추가] Emoji Picker Panel Style
+   ------------------------------------ */
+        .emoji-picker-panel {
+            position: absolute;
+            bottom: 65px; /* 헤더 높이에 맞게 조정 (대략) */
+            left: 0;
+            right: 0;
+            height: 125px; /* 🚩 요구사항 높이 */
+            background-color: rgba(30, 30, 30, 0.5); /* 반투명 다크 배경 */
+            backdrop-filter: blur(5px); /* 배경 블러 효과 (선택적) */
+            border-bottom: 1px solid var(--cf-border-color);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+            z-index: 999; /* 채팅 내용 위에 오도록 설정 */
+            display: none; /* 초기에는 숨김 */
+            transition: transform 0.3s ease-in-out;
+        }
+
+        .emoji-list-container {
+            display: flex;
+            overflow-x: auto; /* 🚩 수평 스크롤 가능 */
+            overflow-y: hidden;
+            gap: 10px;
+            height: 70px; /* 검색창 높이를 제외한 나머지 공간 */
+        }
+
+        /* 개별 이모지 아이템 스타일 */
+        .emoji-item-chat {
+            flex-shrink: 0; /* 줄바꿈 방지 */
+            width: 64px;
+            height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            background-color: var(--cf-dark-bg-tertiary);
+            cursor: pointer;
+            transition: background-color 0.1s;
+            user-select: none;
+        }
+
+        .emoji-item-chat:hover {
+            background-color: var(--cf-accent-primary);
+        }
+
+        .emoji-item-chat img {
+            max-width: 80%;
+            max-height: 80%;
+        }
     </style>
 
     <title th:text="${'Chat ForestFull - ' + room.name}"></title>
@@ -264,6 +314,17 @@
             <i class="bi bi-people-fill me-1"></i> <span id="mobile-participant-count">0</span>
         </button>
         <div class="d-none d-xl-block" style="width: 70px;"></div>
+    </div>
+
+    <div id="emojiPicker" class="emoji-picker-panel">
+        <div class="container-fluid h-100 p-2">
+            <input type="text" id="emojiSearchInput" class="form-control mb-2" placeholder="Search emoji name..."
+                   style="background-color: var(--cf-dark-bg-primary); border-color: var(--cf-border-color); color: var(--cf-text-primary);">
+
+            <div id="emojiListContainer" class="emoji-list-container">
+                <p class="text-center text-secondary w-100 mt-3 small">Loading or no emojis found.</p>
+            </div>
+        </div>
     </div>
 
     <div class="chat-container flex-grow-1">
@@ -290,7 +351,12 @@
             <i class="bi bi-emoji-smile"></i>
         </button>
 
-        <input type="text" id="messageInput" class="form-control flex-grow-1" placeholder="Type your message">
+        <div id="messageInput"
+             class="form-control flex-grow-1"
+             contenteditable="true"
+             placeholder="Type your message"
+             style="max-height: 100px; overflow-y: auto;">
+        </div>
 
         <button id="sendBtn" class="btn btn-primary">Send</button>
     </div>
@@ -311,6 +377,114 @@
     const MAX_DIMENSION = 2000; // 가장 긴 변의 최대 해상도 (픽셀)
     const JPEG_QUALITY = 1; //0.8;   // 리사이징 후 JPEG 압축 품질 (80%)
     const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10MB
+
+    // ... 기존 변수 선언 영역 (DOM Elements) ...
+    const emojiBtn = document.getElementById("emojiBtn");
+    const emojiPicker = document.getElementById("emojiPicker");
+    const emojiSearchInput = document.getElementById("emojiSearchInput");
+    const emojiListContainer = document.getElementById("emojiListContainer");
+
+    // ... 기존 전역 변수 ...
+    let allEmojis = []; // 서버에서 가져온 전체 이모지 목록 저장
+
+    /**
+     * 서버에서 이모지 목록을 가져와 전역 변수에 저장합니다.
+     */
+    async function fetchAllEmojis() {
+        try {
+            const res = await get('/file/emoji');
+            if (!res.ok) throw new Error('Failed to load emojis.');
+            allEmojis = await res.json();
+            // 초기 로드 시 전체 이모지 렌더링
+            renderEmojis(allEmojis);
+        } catch (e) {
+            console.error('Fetch Emojis Error:', e);
+            emojiListContainer.innerHTML = '<p class="text-center text-danger w-100 mt-3 small">Failed to load emojis.</p>';
+        }
+    }
+
+    /**
+     * 이모지 목록을 렌더링합니다.
+     * @param {Array<Object>} list - 렌더링할 FileDTO 목록
+     */
+    function renderEmojis(list) {
+        emojiListContainer.innerHTML = '';
+
+        if (list.length === 0) {
+            emojiListContainer.innerHTML = '<p class="text-center text-secondary w-100 mt-3 small">No matching emojis found.</p>';
+            return;
+        }
+
+        list.forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'emoji-item-chat';
+            div.title = item.name; // 마우스 오버 시 이름 표시
+
+            const imgEl = document.createElement('img');
+            imgEl.src = encodePathForSrc(item.directory);
+            imgEl.alt = item.name || 'emoji';
+            div.appendChild(imgEl);
+
+            // 🚩 클릭 시 입력창에 이모지 텍스트 삽입
+            div.addEventListener('click', () => insertEmojiToInput(item.directory, item.name));
+
+            emojiListContainer.appendChild(div);
+        });
+    }
+
+    /**
+     * 이모지 이름을 기반으로 목록을 필터링하고 렌더링합니다.
+     */
+    function filterAndRenderEmojis() {
+        const searchTerm = emojiSearchInput.value.toLowerCase().trim();
+
+        if (!searchTerm) {
+            renderEmojis(allEmojis);
+            return;
+        }
+
+        // 서버 엔드포인트에 필터링 요청
+        // '/file/emoji/{filename}' 사용
+        get(`/file/emoji/${encodeURIComponent(searchTerm)}`)
+            .then(res => res.json())
+            .then(filteredList => {
+                renderEmojis(filteredList || []);
+            })
+            .catch(e => {
+                console.error('Search Emojis Error:', e);
+                emojiListContainer.innerHTML = '<p class="text-center text-danger w-100 mt-3 small">Search failed.</p>';
+            });
+    }
+
+
+    /**
+     * 선택된 이모지를 메시지 입력창에 삽입합니다.
+     * @param {string} directory - 이모지 파일 경로
+     * @param {string} name - 이모지 파일 이름
+     */
+    function insertEmojiToInput(directory, name) {
+        const input = document.getElementById("messageInput");
+
+        // 🚩 [수정] 텍스트 대신 <img> 태그를 삽입합니다.
+        const imgSrc = encodePathForSrc(directory);
+        const emojiHtml = `<img src="${imgSrc}" alt="${name}"
+                          class="inserted-emoji" style="max-width: 100%; max-height: 4rem; border-radius: 10px; vertical-align: middle;">`;
+
+        // HTML을 추가합니다.
+        // 주의: 캐럿 위치에 삽입하기 위해 복잡한 로직이 필요하지만,
+        // 간단히 현재 콘텐츠 뒤에 추가하도록 구현합니다.
+        input.innerHTML += emojiHtml;
+
+        input.focus();
+
+        // 커서를 삽입된 이모지 뒤로 이동시키는 로직 (UX 개선)
+        const selection = window.getSelection();
+        const range = document.createRange();
+        range.selectNodeContents(input);
+        range.collapse(false); // 끝으로 이동
+        selection.removeAllRanges();
+        selection.addRange(range);
+    }
 
     // ------------------------------------------------
     // 1. WebSocket / STOMP Logic
@@ -806,10 +980,10 @@
         const sendBtn = document.getElementById("sendBtn");
 
         const handleSend = () => {
-            const text = input.value.trim();
-            if (text) {
-                sendMessage(text);
-                input.value = "";
+            const content = input.innerHTML.trim();
+            if (content) {
+                sendMessage(content); // 🚩 변경: 텍스트 대신 HTML 콘텐츠 전송
+                input.innerHTML = ""; // 🚩 변경: input.value 대신 innerHTML 사용
                 input.focus();
             }
         }
@@ -869,7 +1043,26 @@
         });
 
         document.getElementById("emojiBtn").addEventListener("click", () => {
-            console.log("Emoji button clicked. Implement emoji picker logic here.");
+            const isVisible = emojiPicker.style.display === 'block';
+            if (isVisible) {
+                emojiPicker.style.display = 'none';
+            } else {
+                // 이모지 목록이 비어있다면, 목록을 로드합니다.
+                if (allEmojis.length === 0) {
+                    fetchAllEmojis();
+                } else {
+                    renderEmojis(allEmojis); // 이미 로드된 목록이 있으면 바로 표시
+                }
+                emojiSearchInput.value = ''; // 검색창 초기화
+                emojiPicker.style.display = 'block';
+            }
+        });
+
+        // 🚩 [추가] 이모지 검색 입력 이벤트 (디바운스 필요)
+        let searchTimeout;
+        emojiSearchInput.addEventListener('input', () => {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(filterAndRenderEmojis, 300); // 0.3초 디바운스
         });
 
         commonModalElement?.addEventListener('hidden.bs.modal', function (event) {

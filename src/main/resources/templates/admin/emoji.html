@@ -335,15 +335,6 @@
         return originalName.substring(0, lastDotIndex) + '.png';
     }
 
-    /* Helpers */
-    function encodePathForSrc(directory) {
-        if (!directory) return directory;
-        const parts = directory.split('/');
-        const last = encodeURIComponent(parts.pop());
-        // Assumes '/file/' endpoint serves static files
-        return '/file/' + (parts.length ? (parts.join('/') + '/' + last) : last);
-    }
-
     function resetSelectionAndTransforms() {
         selection = {x: 0, y: 0, size: 256};
         flipped = false;
