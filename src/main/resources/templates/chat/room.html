@@ -135,9 +135,9 @@
             gap: 10px;
         }
 
-        /* 🚩 추가: 입력창 좌측 버튼 스타일 */
+        /* 🚩 파일 업로드 버튼 스타일 */
         .input-wrap .btn-icon {
-            flex-shrink: 0; /* 버튼이 줄어들지 않도록 */
+            flex-shrink: 0;
             width: 40px;
             height: 40px;
             padding: 0;
@@ -154,26 +154,7 @@
             color: var(--cf-accent-primary);
         }
 
-        /* 🚩 추가: 입력창 좌측 버튼 스타일 */
-        .input-wrap .btn-icon {
-            flex-shrink: 0; /* 버튼이 줄어들지 않도록 */
-            width: 40px;
-            height: 40px;
-            padding: 0;
-            font-size: 1.25rem;
-            background-color: transparent;
-            color: var(--cf-text-secondary);
-            border: none;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .input-wrap .btn-icon:hover {
-            color: var(--cf-accent-primary);
-        }
-
-        /* 🚩 추가: 미리보기 모달 내 콘텐츠 스타일 (commonModalBody에 삽입될 콘텐츠의 스타일) */
+        /* 🚩 미리보기 모달 내 콘텐츠 스타일 */
         .preview-content {
             height: 400px;
             border: 1px solid var(--cf-border-color);
@@ -199,7 +180,7 @@
         }
 
         #sendBtn {
-            flex-shrink: 0; /* Send 버튼이 줄어들지 않도록 */
+            flex-shrink: 0;
             background-color: var(--cf-accent-primary);
             border-color: var(--cf-accent-primary);
             color: var(--cf-dark-bg-primary);
@@ -212,7 +193,6 @@
 
         /* 모바일 반응형 조정 */
         @media (max-width: 1200px) {
-            /* 🚩 수정: 사이드바 토글 너비 조건 1200px로 변경 */
             .participants-sidebar {
                 position: fixed;
                 top: 0;
@@ -221,7 +201,6 @@
                 transform: translateX(100%);
                 transition: transform 0.3s ease-in-out;
                 z-index: 1040;
-                width: 70%;
                 box-shadow: -4px 0 10px rgba(0, 0, 0, 0.5);
             }
 
@@ -236,7 +215,6 @@
 
         /* 데스크톱 크기에서 사이드바가 항상 보이도록 설정 */
         @media (min-width: 1201px) {
-            /* 🚩 수정: 사이드바 항상 보이기 조건 1201px로 변경 */
             .participants-sidebar {
                 transform: translateX(0) !important;
                 position: relative;
@@ -285,6 +263,7 @@
                 <i class="bi bi-image"></i>
             </button>
         </div>
+
         <button id="emojiBtn" class="btn btn-icon" title="Insert Emoji">
             <i class="bi bi-emoji-smile"></i>
         </button>
@@ -321,7 +300,7 @@
 
 <footer th:replace="~{/layout/footer.html}"></footer>
 <script th:inline="javascript">
-    // 전역 함수/변수 (connectWebSocket, get, getJwtPayload 등)는 config.html에서 제공됨을 가정
+    // 전역 함수/변수 (connectWebSocket, get, getJwtPayload, showModal 등)는 config.html에서 제공됨을 가정
 
     const roomId = /*[[${roomId}]]*/ 0;
     const payload = getJwtPayload();
@@ -334,10 +313,10 @@
 
     let reconnectInterval = 5000;
     let participants = []; // 현재 참여자 목록을 저장하는 배열
-    let isFileBeingSent = false; // 전송 중인지 확인하는 플래그
+    let isFileBeingSent = false; // 🚩 파일 전송 중인지 확인하는 플래그 (showModal 취소 로직에서 중요)
 
     const DEFAULT_AVATAR_PATH = '/images/default-avatar.png';
-    const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10MB
+    const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 🚩 최대 용량 10MB (최종 설정)
     let userInfoModal = null;
     if (typeof bootstrap !== 'undefined' && document.getElementById('userInfoModal')) {
         userInfoModal = new bootstrap.Modal(document.getElementById('userInfoModal'));
@@ -346,7 +325,7 @@
 
 
     // ------------------------------------------------
-    // 1. WebSocket / STOMP Logic (바인딩 포맷 수정)
+    // 1. WebSocket / STOMP Logic
     // ------------------------------------------------
 
     function subscribeAndSendEnter() {
@@ -397,7 +376,7 @@
             roomId: roomId,
             user: {
                 id: MY_USER_ID, // 🚩 TALK 메시지 내부 User DTO는 id 필드 사용
-                name: MY_USERNAME,
+                name: MY_USERNAME, // 🚩 서버 DTO를 위해 name을 사용함 (이 부분에서 DTO 불일치 이슈 발생 가능성 있음)
                 displayName: MY_DISPLAY_NAME,
                 profileImage: MY_PROFILE_IMAGE,
             },
@@ -407,7 +386,7 @@
     }
 
     // ------------------------------------------------
-    // 2. UI Rendering Logic (user DTO 필드명 통일)
+    // 2. UI Rendering Logic
     // ------------------------------------------------
 
     function renderAvatar(profileImageUrl) {
@@ -448,7 +427,7 @@
             div.textContent = `${userName} has ${message.type === "ENTER" ? "joined" : "left"}`;
             div.classList.add("system-msg");
         } else { // TALK
-            const isMine = MY_USER_ID === user?.id; // 🚩 MY_ID 대신 MY_USER_ID 사용
+            const isMine = MY_USER_ID === user?.id;
 
             div.classList.add("message");
             div.classList.add(isMine ? "mine" : "other");
@@ -499,9 +478,9 @@
             const div = document.createElement("div");
             div.classList.add("participant");
 
-            // 🚩 [수정 반영] 리스트 항목 클릭 시 모달 열기, 이벤트 전파 차단 추가
+            // 🚩 리스트 항목 클릭 시 모달 열기, 이벤트 전파 차단 추가
             div.onclick = (event) => {
-                event.stopPropagation(); // 이벤트를 상위 (backdrop)로 전파하지 않음
+                event.stopPropagation();
                 showUserInfoModal(JSON.parse(unescapeHtml(participantInfo)));
             };
 
@@ -560,35 +539,8 @@
     }
 
     // ------------------------------------------------
-    // 4. Event Handlers & Initialization
+    // 4. File Upload Logic (showModal 사용) 🚩 파일 업로드 로직 시작
     // ------------------------------------------------
-
-    document.getElementById("toggleParticipantsBtn").addEventListener('click', () => {
-        const sidebar = document.getElementById("participantsSidebar");
-        const backdrop = document.getElementById("sidebar-backdrop");
-
-        const isOpen = sidebar.classList.toggle('open');
-
-        // 🚩 수정: 사이드바 토글 너비 조건 1200px에 맞춤
-        if (window.innerWidth <= 1200) {
-            backdrop.style.display = isOpen ? 'block' : 'none';
-        }
-    });
-
-    document.getElementById("sidebar-backdrop").addEventListener('click', () => {
-        document.getElementById("participantsSidebar").classList.remove('open');
-        document.getElementById("sidebar-backdrop").style.display = 'none';
-    });
-
-    window.addEventListener('resize', () => {
-        const sidebar = document.getElementById("participantsSidebar");
-        const backdrop = document.getElementById("sidebar-backdrop");
-        // 🚩 수정: 사이드바 항상 보이기 조건 1201px에 맞춤
-        if (window.innerWidth > 1200) {
-            sidebar.classList.remove('open');
-            backdrop.style.display = 'none';
-        }
-    });
 
     /**
      * 숨겨진 파일 인풋을 초기화합니다. (취소 액션)
@@ -656,7 +608,7 @@
         const fileInput = document.getElementById("fileInput");
         const file = fileInput.files[0];
 
-        // 캡션 필드 가져오기 (모달이 닫히기 직전이므로 접근 가능하다고 가정)
+        // 캡션 필드 가져오기
         const caption = document.getElementById('fileCaption')?.value || '';
 
         if (!file || !stompClient || !stompClient.connected) {
@@ -673,7 +625,6 @@
             formData.append('file', file);
             formData.append('roomId', roomId);
             formData.append('caption', caption);
-            // TODO: 필요한 다른 메타데이터 추가 (예: userId)
 
             // httpFileRequest는 전역 script.js에 정의되어 있다고 가정
             const response = await httpFileRequest(`/api/chat/rooms/${roomId}/files`, formData);
@@ -695,11 +646,40 @@
         }
     }
 
+    // ------------------------------------------------
+    // 5. Event Handlers & Initialization
+    // ------------------------------------------------
+
+    document.getElementById("toggleParticipantsBtn").addEventListener('click', () => {
+        const sidebar = document.getElementById("participantsSidebar");
+        const backdrop = document.getElementById("sidebar-backdrop");
+
+        const isOpen = sidebar.classList.toggle('open');
+
+        if (window.innerWidth <= 1200) {
+            backdrop.style.display = isOpen ? 'block' : 'none';
+        }
+    });
+
+    document.getElementById("sidebar-backdrop").addEventListener('click', () => {
+        document.getElementById("participantsSidebar").classList.remove('open');
+        document.getElementById("sidebar-backdrop").style.display = 'none';
+    });
+
+    window.addEventListener('resize', () => {
+        const sidebar = document.getElementById("participantsSidebar");
+        const backdrop = document.getElementById("sidebar-backdrop");
+        if (window.innerWidth > 1200) {
+            sidebar.classList.remove('open');
+            backdrop.style.display = 'none';
+        }
+    });
+
     document.addEventListener("DOMContentLoaded", () => {
         // 1. WebSocket 연결 및 구독/입장 메시지 전송
         connectWebSocket(subscribeAndSendEnter);
 
-        // 2. 이전 메시지 불러오기 (전역 get 함수 사용)
+        // 2. 이전 메시지 불러오기
         get(`/api/chat/rooms/${roomId}/messages`)
             .then(res => res.json())
             .then(messages => {
@@ -736,10 +716,11 @@
         });
         sendBtn.addEventListener("click", handleSend);
 
+        // 4. 파일 업로드 이벤트 핸들러
         const fileInput = document.getElementById("fileInput");
         const commonModalElement = document.getElementById('commonModal'); // 전역 모달 요소
 
-        document.getElementById("attachFileBtn").addEventListener("click", () => {
+        document.getElementById("attachFileBtn")?.addEventListener("click", () => {
             // 버튼 클릭 시 숨겨진 파일 인풋을 트리거
             fileInput.click();
         });
@@ -760,12 +741,11 @@
             const bodyHtml = renderPreviewHtml(file);
 
             // 🚩 showModal 전역 함수를 사용하여 미리보기 모달 표시
-            // isStatic: true (배경 클릭 및 ESC로 닫기 불가), showClose: true (Confirm 옆에 취소 버튼 표시)
             showModal(
                 "File Preview: " + file.name,
                 bodyHtml,
                 sendFileAction, // Confirm 버튼 클릭 시 실행할 액션
-                { isStatic: true, showClose: true }
+                { isStatic: true, showClose: true } // isStatic 모드, 취소 버튼 표시
             );
         });
 
@@ -779,12 +759,6 @@
                 resetFileInput();
             }
         });
-
-        document.getElementById("emojiBtn").addEventListener("click", () => {
-            console.log("Emoji button clicked. Implement emoji picker logic here.");
-            // 여기에 이모티콘 선택창을 띄우는 로직을 구현해야 합니다.
-        });
-
 
         // 5. 페이지 이탈 시 처리
         const handleLeave = () => {
