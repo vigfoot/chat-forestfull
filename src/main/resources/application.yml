@@ -29,12 +29,6 @@ jasypt:
   encryptor:
     password: ${key}
     bean: jasyptStringEncryptor
-mybatis:
-  mapper-locations: classpath:mapper/*.xml
-  type-aliases-package: com.forestfull
-  configuration:
-    map-underscore-to-camel-case: true
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
 ---
 
 # ==========================================
