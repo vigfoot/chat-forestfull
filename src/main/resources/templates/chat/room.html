@@ -154,6 +154,39 @@
             color: var(--cf-accent-primary);
         }
 
+        /* 🚩 추가: 입력창 좌측 버튼 스타일 */
+        .input-wrap .btn-icon {
+            flex-shrink: 0; /* 버튼이 줄어들지 않도록 */
+            width: 40px;
+            height: 40px;
+            padding: 0;
+            font-size: 1.25rem;
+            background-color: transparent;
+            color: var(--cf-text-secondary);
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .input-wrap .btn-icon:hover {
+            color: var(--cf-accent-primary);
+        }
+
+        /* 🚩 추가: 미리보기 모달 내 콘텐츠 스타일 (commonModalBody에 삽입될 콘텐츠의 스타일) */
+        .preview-content {
+            height: 400px;
+            border: 1px solid var(--cf-border-color);
+            background-color: var(--cf-dark-bg-primary);
+            overflow: hidden;
+        }
+
+        .preview-content img,
+        .preview-content video {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
 
         #messageInput {
             background-color: var(--cf-dark-bg-primary);
@@ -178,7 +211,8 @@
         }
 
         /* 모바일 반응형 조정 */
-        @media (max-width: 1200px) { /* 🚩 수정: 사이드바 토글 너비 조건 1200px로 변경 */
+        @media (max-width: 1200px) {
+            /* 🚩 수정: 사이드바 토글 너비 조건 1200px로 변경 */
             .participants-sidebar {
                 position: fixed;
                 top: 0;
@@ -190,15 +224,19 @@
                 width: 70%;
                 box-shadow: -4px 0 10px rgba(0, 0, 0, 0.5);
             }
+
             .participants-sidebar.open {
                 transform: translateX(0);
             }
+
             .chat-container {
                 border-radius: 0;
             }
         }
+
         /* 데스크톱 크기에서 사이드바가 항상 보이도록 설정 */
-        @media (min-width: 1201px) { /* 🚩 수정: 사이드바 항상 보이기 조건 1201px로 변경 */
+        @media (min-width: 1201px) {
+            /* 🚩 수정: 사이드바 항상 보이기 조건 1201px로 변경 */
             .participants-sidebar {
                 transform: translateX(0) !important;
                 position: relative;
@@ -241,6 +279,7 @@
     </div>
 
     <div class="input-wrap d-flex align-items-center">
+        <input type="file" id="fileInput" style="display: none;" accept="image/*,video/*">
 
         <button id="attachFileBtn" class="btn btn-icon" title="Attach Photo">
             <i class="bi bi-image"></i>
@@ -266,7 +305,8 @@
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body text-center">
-                <img id="modal-profile-image" src="/images/default-avatar.png" alt="Profile" class="rounded-circle mb-3" style="width: 100px; height: 100px; border: 3px solid var(--cf-accent-primary);">
+                <img id="modal-profile-image" src="/images/default-avatar.png" alt="Profile" class="rounded-circle mb-3"
+                     style="width: 100px; height: 100px; border: 3px solid var(--cf-accent-primary);">
                 <h4 id="modal-display-name" class="fw-bold mb-1"></h4>
                 <p id="modal-username" class="text-muted small mb-3"></p>
                 <div id="modal-user-info">
@@ -278,6 +318,8 @@
         </div>
     </div>
 </div>
+
+<footer th:replace="~{/layout/footer.html}"></footer>
 
 <script th:inline="javascript">
     // 전역 함수/변수 (connectWebSocket, get, getJwtPayload 등)는 config.html에서 제공됨을 가정
@@ -293,13 +335,16 @@
 
     let reconnectInterval = 5000;
     let participants = []; // 현재 참여자 목록을 저장하는 배열
+    let isFileBeingSent = false; // 전송 중인지 확인하는 플래그
 
     const DEFAULT_AVATAR_PATH = '/images/default-avatar.png';
-
+    const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10MB
     let userInfoModal = null;
     if (typeof bootstrap !== 'undefined' && document.getElementById('userInfoModal')) {
         userInfoModal = new bootstrap.Modal(document.getElementById('userInfoModal'));
     }
+
+
 
     // ------------------------------------------------
     // 1. WebSocket / STOMP Logic (바인딩 포맷 수정)
@@ -508,6 +553,7 @@
         if (!s) return '';
         return s.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&#039;');
     }
+
     // HTML Unescape Helper (JSON.parse를 위해 필요)
     function unescapeHtml(s) {
         if (!s) return '';
@@ -544,6 +590,111 @@
             backdrop.style.display = 'none';
         }
     });
+
+    /**
+     * 숨겨진 파일 인풋을 초기화합니다. (취소 액션)
+     */
+    function resetFileInput() {
+        const fileInput = document.getElementById("fileInput");
+        fileInput.value = ''; // 파일 선택 취소
+        isFileBeingSent = false;
+    }
+
+    /**
+     * 파일 유효성 검사 (타입 및 용량)
+     */
+    function validateFile(file) {
+        if (!file) {
+            return "No file selected.";
+        }
+
+        const mimeType = file.type;
+        if (!mimeType.startsWith('image/') && !mimeType.startsWith('video/')) {
+            return "Only images and videos are allowed (image/* or video/*).";
+        }
+
+        if (file.size > MAX_FILE_SIZE_BYTES) {
+            const maxMb = (MAX_FILE_SIZE_BYTES / 1024 / 1024).toFixed(1);
+            const fileMb = (file.size / 1024 / 1024).toFixed(2);
+            return `File size (${fileMb}MB) exceeds the maximum limit (${maxMb}MB).`;
+        }
+
+        return null;
+    }
+
+    /**
+     * 파일 미리보기 HTML 콘텐츠를 생성하여 반환합니다.
+     */
+    function renderPreviewHtml(file) {
+        const fileUrl = URL.createObjectURL(file);
+        let mediaHtml = '';
+
+        if (file.type.startsWith('image/')) {
+            mediaHtml = `<img src="${fileUrl}" alt="Preview" class="d-block w-100 h-100">`;
+        } else if (file.type.startsWith('video/')) {
+            mediaHtml = `<video src="${fileUrl}" controls autoplay muted class="d-block w-100 h-100"></video>`;
+        } else {
+            mediaHtml = `<span class="text-danger">Unsupported file type for preview.</span>`;
+        }
+
+        const bodyHtml = `
+            <p id="fileNameDisplay" class="mb-2 text-muted small">${file.name}</p>
+            <div id="previewContent" class="d-flex justify-content-center align-items-center preview-content">
+                ${mediaHtml}
+            </div>
+            <textarea id="fileCaption" class="form-control mt-3" placeholder="Add a caption (optional)" rows="2"
+                      style="background-color: var(--cf-dark-bg-primary); color: var(--cf-text-primary); border-color: var(--cf-border-color);"></textarea>
+
+            <p class="mt-2 small text-warning">Note: The file will be sent once you click 'Confirm'.</p>
+        `;
+        return bodyHtml;
+    }
+
+    /**
+     * 파일 전송 로직 (showModal의 Confirm 액션)
+     */
+    async function sendFileAction() {
+        const fileInput = document.getElementById("fileInput");
+        const file = fileInput.files[0];
+
+        // 캡션 필드 가져오기 (모달이 닫히기 직전이므로 접근 가능하다고 가정)
+        const caption = document.getElementById('fileCaption')?.value || '';
+
+        if (!file || !stompClient || !stompClient.connected) {
+            showAlert("File or connection missing. Cannot send file.", 'danger');
+            resetFileInput();
+            return;
+        }
+
+        isFileBeingSent = true; // 전송 시작 플래그 설정
+        showAlert(`Uploading ${file.name}...`, 'info');
+
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('roomId', roomId);
+            formData.append('caption', caption);
+            // TODO: 필요한 다른 메타데이터 추가 (예: userId)
+
+            // httpFileRequest는 전역 script.js에 정의되어 있다고 가정
+            const response = await httpFileRequest(`/api/chat/rooms/${roomId}/files`, formData);
+
+            if (response.ok) {
+                // 서버에서 파일 저장 후, WebSocket으로 메시지를 브로드캐스트할 것으로 예상됨
+                showAlert(`File ${file.name} sent successfully.`, 'success');
+            } else {
+                const errorText = await response.text();
+                showAlert(`File upload failed: ${response.status} - ${errorText}`, 'danger');
+            }
+
+        } catch (error) {
+            console.error("File upload network error:", error);
+            showAlert("Network error during file upload.", 'danger');
+        } finally {
+            // 전송 완료 후 최종 정리
+            resetFileInput();
+        }
+    }
 
     document.addEventListener("DOMContentLoaded", () => {
         // 1. WebSocket 연결 및 구독/입장 메시지 전송
@@ -586,11 +737,50 @@
         });
         sendBtn.addEventListener("click", handleSend);
 
-        // 4. 🚩 추가: 사진 첨부 및 이모티콘 버튼 클릭 이벤트 핸들러 (기능은 없음, 로그만 출력)
+        const fileInput = document.getElementById("fileInput");
+        const commonModalElement = document.getElementById('commonModal'); // 전역 모달 요소
+
         document.getElementById("attachFileBtn").addEventListener("click", () => {
-            console.log("Photo attachment button clicked. Implement file input logic here.");
-            // 여기에 파일 입력 필드를 띄우는 로직을 구현해야 합니다.
+            // 버튼 클릭 시 숨겨진 파일 인풋을 트리거
+            fileInput.click();
         });
+
+        // 🚩 파일 선택 시 이벤트
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const error = validateFile(file);
+
+            if (error) {
+                showAlert(error, 'warning');
+                resetFileInput();
+                return;
+            }
+
+            const bodyHtml = renderPreviewHtml(file);
+
+            // 🚩 showModal 전역 함수를 사용하여 미리보기 모달 표시
+            // isStatic: true (배경 클릭 및 ESC로 닫기 불가), showClose: true (Confirm 옆에 취소 버튼 표시)
+            showModal(
+                "File Preview: " + file.name,
+                bodyHtml,
+                sendFileAction, // Confirm 버튼 클릭 시 실행할 액션
+                { isStatic: true, showClose: true }
+            );
+        });
+
+        document.getElementById("emojiBtn").addEventListener("click", () => {
+            console.log("Emoji button clicked. Implement emoji picker logic here.");
+        });
+
+        // 🚩 전역 모달이 닫힐 때 (취소 동작 시) 파일 인풋 초기화
+        commonModalElement?.addEventListener('hidden.bs.modal', function (event) {
+            if (!isFileBeingSent) {
+                resetFileInput();
+            }
+        });
+
         document.getElementById("emojiBtn").addEventListener("click", () => {
             console.log("Emoji button clicked. Implement emoji picker logic here.");
             // 여기에 이모티콘 선택창을 띄우는 로직을 구현해야 합니다.
