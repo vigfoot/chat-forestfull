@@ -1,5 +1,7 @@
 package com.forestfull;
 
+import com.forestfull.chat.ChatDTO;
+import com.forestfull.chat.room.ChatRoomService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -39,9 +41,11 @@ public class PageRouter {
         return "chat/rooms";
     }
 
+    private final ChatRoomService chatRoomService;
+
     @GetMapping("/pages/rooms/{roomId}")
     String roomPage(@PathVariable Long roomId, Model model) {
-        model.addAttribute("roomId", roomId);
+        model.addAttribute("room", chatRoomService.findRoomById(roomId));
         addCurrentUri(model, "/pages/rooms/" + roomId); // Use the full URI for consistency
         return "chat/room";
     }

@@ -51,7 +51,7 @@ public class ChatRoomRestController {
 
     @GetMapping("/{roomId}")
     public ResponseEntity<ChatDTO.Room> getRoom(@PathVariable Long roomId) {
-        ChatDTO.Room room = chatRoomService.getRoomById(roomId);
+        ChatDTO.Room room = chatRoomService.findRoomById(roomId);
         if (room == null) return ResponseEntity.notFound().build();
         return ResponseEntity.ok(room);
     }

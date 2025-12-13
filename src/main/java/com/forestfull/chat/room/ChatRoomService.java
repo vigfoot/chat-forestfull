@@ -35,7 +35,7 @@ public class ChatRoomService {
                 .collect(Collectors.toList());
     }
 
-    public ChatDTO.Room getRoomById(Long roomId) {
+    public ChatDTO.Room findRoomById(Long roomId) {
         ChatDTO.Room room = chatRoomMapper.findRoomById(roomId);
         if (room != null) {
             room.setParticipantList(chatRoomMapper.findParticipants(roomId));

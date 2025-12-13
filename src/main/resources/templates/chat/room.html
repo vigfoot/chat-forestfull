@@ -179,7 +179,7 @@
         }
     </style>
 
-    <title>Chat ForestFull | Room #<span th:text="${roomId}"></span></title>
+    <title th:text="${'Chat ForestFull - ' + room.name}"></title>
 </head>
 <body class="d-flex flex-column min-vh-100">
 
@@ -192,7 +192,8 @@
         </button>
 
         <h5 class="mb-0 fw-bold text-center flex-grow-1" style="color: var(--cf-text-primary);">
-            Room #<span th:text="${roomId}"></span>
+            <span th:text="${room.name}"></span>
+            <span style="font-size: 1rem; color: gray;" th:text="${'(created by ' + room.maker + ')'}"></span>
         </h5>
 
         <button id="toggleParticipantsBtn" class="btn btn-sm btn-primary d-md-none fw-bold">
