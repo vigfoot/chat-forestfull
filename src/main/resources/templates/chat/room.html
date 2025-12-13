@@ -135,7 +135,7 @@
             gap: 10px;
         }
 
-        /* 🚩 파일 업로드 버튼 스타일 */
+        /* 파일 업로드 버튼 스타일 */
         .input-wrap .btn-icon {
             flex-shrink: 0;
             width: 40px;
@@ -154,7 +154,7 @@
             color: var(--cf-accent-primary);
         }
 
-        /* 🚩 미리보기 모달 내 콘텐츠 스타일 */
+        /* 미리보기 모달 내 콘텐츠 스타일 */
         .preview-content {
             height: 400px;
             border: 1px solid var(--cf-border-color);
@@ -167,6 +167,14 @@
             max-width: 100%;
             max-height: 100%;
             object-fit: contain;
+        }
+
+        /* 사용자 정보 모달을 위한 아바타 스타일 (commonModalBody에 직접 적용) */
+        .user-modal-avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            border: 3px solid var(--cf-accent-primary);
         }
 
         #messageInput {
@@ -201,6 +209,7 @@
                 transform: translateX(100%);
                 transition: transform 0.3s ease-in-out;
                 z-index: 1040;
+                max-width: 70%;
                 box-shadow: -4px 0 10px rgba(0, 0, 0, 0.5);
             }
 
@@ -276,58 +285,31 @@
 
 <div class="modal-backdrop fade" id="sidebar-backdrop" style="display: none;"></div>
 
-<div class="modal fade" id="userInfoModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content" style="background-color: var(--cf-dark-bg-secondary); color: var(--cf-text-primary);">
-            <div class="modal-header" style="border-color: var(--cf-border-color);">
-                <h5 class="modal-title fw-bold">User Information</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body text-center">
-                <img id="modal-profile-image" src="/images/default-avatar.png" alt="Profile" class="rounded-circle mb-3"
-                     style="width: 100px; height: 100px; border: 3px solid var(--cf-accent-primary);">
-                <h4 id="modal-display-name" class="fw-bold mb-1"></h4>
-                <p id="modal-username" class="text-muted small mb-3"></p>
-                <div id="modal-user-info">
-                </div>
-            </div>
-            <div class="modal-footer" style="border-color: var(--cf-border-color);">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-            </div>
-        </div>
-    </div>
-</div>
-
 <footer th:replace="~{/layout/footer.html}"></footer>
+
 <script th:inline="javascript">
     // 전역 함수/변수 (connectWebSocket, get, getJwtPayload, showModal 등)는 config.html에서 제공됨을 가정
 
     const roomId = /*[[${roomId}]]*/ 0;
     const payload = getJwtPayload();
 
-    // 서버의 DTO 필드에 맞게 변수명 정의
-    const MY_USER_ID = Number(payload?.sub); // ChatDTO.Participant.userId
+    const MY_USER_ID = Number(payload?.sub);
     const MY_USERNAME = payload?.username;
     const MY_DISPLAY_NAME = payload?.displayName || 'Me';
     const MY_PROFILE_IMAGE = payload?.profileImage;
 
     let reconnectInterval = 5000;
-    let participants = []; // 현재 참여자 목록을 저장하는 배열
-    let isFileBeingSent = false; // 🚩 파일 전송 중인지 확인하는 플래그 (showModal 취소 로직에서 중요)
+    let participants = [];
+    let isFileBeingSent = false;
 
     const DEFAULT_AVATAR_PATH = '/images/default-avatar.png';
-    const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 🚩 최대 용량 10MB (최종 설정)
-    let userInfoModal = null;
-    if (typeof bootstrap !== 'undefined' && document.getElementById('userInfoModal')) {
-        userInfoModal = new bootstrap.Modal(document.getElementById('userInfoModal'));
-    }
-
-
+    const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10MB
 
     // ------------------------------------------------
     // 1. WebSocket / STOMP Logic
     // ------------------------------------------------
 
+    // (구현 내용은 변경 없음 - DTO 구조는 현재 상태 유지)
     function subscribeAndSendEnter() {
         // 메시지 구독
         stompClient.subscribe(`/topic/rooms/${roomId}`, msg => {
@@ -341,10 +323,10 @@
             updateUsers(users);
         });
 
-        // 🟢 입장 메시지 전송: ChatDTO.Participant 구조로 평탄화하여 전송 (서버 컨트롤러 기대 포맷)
+        // 입장 메시지 전송
         stompClient.send("/app/chat.enter", {}, JSON.stringify({
             roomId: roomId,
-            userId: MY_USER_ID, // 🚩 MY_ID 대신 userId 필드 사용
+            userId: MY_USER_ID,
             username: MY_USERNAME,
             displayName: MY_DISPLAY_NAME,
             profileImage: MY_PROFILE_IMAGE,
@@ -353,10 +335,10 @@
 
     function disconnectWebSocket() {
         if (stompClient && stompClient.connected) {
-            // 🟢 퇴장 메시지 전송: ChatDTO.Participant 구조로 평탄화하여 전송 (서버 컨트롤러 기대 포맷)
+            // 퇴장 메시지 전송
             stompClient.send("/app/chat.leave", {}, JSON.stringify({
                 roomId: roomId,
-                userId: MY_USER_ID, // 🚩 MY_ID 대신 userId 필드 사용
+                userId: MY_USER_ID,
                 username: MY_USERNAME,
                 displayName: MY_DISPLAY_NAME,
                 profileImage: MY_PROFILE_IMAGE,
@@ -371,12 +353,12 @@
 
     function sendMessage(text) {
         if (!text || !stompClient || !stompClient.connected) return;
-        // 🟢 TALK 메시지 전송: ChatDTO.Message 구조 (user 객체 포함) 유지
+        // TALK 메시지 전송
         stompClient.send("/app/chat.sendMessage", {}, JSON.stringify({
             roomId: roomId,
             user: {
-                id: MY_USER_ID, // 🚩 TALK 메시지 내부 User DTO는 id 필드 사용
-                name: MY_USERNAME, // 🚩 서버 DTO를 위해 name을 사용함 (이 부분에서 DTO 불일치 이슈 발생 가능성 있음)
+                id: MY_USER_ID,
+                name: MY_USERNAME,
                 displayName: MY_DISPLAY_NAME,
                 profileImage: MY_PROFILE_IMAGE,
             },
@@ -394,7 +376,6 @@
         return imageUrl;
     }
 
-    // 🟢 헬퍼 함수: ChatDTO.Message 내부 User DTO (id, username, displayName, profileImage 포함)
     function getUserInfoString(user) {
         if (!user) return '{}';
         return JSON.stringify({
@@ -405,11 +386,10 @@
         }).replaceAll('"', '&quot;');
     }
 
-    // 🟢 헬퍼 함수: ChatDTO.Participant DTO (userId, username, displayName, profileImage 포함)
     function getParticipantInfoString(p) {
         if (!p) return '{}';
         return JSON.stringify({
-            id: p.userId, // 모달에서 id를 기대하므로 userId를 id로 매핑
+            id: p.userId,
             username: p.username,
             displayName: p.displayName,
             profileImage: p.profileImage,
@@ -458,13 +438,10 @@
         container.scrollTop = container.scrollHeight;
     }
 
-    /**
-     * 참여자 목록 업데이트 (ChatDTO.Participant[] 구조를 가정)
-     */
     function updateUsers(users) {
         const container = document.getElementById("participantsList");
         container.innerHTML = "";
-        participants = users; // 전역 변수 업데이트
+        participants = users;
 
         const count = users.length;
         document.getElementById("desktop-participant-count").textContent = count;
@@ -478,7 +455,6 @@
             const div = document.createElement("div");
             div.classList.add("participant");
 
-            // 🚩 리스트 항목 클릭 시 모달 열기, 이벤트 전파 차단 추가
             div.onclick = (event) => {
                 event.stopPropagation();
                 showUserInfoModal(JSON.parse(unescapeHtml(participantInfo)));
@@ -496,64 +472,67 @@
     }
 
     // ------------------------------------------------
-    // 3. User Info Modal Logic
+    // 3. User Info Modal Logic (🚩 commonModal로 리팩토링)
     // ------------------------------------------------
 
     /**
-     * 사용자 정보를 모달에 표시하고 띄웁니다.
+     * 사용자 정보를 commonModal에 표시하고 띄웁니다.
      * @param {Object} userData - 표시할 사용자 데이터 (id, username, displayName, profileImage 포함)
      */
     function showUserInfoModal(userData) {
-        if (!userData || !userInfoModal) {
-            console.error("Modal or User Data missing.", userData);
+        if (!userData) {
+            console.error("User Data missing.", userData);
             return;
         }
 
         const avatarUrl = renderAvatar(userData.profileImage);
 
-        // 모달 필드 업데이트
-        document.getElementById('modal-profile-image').src = avatarUrl;
-        document.getElementById('modal-display-name').textContent = userData.displayName || 'N/A';
-        document.getElementById('modal-username').textContent = `@${userData.username || 'Unknown'}`;
-
-        // 추가 정보 필드 구성
-        const infoDiv = document.getElementById('modal-user-info');
-        infoDiv.innerHTML = `
-            ${userData.id ? `<p class="small mb-0">Member ID: ${userData.id}</p>` : ''}
+        // 🚩 commonModal body에 들어갈 HTML 생성
+        const bodyHtml = `
+            <div class="text-center">
+                <img src="${avatarUrl}" alt="Profile" class="user-modal-avatar mb-3">
+                <h4 class="fw-bold mb-1">${userData.displayName || 'N/A'}</h4>
+                <p class="text-muted small mb-3">@${userData.username || 'Unknown'}</p>
+                ${userData.id ? `<p class="small mb-0">Member ID: ${userData.id}</p>` : ''}
+            </div>
         `;
 
-        userInfoModal.show();
+        // 🚩 showModal 전역 함수를 사용하여 모달 표시
+        // actionFn: null (확인 버튼 없음), options: { showClose: true } (닫기 버튼만 표시)
+        showModal(
+            "User Information",
+            bodyHtml,
+            null,
+            {
+                center: true, // 중앙 정렬 추가
+                customModalClass: 'modal-sm' // 모달 크기를 작게 조정
+            }
+        );
     }
 
 
-    // HTML Escape Helper
+    // HTML Escape Helper (변경 없음)
     function escapeHtml(s) {
         if (!s) return '';
         return s.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&#039;');
     }
 
-    // HTML Unescape Helper (JSON.parse를 위해 필요)
+    // HTML Unescape Helper (변경 없음)
     function unescapeHtml(s) {
         if (!s) return '';
         return s.replaceAll('&quot;', '"').replaceAll('&#039;', "'").replaceAll('&lt;', '<').replaceAll('&gt;', '>').replaceAll('&amp;', '&');
     }
 
     // ------------------------------------------------
-    // 4. File Upload Logic (showModal 사용) 🚩 파일 업로드 로직 시작
+    // 4. File Upload Logic (변경 없음)
     // ------------------------------------------------
 
-    /**
-     * 숨겨진 파일 인풋을 초기화합니다. (취소 액션)
-     */
     function resetFileInput() {
         const fileInput = document.getElementById("fileInput");
-        fileInput.value = ''; // 파일 선택 취소
+        fileInput.value = '';
         isFileBeingSent = false;
     }
 
-    /**
-     * 파일 유효성 검사 (타입 및 용량)
-     */
     function validateFile(file) {
         if (!file) {
             return "No file selected.";
@@ -573,9 +552,6 @@
         return null;
     }
 
-    /**
-     * 파일 미리보기 HTML 콘텐츠를 생성하여 반환합니다.
-     */
     function renderPreviewHtml(file) {
         const fileUrl = URL.createObjectURL(file);
         let mediaHtml = '';
@@ -601,14 +577,10 @@
         return bodyHtml;
     }
 
-    /**
-     * 파일 전송 로직 (showModal의 Confirm 액션)
-     */
     async function sendFileAction() {
         const fileInput = document.getElementById("fileInput");
         const file = fileInput.files[0];
 
-        // 캡션 필드 가져오기
         const caption = document.getElementById('fileCaption')?.value || '';
 
         if (!file || !stompClient || !stompClient.connected) {
@@ -617,7 +589,7 @@
             return;
         }
 
-        isFileBeingSent = true; // 전송 시작 플래그 설정
+        isFileBeingSent = true;
         showAlert(`Uploading ${file.name}...`, 'info');
 
         try {
@@ -626,11 +598,9 @@
             formData.append('roomId', roomId);
             formData.append('caption', caption);
 
-            // httpFileRequest는 전역 script.js에 정의되어 있다고 가정
             const response = await httpFileRequest(`/api/chat/rooms/${roomId}/files`, formData);
 
             if (response.ok) {
-                // 서버에서 파일 저장 후, WebSocket으로 메시지를 브로드캐스트할 것으로 예상됨
                 showAlert(`File ${file.name} sent successfully.`, 'success');
             } else {
                 const errorText = await response.text();
@@ -641,13 +611,12 @@
             console.error("File upload network error:", error);
             showAlert("Network error during file upload.", 'danger');
         } finally {
-            // 전송 완료 후 최종 정리
             resetFileInput();
         }
     }
 
     // ------------------------------------------------
-    // 5. Event Handlers & Initialization
+    // 5. Event Handlers & Initialization (변경 없음)
     // ------------------------------------------------
 
     document.getElementById("toggleParticipantsBtn").addEventListener('click', () => {
@@ -718,14 +687,12 @@
 
         // 4. 파일 업로드 이벤트 핸들러
         const fileInput = document.getElementById("fileInput");
-        const commonModalElement = document.getElementById('commonModal'); // 전역 모달 요소
+        const commonModalElement = document.getElementById('commonModal');
 
         document.getElementById("attachFileBtn")?.addEventListener("click", () => {
-            // 버튼 클릭 시 숨겨진 파일 인풋을 트리거
             fileInput.click();
         });
 
-        // 🚩 파일 선택 시 이벤트
         fileInput.addEventListener('change', (e) => {
             const file = e.target.files[0];
             if (!file) return;
@@ -740,12 +707,11 @@
 
             const bodyHtml = renderPreviewHtml(file);
 
-            // 🚩 showModal 전역 함수를 사용하여 미리보기 모달 표시
             showModal(
                 "File Preview: " + file.name,
                 bodyHtml,
-                sendFileAction, // Confirm 버튼 클릭 시 실행할 액션
-                { isStatic: true, showClose: true } // isStatic 모드, 취소 버튼 표시
+                sendFileAction,
+                { isStatic: true, showClose: true }
             );
         });
 
@@ -753,7 +719,6 @@
             console.log("Emoji button clicked. Implement emoji picker logic here.");
         });
 
-        // 🚩 전역 모달이 닫힐 때 (취소 동작 시) 파일 인풋 초기화
         commonModalElement?.addEventListener('hidden.bs.modal', function (event) {
             if (!isFileBeingSent) {
                 resetFileInput();
