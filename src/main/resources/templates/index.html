@@ -150,7 +150,7 @@
         const password = document.getElementById('password').value.trim();
 
         if (!username || !password) {
-            showAndRedirectModal("Input Error", "Please enter both ID and Password.");
+            showModal("Input Error", "Please enter both ID and Password.");
             return;
         }
 
@@ -161,17 +161,17 @@
             const loginResp = await post(LOGIN_API, {username, password});
 
             if (loginResp.ok) {
-                showAndRedirectModal("Login Success", "Welcome! Redirecting to the service.");
+                showModal("Login Success", "Welcome! Redirecting to the service.", redirectIndexPage);
 
             } else if (loginResp.status === 401 || loginResp.status === 404) {
-                showAndRedirectModal("Login Failed", "❗ The ID or password you entered is incorrect.");
+                showModal("Login Failed", "❗ The ID or password you entered is incorrect.");
 
             } else {
-                showAndRedirectModal("Login Failed", `❌ Failed to log in due to a server error. (Status: ${loginResp.status})`);
+                showModal("Login Failed", `❌ Failed to log in due to a server error. (Status: ${loginResp.status})`);
             }
         } catch (err) {
             console.error(err);
-            showAndRedirectModal("Communication Error", "⚠️ An issue occurred while communicating with the server. Please check your network status.");
+            showModal("Communication Error", "⚠️ An issue occurred while communicating with the server. Please check your network status.");
         } finally {
             joinBtn.disabled = false;
         }

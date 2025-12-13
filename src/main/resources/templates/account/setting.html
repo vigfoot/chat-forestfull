@@ -392,10 +392,7 @@
                 emailStatus.className = 'form-text status-success';
                 showVerificationCodeInput();
                 startTimer(180);
-                showAndRedirectModal("Check Your Email",
-                    "Verification code sent! Please check your inbox. If you don't receive it shortly, please check your **Spam or Junk folder**."
-                    , () => {}
-                );
+                showModal("Check Your Email", "Verification code sent! Please check your inbox. If you don't receive it shortly, please check your **Spam or Junk folder**.");
             } else if (sendResp.status === 409) {
                 isEmailVerified = false;
                 emailStatus.textContent = '❌ This email is already registered and cannot be used.';
@@ -539,7 +536,7 @@
                 const response = await httpFileRequest(UPDATE_PROFILE_API, formData);
 
                 if (response.ok) {
-                    showAndRedirectModal('Profile Updated', 'Your profile information has been updated successfully.');
+                    showModal('Profile Updated', 'Your profile information has been updated successfully.', redirectIndexPage);
                 } else if (response.status === 409) {
                     const error = await response.json().catch(() => ({}));
                     showAlert(`Update failed: ${error.message || 'Nickname or email already in use.'}`, 'danger');
@@ -576,7 +573,7 @@
 
                 if (response.ok) {
                     // 🚩 수정: 새로운 모달 함수 사용
-                    showAndRedirectModal('Password Changed', 'Your password has been successfully updated. Please log in with your new password.');
+                    showModal('Password Changed', 'Your password has been successfully updated. Please log in with your new password.', redirectIndexPage);
                     document.getElementById('password-form').reset();
                 } else if (response.status === 401) {
                     showAlert('Password change failed: Current password is incorrect.', 'danger');
@@ -596,7 +593,7 @@
                 try {
                     const response = await del(DELETE_ACCOUNT_API);
                     if (response.ok) {
-                        showAndRedirectModal('Account Deleted', 'Your account has been successfully deleted.');
+                        showModal('Account Deleted', 'Your account has been successfully deleted.', redirectIndexPage);
                     } else if (response.status === 403) {
                         showAlert('Deletion failed: You do not have permission.', 'danger');
                     } else {

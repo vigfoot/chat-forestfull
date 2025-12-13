@@ -28,7 +28,7 @@ function connectWebSocket(callback) {
 async function httpRequest(url, method = 'GET', body = null, headers = {}, retry = true) {
     const options = {
         method,
-        headers: { ...headers },
+        headers: {...headers},
         credentials: 'include'
     };
 
@@ -182,17 +182,43 @@ function showAlert(message, type = 'warning') {
     }, 5000);
 }
 
-
 /**
  * Global function to display the common modal.
- * @param {string} title Modal title
- * @param {string} bodyHtml Modal content (HTML string)
- * @param {function|null} confirmAction Function to execute when the primary confirmation button is clicked.
+ *
+ * @param {string} title 모달 제목
+ * @param {string} bodyHtml 모달 본문 HTML
+ * @param {function|null} confirmAction 'Confirm' 버튼 클릭 시 실행할 함수. (null이면 Action 버튼 미표시)
+ * @param {Object} options 모달 동작 관련 옵션 객체
+ * @param {boolean} options.isStatic 모달을 ESC 키나 배경 클릭으로 닫지 못하게 할지 여부 (기본값: true)
+ * @param {boolean} options.showClose Action이 있을 때도 Close 버튼을 표시할지 여부 (기본값: false)
  */
-function showModal(title, bodyHtml, confirmAction = null) {
-    const modalEl = document.getElementById('commonModal');
-    if (!modalEl) {
-        console.error("Modal element 'commonModal' not found. Ensure footer.html is included.");
+function showModal(title, bodyHtml, confirmAction = null, options = {}) {
+    // 1. 기본 옵션 설정 (isStatic의 기본값을 true로 변경)
+    const defaultOptions = {
+        isStatic: true, // 🚩 기본값을 true로 설정
+        showClose: false
+    };
+
+    let finalOptions = { ...defaultOptions, ...options };
+
+    // 2. 🚩 핵심 로직: Static 비활성화 조건 확인 및 적용
+    const onlyCloseButton = !confirmAction && !finalOptions.showClose;
+    const bothButtons = confirmAction && finalOptions.showClose;
+
+    // 취소만 있거나 (onlyCloseButton), 액션과 취소가 모두 있을 때 (bothButtons) static을 false로 설정
+    if (onlyCloseButton || bothButtons) {
+        // 단, 사용자가 options에서 isStatic을 명시적으로 true로 설정했다면 덮어쓰지 않습니다.
+        if (options.isStatic !== true) {
+            finalOptions.isStatic = false;
+        }
+    }
+
+    // --- 3. DOM 요소 및 인스턴스 준비 (이전과 동일) ---
+
+    const modalElement = document.getElementById('commonModal');
+
+    if (!modalElement) {
+        console.error("Modal element 'commonModal' not found.");
         return;
     }
 
@@ -200,70 +226,55 @@ function showModal(title, bodyHtml, confirmAction = null) {
     document.getElementById('commonModalBody').innerHTML = bodyHtml;
 
     const footer = document.getElementById('commonModalFooter');
-    footer.innerHTML = '<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>';
+    footer.innerHTML = '';
+
+    const bootstrapOptions = finalOptions.isStatic
+        ? { backdrop: 'static', keyboard: false }
+        : {};
+
+    const modalInstance = new bootstrap.Modal(modalElement, bootstrapOptions);
+
+    // --- 4. 버튼 생성 헬퍼 함수 ---
+
+    function createButton(action, classname, text) {
+        const btn = document.createElement('button');
+        btn.setAttribute('type', 'button');
+        btn.className = classname;
+        btn.textContent = text;
+
+        btn.setAttribute('data-bs-dismiss', 'modal');
+
+        if (action) {
+            btn.addEventListener('click', () => {
+                action();
+                modalInstance.hide();
+            });
+        }
+
+        footer.appendChild(btn);
+    }
+
+    // --- 5. 버튼 생성 로직 ---
 
     if (confirmAction) {
-        const confirmBtn = document.createElement('button');
-        confirmBtn.setAttribute('type', 'button');
-        confirmBtn.className = 'btn btn-primary';
-        confirmBtn.textContent = 'Confirm';
+        // A. Confirm 버튼 (Action이 있을 때)
+        createButton(confirmAction, 'btn btn-primary', 'Confirm');
 
-        // Clone the button to remove existing event listeners safely
-        const newConfirmBtn = confirmBtn.cloneNode(true);
-        newConfirmBtn.addEventListener('click', () => {
-            confirmAction();
-            // Hide modal instance safely
-            const modalInstance = bootstrap.Modal.getInstance(modalEl);
-            if (modalInstance) {
-                modalInstance.hide();
-            }
-        });
-
-        footer.appendChild(newConfirmBtn);
+        // B-1. Close 버튼 (Action이 있고, showClose 옵션이 true일 때)
+        if (finalOptions.showClose) {
+            createButton(null, 'btn btn-secondary', 'Close');
+        }
+    } else {
+        // B-2. Close 버튼 (Action이 없을 때 자동으로 생성)
+        createButton(null, 'btn btn-secondary', 'Close');
     }
 
-    const modal = new bootstrap.Modal(modalEl);
-    modal.show();
+    // --- 6. 모달 표시 ---
+    modalInstance.show();
 }
 
-// Constants
-const INDEX_PAGE = '/';
-let redirectModalInstance; // Bootstrap Modal 객체 인스턴스 저장
-
-function redirectUser() {
-    if (typeof clearAuthToken === 'function') {
-        clearAuthToken();
-    }
-    window.location.replace(INDEX_PAGE);
-}
-
-/**
- * @English: Displays a success modal and redirects to the root page ('/')
- * after the user closes the modal (by button, X, or backdrop).
- * @Korean: 성공 모달을 표시하고, 사용자가 모달을 닫는 순간 (버튼, X, 배경)
- * 루트 페이지('/')로 리디렉션합니다.
- * @param {string} title - Modal Title
- * @param {string} message - Modal body content (HTML allowed)
- * @param redirect
- */
-function showAndRedirectModal(title, message, redirect = redirectUser) {
-    // 모달 내용 설정
-    document.getElementById('redirectModalLabel').textContent = title;
-    document.getElementById('redirectModalMessage').innerHTML = message;
-
-    // 모달 인스턴스가 없으면 새로 생성하고, 닫힘 이벤트를 연결합니다.
-    if (!redirectModalInstance) {
-        const modalElement = document.getElementById('redirectModal');
-        redirectModalInstance = new bootstrap.Modal(modalElement, {
-            backdrop: 'static',
-            keyboard: false
-        });
-
-        // 모달이 닫힐 때 발생하는 이벤트를 잡아 리디렉션 함수 실행 (핵심)
-        modalElement.addEventListener('hidden.bs.modal', redirect);
-    }
-
-    redirectModalInstance.show();
+function redirectIndexPage() {
+    window.location.href = '/';
 }
 
 async function handleLogout() {
@@ -271,12 +282,12 @@ async function handleLogout() {
         // POST request to the logout endpoint
         const response = await post('/api/auth/logout', null);
         if (response.ok) {
-            showAndRedirectModal('Log Out', 'Logged out successfully.');
+            showModal('Log Out', 'Logged out successfully.', redirectIndexPage);
         } else {
-            showAndRedirectModal('Log Out', 'Error occurred during logout.');
+            showModal('Log Out', 'Error occurred during logout.');
         }
     } catch (err) {
         console.error(err);
-        showAndRedirectModal('Log Out', 'Communication error with the server.');
+        showModal('Log Out', 'Communication error with the server.');
     }
 }
