@@ -132,31 +132,6 @@ function getJwtPayload(cookieName = 'JWT_PAYLOAD') {
     return null;
 }
 
-function redirectToLogin() {
-    deleteCookie('JWT');
-    deleteCookie('JWT_PAYLOAD');
-    deleteCookie('REFRESH');
-    window.location.href = '/';
-}
-
-/**
- * 쿠키 삭제
- * @param {string} name
- */
-function deleteCookie(name) {
-    document.cookie = name + '=; Max-Age=0; path=/; SameSite=None; Secure';
-}
-
-/**
- * 쿠키 읽기
- * @param {string} name
- * @returns {string|null}
- */
-function getCookie(name) {
-    const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
-    return match ? match[2] : null;
-}
-
 /**
  * Global function to display the top alert.
  * @param {string} message Message to display
