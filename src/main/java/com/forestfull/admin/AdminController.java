@@ -72,25 +72,30 @@ public class AdminController {
 
     // 🚩 HTML 태그 생성 유틸리티
     private String createMediaHtml(FileDTO fileDto, String fileType, String caption) {
-        String url = "/file/" + fileDto.getDirectory(); // FileService의 addResourceHandlers 설정 경로 반영
+        String url = "/file/" + fileDto.getDirectory();
         String html = "";
 
+        // 🚩 data-url과 data-type 속성을 추가하여 JS에서 URL을 가져갈 수 있게 함
+        final String dataAttrs = String.format("data-url=\"%s\" data-type=\"%s\"", url, fileType.toLowerCase());
+
         if (FILE_TYPE.IMAGE.name().equals(fileType)) {
-            // 이미지 태그 (클릭 시 원본 보기 등을 위해 클래스 추가 권장)
-            html = String.format("<img src=\"%s\" alt=\"%s\" class=\"file-image\" loading=\"lazy\">", url, fileDto.getName());
+            // 이미지 태그
+            html = String.format("<img src=\"%s\" alt=\"%s\" class=\"file-image\" %s loading=\"lazy\">", url, fileDto.getName(), dataAttrs);
         } else if (FILE_TYPE.VIDEO.name().equals(fileType)) {
-            // 비디오 태그 (controls 필수)
-            html = String.format("<video src=\"%s\" controls class=\"file-video\"></video>", url);
+            // 비디오 태그: 썸네일 래퍼와 플레이 버튼 오버레이를 위해 controls 제거 및 래퍼 추가
+            // 🚩 video-thumbnail-wrap 클래스로 감싸고, controls 속성을 제거하여 썸네일처럼 보이게 함
+            html = String.format(
+                    "<div class=\"video-thumbnail-wrap\" %s>" +
+                            "<video src=\"%s\" class=\"file-video\"></video>" +
+                            "</div>",
+                    dataAttrs, url
+            );
         }
 
-        // 캡션이 있다면 HTML 하단에 추가 (클라이언트에서 줄바꿈 처리 필요)
+        // 캡션 추가 로직 유지
         if (StringUtils.hasText(caption)) {
-            html += "<p class=\"file-caption\">" + caption + "</p>";
+            html += String.format("<p class=\"file-caption\">%s</p>", caption);
         }
-
-        // 🚨 중요: 캡션이나 HTML 자체에 XSS 공격 위험이 있으므로, 프론트엔드에서 메시지를 렌더링할 때
-        // 이 메시지(HTML)는 escape 없이 raw로 innerHTML/jQuery.html()로 삽입해야 합니다.
-        // 일반 텍스트 메시지와 파일 메시지를 구분하는 플래그/로직이 필요합니다.
 
         return html;
     }

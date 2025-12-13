@@ -485,6 +485,24 @@
 
         container.appendChild(div);
         container.scrollTop = container.scrollHeight;
+
+        if (isFileMsg) {
+            // 메시지 DIV 내부에서 미디어 요소 (img.file-image 또는 .video-thumbnail-wrap)를 찾습니다.
+            const mediaElement = div.querySelector('.file-image, .video-thumbnail-wrap');
+
+            if (mediaElement) {
+                mediaElement.addEventListener('click', function(e) {
+                    e.stopPropagation(); // 중첩된 클릭 방지
+
+                    const url = this.getAttribute('data-url');
+                    const type = this.getAttribute('data-type');
+
+                    if (url && type) {
+                        showMediaModal(url, type); // 🚩 새로 정의한 모달 함수 호출
+                    }
+                });
+            }
+        }
     }
 
     function updateUsers(users) {

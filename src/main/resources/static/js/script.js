@@ -381,6 +381,8 @@ function showModal(title, bodyHtml, confirmAction = null, options = {}) {
     // 🚩 [B] hidden.bs.modal: 모달이 완전히 사라진 후 변수 초기화 및 리스너 제거
     function cleanupAfterModalHidden() {
         lastFocusedElementBeforeModal = null;
+        document.getElementById('commonModalLabel').textContent = '';
+        document.getElementById('commonModalBody').innerHTML = '';
         // 리스너 제거
         modalElement.removeEventListener('hide.bs.modal', restoreFocus);
         modalElement.removeEventListener('hidden.bs.modal', cleanupAfterModalHidden);
@@ -450,4 +452,43 @@ async function handleLogout() {
         console.error(err);
         showModal('Log Out', 'Communication error with the server.');
     }
+}
+
+// ------------------------------------------------
+// 6. Media Modal Logic (새로 추가)
+// ------------------------------------------------
+
+/**
+ * 이미지/비디오를 큰 화면 모달에 표시하고 재생합니다.
+ * @param {string} url - 파일의 웹 접근 URL
+ * @param {string} type - 'image' 또는 'video'
+ */
+function showMediaModal(url, type) {
+    let mediaHtml = '';
+    let title = '';
+
+    if (type === 'image') {
+        title = "Image Viewer";
+        // 큰 이미지 표시 (클릭 이벤트 제거)
+        mediaHtml = `<img src="${url}" alt="Image" style="max-width: 100%; max-height: 80vh; display: block; margin: auto;">`;
+    } else if (type === 'video') {
+        title = "Video Player";
+        // 비디오 재생 (controls 추가, 자동 재생)
+        mediaHtml = `<video src="${url}" controls autoplay style="max-width: 100%; max-height: 80vh; display: block; margin: auto;"></video>`;
+    } else {
+        return;
+    }
+
+    // isStatic: true (모달 바깥 클릭으로 닫히지 않음)
+    showModal(
+        title,
+        mediaHtml,
+        null, // Confirm 버튼 없음
+        {
+            isStatic: true,
+            showClose: true,
+            center: true,
+            customModalClass: 'modal-xl' // 모달 크기를 키워서 미디어를 더 크게 표시
+        }
+    );
 }

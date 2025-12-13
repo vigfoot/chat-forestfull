@@ -143,6 +143,7 @@ a:hover {
 .cf-navbar-toggler-dark {
     border-color: var(--cf-border-color) !important;
 }
+
 .cf-toggler-custom:focus {
     /* 버튼 클릭 시 나타나는 원치 않는 포커스 아웃라인 제거 */
     box-shadow: none !important;
@@ -167,13 +168,16 @@ a:hover {
     color: var(--cf-text-secondary);
     padding: 0.5rem 0;
 }
+
 .cf-footer-minimized a {
     color: var(--cf-text-secondary);
     text-decoration: none;
 }
+
 .cf-footer-minimized a:hover {
     color: var(--cf-accent-primary);
 }
+
 /* Footer inline logo style */
 .footer-inline-logo {
     height: 16px;
@@ -184,6 +188,7 @@ a:hover {
     max-width: 40vw;
     max-height: 20vw;
 }
+
 .file-caption {
     font-size: 0.85rem; /* 메시지 본문보다 약간 작게 */
     margin-top: 8px; /* 미디어 요소와의 간격 */
@@ -215,4 +220,38 @@ a:hover {
 .other .file-caption {
     color: var(--cf-text-secondary); /* 배경에 비해 약간 연한 텍스트 */
     opacity: 0.8;
+}
+
+.video-thumbnail-wrap {
+    position: relative;
+    display: inline-block;
+    cursor: pointer;
+}
+
+.video-thumbnail-wrap .chat-video {
+    /* 비디오가 이미지처럼 보이도록 설정 */
+    filter: brightness(0.8); /* 약간 어둡게 */
+}
+
+/* 플레이 버튼 오버레이 */
+.video-thumbnail-wrap:after {
+    content: "\F473"; /* Bootstrap Icons bi-play-circle-fill 유니코드 */
+    font-family: "bootstrap-icons";
+    font-size: 3rem;
+    color: white;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    opacity: 0.8;
+    pointer-events: none; /* 클릭 이벤트가 아래 요소로 전달되도록 */
+    text-shadow: 0 0 10px rgba(0, 0, 0, 0.6);
+}
+
+.video-thumbnail-wrap:hover:after {
+    opacity: 1;
+}
+
+.file-image, .file-video, .video-thumbnail-wrap {
+    cursor: pointer; /* 클릭 가능하도록 커서 변경 */
 }
