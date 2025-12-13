@@ -1,6 +1,5 @@
 let stompClient = null;
 let connectedRoomId = null;
-let lastFocusedElementBeforeModal = null; // 🚩 포커스 관리를 위한 전역 변수
 const DEFAULT_AVATAR_PATH = '/images/default-avatar.png';
 
 /** WebSocket 연결 */
@@ -242,17 +241,23 @@ function showAlert(message, type = 'warning', duration = 1000) {
         }, duration);
     }
 }
+
+// 전역 변수: 모달이 열리기 전 마지막으로 포커스된 요소를 저장합니다.
+let lastFocusedElementBeforeModal = null;
+
+// ... (다른 전역 함수 생략)
+
 /**
- * Global function to display the common modal.
+ * Global function to display the common modal. (수정됨)
  *
  * @param {string} title 모달 제목
  * @param {string} bodyHtml 모달 본문 HTML
- * @param {function|null} confirmAction 'Confirm' 버튼 클릭 시 실행할 함수. (null이면 Action 버튼 미표시)
+ * @param {function|null} confirmAction 'Confirm' 버튼 클릭 시 실행할 함수.
  * @param {Object} options 모달 동작 관련 옵션 객체
- * @param {boolean} options.isStatic 모달을 ESC 키나 배경 클릭으로 닫지 못하게 할지 여부 (기본값: true)
- * @param {boolean} options.showClose Action이 있을 때도 Close 버튼을 표시할지 여부 (기본값: false)
+ * @param {boolean} options.isStatic 모달을 ESC 키나 배경 클릭으로 닫지 못하게 할지 여부
+ * @param {boolean} options.showClose Action이 있을 때도 Close 버튼을 표시할지 여부
  * @param {boolean} options.center 모달을 수직 중앙에 배치할지 여부
- * @param {string} options.customModalClass 모달 크기 조정을 위한 추가 클래스 (예: modal-sm, modal-lg)
+ * @param {string} options.customModalClass 모달 크기 조정을 위한 추가 클래스
  */
 function showModal(title, bodyHtml, confirmAction = null, options = {}) {
     // 1. 기본 옵션 설정 및 병합
@@ -265,10 +270,10 @@ function showModal(title, bodyHtml, confirmAction = null, options = {}) {
 
     let finalOptions = {...defaultOptions, ...options};
 
-    // 🚩 2. 포커스 저장 (가장 먼저 실행): 현재 포커스된 요소를 저장
+    // 🚩 2. 포커스 저장: 현재 포커스된 요소를 저장
     lastFocusedElementBeforeModal = document.activeElement;
 
-    // 3. Static 비활성화 조건 확인 및 적용
+    // 3. Static 비활성화 조건 확인 및 적용 (변경 없음)
     const onlyCloseButton = !confirmAction && !finalOptions.showClose;
     const bothButtons = confirmAction && finalOptions.showClose;
 
@@ -278,7 +283,7 @@ function showModal(title, bodyHtml, confirmAction = null, options = {}) {
         }
     }
 
-    // --- 4. DOM 요소 및 인스턴스 준비 ---
+    // --- 4. DOM 요소 및 인스턴스 준비 (변경 없음) ---
     const modalElement = document.getElementById('commonModal');
     const dialogElement = modalElement?.querySelector('.modal-dialog');
 
@@ -290,100 +295,89 @@ function showModal(title, bodyHtml, confirmAction = null, options = {}) {
     document.getElementById('commonModalLabel').textContent = title;
     document.getElementById('commonModalBody').innerHTML = bodyHtml;
 
-    // 클래스 적용 (중앙 정렬 및 커스텀 클래스)
+    // 클래스 적용 (변경 없음)
     dialogElement.classList.toggle('modal-dialog-centered', finalOptions.center);
-    dialogElement.className = dialogElement.className.replace(/\bmodal-(sm|lg|xl)\b/g, ''); // 기존 크기 클래스 제거
+    dialogElement.className = dialogElement.className.replace(/\bmodal-(sm|lg|xl)\b/g, '');
     if (finalOptions.customModalClass) {
         dialogElement.classList.add(finalOptions.customModalClass);
     }
 
-    // 이전 인스턴스 정리 (재사용 시 옵션 적용 및 리스너 재부착을 위해 필요)
+    // 이전 인스턴스 정리 및 새 인스턴스 생성 (변경 없음)
     let modalInstance = bootstrap.Modal.getInstance(modalElement);
     if (modalInstance) {
-        modalInstance.dispose(); // 기존 인스턴스를 명시적으로 정리
+        modalInstance.dispose();
     }
 
     const bootstrapOptions = finalOptions.isStatic
         ? {backdrop: 'static', keyboard: false}
         : {};
 
-    // 새 인스턴스 생성
     modalInstance = new bootstrap.Modal(modalElement, bootstrapOptions);
 
     const footer = document.getElementById('commonModalFooter');
     footer.innerHTML = '';
 
-    // --- 5. 모달 닫힘 이벤트 리스너 부착 (핵심 통합 로직 - 수정) ---
+    // --- 5. 모달 닫힘 이벤트 리스너 부착 (수정) ---
 
-    // 🚩 hidden.bs.modal 대신 hide.bs.modal을 사용합니다.
-    // 'hide.bs.modal'은 모달이 사라지기 직전에 발생하여 포커스를 미리 뺄 수 있습니다.
-    function restoreFocusAndCleanup(event) {
-        // 모달 닫기를 취소하는 이벤트(event.preventDefault())가 있을 수 있으므로,
-        // 여기서는 포커스 이동만 시도하고, 리스너 제거는 hidden 이벤트에서 처리하는 것이 안전합니다.
-
-        // 🚩 포커스를 원래 요소로 복원합니다.
+    // 🚩 [A] hide.bs.modal: 모달이 사라지기 직전에 포커스 복원 (경고 방지 목적)
+    function restoreFocus(event) {
         if (lastFocusedElementBeforeModal && lastFocusedElementBeforeModal.focus) {
             lastFocusedElementBeforeModal.focus();
         }
     }
 
-    // 모달이 완전히 사라진 후 cleanup (이벤트 리스너 제거 및 전역 변수 초기화)
+    // 🚩 [B] hidden.bs.modal: 모달이 완전히 사라진 후 변수 초기화 및 리스너 제거
     function cleanupAfterModalHidden() {
         lastFocusedElementBeforeModal = null;
-        modalElement.removeEventListener('hide.bs.modal', restoreFocusAndCleanup);
+        // 리스너 제거
+        modalElement.removeEventListener('hide.bs.modal', restoreFocus);
         modalElement.removeEventListener('hidden.bs.modal', cleanupAfterModalHidden);
     }
 
-    // 리스너 부착 (hide 이벤트에서 포커스 이동)
-    modalElement.addEventListener('hide.bs.modal', restoreFocusAndCleanup);
-    // 리스너 제거 (hidden 이벤트에서 최종 정리)
+    // 리스너 부착
+    modalElement.addEventListener('hide.bs.modal', restoreFocus);
     modalElement.addEventListener('hidden.bs.modal', cleanupAfterModalHidden);
 
-    // --- 6. 버튼 생성 헬퍼 함수 ---
+    // --- 6. 버튼 생성 헬퍼 함수 (수정) ---
     function createButton(action, classname, text) {
         const btn = document.createElement('button');
         btn.setAttribute('type', 'button');
         btn.className = classname;
         btn.textContent = text;
 
-        if (action) {
-            btn.addEventListener('click', () => {
-                // 🚩 1. 클릭 후 포커스 제거: 경고 유발 요소에서 즉시 포커스 제거
-                btn.blur();
+        // 🚩 [핵심 수정 1]: data-bs-dismiss="modal"을 기본적으로 제거. 모든 닫기 동작은 JS가 관리합니다.
 
-                // Confirm 액션 실행 전에 모달을 숨깁니다.
-                modalInstance.hide();
-                action(); // Action 실행
-            });
-            // data-bs-dismiss 속성 제거는 유지
-        } else {
-            // Close 버튼 (Action이 null인 경우)
-            btn.setAttribute('data-bs-dismiss', 'modal');
+        btn.addEventListener('click', () => {
+            // 🚩 [핵심 수정 2]: 클릭 후 즉시 버튼에서 포커스를 제거합니다.
+            btn.blur();
 
-            btn.addEventListener('click', () => {
-                // 🚩 2. Close 버튼 클릭 시 포커스 제거
-                btn.blur();
-                // data-bs-dismiss="modal" 때문에 hide() 호출은 불필요
-            });
-        }
+            // 모달 닫기 명령
+            modalInstance.hide();
+
+            // Confirm 액션 실행 (action이 null이 아닐 경우)
+            if (action) {
+                action();
+            }
+        });
 
         footer.appendChild(btn);
     }
-    // --- 7. 버튼 생성 로직 ---
+
+    // --- 7. 버튼 생성 로직 (변경 없음) ---
     if (confirmAction) {
-        // A. Confirm 버튼 (Action이 있을 때)
+        // A. Confirm 버튼
         createButton(confirmAction, 'btn btn-primary', 'Confirm');
 
-        // B-1. Close 버튼 (Action이 있고, showClose 옵션이 true일 때)
+        // B-1. Close 버튼
         if (finalOptions.showClose) {
             createButton(null, 'btn btn-secondary', 'Close');
         }
     } else {
-        // B-2. Close 버튼 (Action이 없을 때 자동으로 생성)
+        // B-2. Close 버튼
         createButton(null, 'btn btn-secondary', 'Close');
     }
 
-    // --- 8. 모달 표시 ---
+    // --- 8. 모달 표시 (변경 없음) ---
     modalInstance.show();
 }
 
