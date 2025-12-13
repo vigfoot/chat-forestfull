@@ -3,7 +3,7 @@ package com.forestfull.member;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.forestfull.common.file.FileService;
 import com.forestfull.common.smtp.EmailVerificationService;
-import com.forestfull.common.smtp.VerificationEmail;
+import com.forestfull.common.smtp.VerificationEmailDTO;
 import com.forestfull.common.token.CookieUtil;
 import com.forestfull.common.token.JwtUtil;
 import com.forestfull.domain.CustomUserDetailsService;
@@ -121,8 +121,8 @@ public class MemberController {
     }
 
     @PostMapping("/verify/send/email")
-    public ResponseEntity<Void> sendVerificationCode(@RequestBody VerificationEmail verificationEmail) {
-        final String email = verificationEmail.getEmail();
+    public ResponseEntity<Void> sendVerificationCode(@RequestBody VerificationEmailDTO verificationEmailDTO) {
+        final String email = verificationEmailDTO.getEmail();
         if (!StringUtils.hasText(email)) return ResponseEntity.badRequest().build();
         if (memberService.isEmailRegistered(email)) return ResponseEntity.status(HttpStatus.CONFLICT).build();
 
@@ -135,9 +135,9 @@ public class MemberController {
     }
 
     @PostMapping("/verify/check/email")
-    public ResponseEntity<Void> checkVerificationCode(@RequestBody VerificationEmail verificationEmail) {
-        final String email = verificationEmail.getEmail();
-        final String code = verificationEmail.getCode();
+    public ResponseEntity<Void> checkVerificationCode(@RequestBody VerificationEmailDTO verificationEmailDTO) {
+        final String email = verificationEmailDTO.getEmail();
+        final String code = verificationEmailDTO.getCode();
 
         if (!StringUtils.hasText(email) || !StringUtils.hasText(code))
             return ResponseEntity.badRequest().build();

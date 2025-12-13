@@ -37,7 +37,7 @@ public class EmailVerificationService {
 
     // 🚩 Store 1: Stores the code and its expiry time for verification
     // Key: email address, Value: VerificationEmail (contains code and expiryTime)
-    private final ConcurrentMap<String, VerificationEmail> verificationStore = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, VerificationEmailDTO> verificationStore = new ConcurrentHashMap<>();
 
     // 🚩 Store 2: Stores the final 'verified' status for signup eligibility
     // Key: email address, Value: Verified status expiry time
@@ -67,7 +67,7 @@ public class EmailVerificationService {
         LocalDateTime expiryTime = LocalDateTime.now().plusSeconds(codeTimeoutSeconds);
 
         // 2. Save to verification store (overwrites existing code for resend logic)
-        verificationStore.put(email, VerificationEmail.builder()
+        verificationStore.put(email, VerificationEmailDTO.builder()
                 .email(email)
                 .code(code)
                 .expiryTime(expiryTime).build());
@@ -99,7 +99,7 @@ public class EmailVerificationService {
      * @return True if verification is successful, false otherwise
      */
     public boolean verifyCode(String email, String code) {
-        VerificationEmail data = verificationStore.get(email);
+        VerificationEmailDTO data = verificationStore.get(email);
 
         // 1. Check if data exists or if the code has expired
         if (data == null || LocalDateTime.now().isAfter(data.getExpiryTime())) {

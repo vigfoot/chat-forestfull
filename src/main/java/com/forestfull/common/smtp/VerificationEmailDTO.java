@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class VerificationEmail {
+public class VerificationEmailDTO {
     @Size(min = 10, max = 100, message = "Email Address must be between 10 and 100 characters.")
     @Pattern(regexp = "^\\S+@\\S+\\.\\S+$", message = "Not allow characters.")
     private String email;
