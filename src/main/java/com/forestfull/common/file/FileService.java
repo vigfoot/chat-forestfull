@@ -84,6 +84,12 @@ public class FileService implements WebMvcConfigurer {
      * - 폴더 생성은 Files.createDirectories 사용
      */
     public CommonResponse saveFile(MultipartFile filePart, String type, String fileName) {
+        // 🚩 1. MIME 타입 검증 추가
+        String contentType = filePart.getContentType();
+        if (contentType == null || (!contentType.startsWith("image/") && !contentType.startsWith("video/"))) {
+            return CommonResponse.fail("Unsupported file type. Only images and videos are allowed.");
+        }
+
         String safeFileName;
         try {
             safeFileName = sanitizeFilename(fileName);
@@ -166,6 +172,13 @@ public class FileService implements WebMvcConfigurer {
     public File saveProfileImage(MultipartFile filePart, Long userId) {
         if (filePart == null || filePart.isEmpty()) return null;
         if (userId == null || userId <= 0) return null;
+
+        // MIME 타입 검증 추가
+        String contentType = filePart.getContentType();
+        if (contentType == null || (!contentType.startsWith("image/"))) {
+            log.warn("Attempt to upload unsupported file type for profile: {}", contentType);
+            return null; // 허용되지 않는 타입이면 null 반환
+        }
 
         // 1. 파일명 처리
         String originalFilename = StringUtils.cleanPath(Objects.requireNonNull(filePart.getOriginalFilename()));
