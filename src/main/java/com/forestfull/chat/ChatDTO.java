@@ -1,10 +1,10 @@
 package com.forestfull.chat;
 
 import com.forestfull.domain.User;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 public class ChatDTO {
 
@@ -34,20 +34,39 @@ public class ChatDTO {
      * 🔹 방 정보 DTO
      */
     @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
     public static class Room {
         private Long id;
         private String name;
+        private String maker;
         private Long createdBy;
         private LocalDateTime createdAt;
         private LocalDateTime updatedAt;
+        private Integer participantsCount;
+        private List<Participant> participantList;
     }
 
     /**
      * 🔹 참여자 DTO
      */
     @Data
-    public static class Participant{
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class Participant {
         private Long roomId;
-        private User user;
+        private Long userId;
+        private String username;
+        private String displayName;
+        private String profileImage;
+    }
+
+    @Data
+    @Builder
+    public static class RoomParticipantUpdate {
+        private Long roomId;
+        private int count;
     }
 }

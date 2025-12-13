@@ -18,10 +18,35 @@ public class ChatRoomRestController {
 
     private final ChatRoomService chatRoomService;
     private final ChatMessageService chatMessageService;
+    private final ParticipantService participantService;
 
+    /**
+     * GET /api/chat/rooms: 채팅방 목록 및 실시간 인원수 조회
+     */
     @GetMapping
-    public ResponseEntity<List<ChatDTO.Room>> getAllRooms() {
-        return ResponseEntity.ok(chatRoomService.getAllRooms());
+    public ResponseEntity<List<ChatDTO.Room>> getRooms() {
+
+        // 1. 모든 ChatRoom 엔티티 조회 (DB 접근)
+        List<ChatDTO.Room> rooms = chatRoomService.getAllRooms(); // ChatRoom 엔티티 반환 가정
+
+        // 2. ChatDTO.Room DTO로 변환하면서 실시간 인원 정보 추가
+        List<ChatDTO.Room> roomDtos = rooms.stream()
+                .map(room -> {
+                    // 💡 a. 실시간 인원수 조회
+                    int count = participantService.getParticipantCount(room.getId());
+                    // 💡 b. DTO로 변환 및 인원수 설정
+                    return ChatDTO.Room.builder()
+                            .id(room.getId())
+                            .name(room.getName())
+                            .createdBy(room.getCreatedBy()) // DTO의 필드 타입에 맞춰 설정
+                            .createdAt(room.getCreatedAt())
+                            .updatedAt(room.getUpdatedAt())
+                            .participantsCount(count) // 인원수 설정
+                            .build();
+                })
+                .toList();
+
+        return ResponseEntity.ok(roomDtos);
     }
 
     @GetMapping("/{roomId}")
@@ -50,7 +75,7 @@ public class ChatRoomRestController {
     }
 
     @GetMapping("/{roomId}/participants")
-    public ResponseEntity<List<ChatDTO.Message>> getParticipants(@PathVariable Long roomId) {
+    public ResponseEntity<List<ChatDTO.Participant>> getParticipants(@PathVariable Long roomId) {
         return ResponseEntity.ok(chatRoomService.getParticipants(roomId));
     }
 

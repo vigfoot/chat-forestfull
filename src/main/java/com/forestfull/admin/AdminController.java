@@ -1,25 +1,22 @@
 package com.forestfull.admin;
 
-import com.auth0.jwt.interfaces.DecodedJWT;
 import com.forestfull.chat.ChatDTO;
 import com.forestfull.chat.room.ChatRoomService;
 import com.forestfull.common.CommonResponse;
 import com.forestfull.common.file.FILE_TYPE;
 import com.forestfull.common.file.FileService;
-import com.forestfull.common.token.JwtUtil;
 import com.forestfull.domain.User;
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 @RestController
 @RequiredArgsConstructor
@@ -65,7 +62,7 @@ public class AdminController {
 
     @PostMapping("/chat/rooms")
     public ResponseEntity<ChatDTO.Room> createRoom(@RequestBody ChatDTO.Room roomInfo, @AuthenticationPrincipal User user) {
-        if (roomInfo.getName() == null) return ResponseEntity.badRequest().build();
+        if (!StringUtils.hasText(roomInfo.getName())) return ResponseEntity.badRequest().build();
 
         ChatDTO.Room created = chatRoomService.createRoom(roomInfo.getName(), user.getId());
         return ResponseEntity.status(HttpStatus.CREATED).body(created);

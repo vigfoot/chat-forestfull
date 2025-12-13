@@ -105,19 +105,23 @@
 <script src="/webjars/stomp-websocket/2.3.4/stomp.min.js"></script>
 <script>
     (function () {
-        const payload = getJwtPayload(); // global function
+        // 전역 함수 호출: JWT Payload에서 사용자 정보 추출
+        const payload = getJwtPayload();
         const userDisplay = payload ? (payload.displayName || payload.name || ('#' + payload.sub)) : 'Guest';
         document.getElementById('user-info').innerText = `Logged in as ${userDisplay}`;
 
         const roomsList = document.getElementById('rooms-list');
+        // 부트스트랩 모달 인스턴스
         const modal = new bootstrap.Modal(document.getElementById('createRoomModal'));
 
         // 🟢 STOMP Client 정의 및 설정
         let stompClient = null;
+        // 🟢 ParticipantService에서 사용하는 토픽과 일치해야 합니다.
         const participantsTopic = '/topic/rooms/participants';
+
         // 🚩 API URI 상수 정의
         const ROOMS_READ_URI = '/api/chat/rooms';
-        const ROOMS_CREATE_URI = '/api/admin/chat/rooms'; // 🚨 변경된 관리자 URI
+        const ROOMS_CREATE_URI = '/api/admin/chat/rooms';
 
         // ------------------------------------
         // 웹소켓 연결 및 구독 로직
@@ -127,12 +131,13 @@
                 return;
             }
 
-            const socket = new SockJS('/ws');
+            const socket = new SockJS('/ws/chat');
             stompClient = Stomp.over(socket);
             stompClient.debug = null;
-
             stompClient.connect({}, (frame) => {
                 console.log('STOMP Connection established.');
+
+                // 🟢 인원수 업데이트 토픽 구독
                 stompClient.subscribe(participantsTopic, (message) => {
                     const update = JSON.parse(message.body);
                     handleParticipantUpdate(update);
@@ -144,12 +149,18 @@
             });
         }
 
+        /**
+         * 🟢 웹소켓으로부터 받은 인원수 업데이트 메시지 처리
+         * @param {Object} update - {roomId: number, count: number} 구조
+         */
         function handleParticipantUpdate(update) {
             const roomId = update.roomId;
             const newCount = update.count;
+            // li 요소를 data-room-id 속성을 이용해 찾습니다.
             const roomItem = document.querySelector(`li[data-room-id="${roomId}"]`);
 
             if (roomItem) {
+                // 인원수를 표시하는 span 요소를 찾습니다.
                 const countElement = roomItem.querySelector('.participant-count-value');
                 if (countElement) {
                     countElement.innerText = newCount;
@@ -160,7 +171,7 @@
 
         async function loadRooms() {
             try {
-                // 방 목록 조회 URI 사용
+                // get() 함수는 전역에 정의된 fetch wrapper라고 가정합니다.
                 const res = await get(ROOMS_READ_URI);
                 if (!res.ok) throw new Error('Failed to load rooms');
                 const rooms = await res.json();
@@ -170,7 +181,7 @@
                 connect();
 
             } catch (e) {
-                console.error(e);
+                console.error('Error loading rooms:', e);
             }
         }
 
@@ -181,6 +192,7 @@
                 return;
             }
             rooms.forEach(r => {
+                // 🟢 DTO 구조에 맞춰 participantsCount 필드 사용
                 const participantCount = r.participantsCount ?? 0;
 
                 const li = document.createElement('li');
@@ -200,7 +212,7 @@
                     <div class="small text-muted mt-1">
                         <i class="bi bi-tag-fill me-1"></i> #${r.id}
                         <span class="ms-3 d-none d-sm-inline">
-                            <i class="bi bi-person-fill me-1"></i> Created by ${r.createdBy ?? 'system'}
+                            <i class="bi bi-person-fill me-1"></i> Created by ${r.maker ?? 'system'}
                         </span>
                     </div>
                   </div>
@@ -220,7 +232,6 @@
         // Create room modal event handling
         // ------------------------------------
 
-        // 🟢 Null 체크 1: createRoomButton이 존재할 때만 리스너 등록
         if (createRoomButton) {
             createRoomButton.addEventListener('click', () => {
                 modal.show();
@@ -229,22 +240,23 @@
             });
         }
 
-        // 🟢 Null 체크 2: createRoomSubmit 버튼은 모달 내부에 있지만,
-        //   modal이 sec:authorize 외부에 있으므로 DOM에 존재할 가능성이 높음.
-        //   하지만 안전을 위해, 버튼을 찾아서 리스너를 등록합니다.
         if (createRoomSubmit) {
             createRoomSubmit.addEventListener('click', async () => {
                 const name = document.getElementById('new-room-name').value.trim();
                 if (!name) return alert('Room name required');
                 try {
                     const createdBy = payload ? Number(payload.sub) : null;
+                    // post() 함수는 전역에 정의된 fetch wrapper라고 가정합니다.
                     const res = await post(ROOMS_CREATE_URI, { name, createdBy });
+
                     if (res.ok) {
                         modal.hide();
                         const body = await res.json();
                         if (body && body.id) {
+                            // 방 생성 후 바로 해당 방으로 이동
                             window.location.href = `/pages/rooms/${body.id}`;
                         } else {
+                            // 방 생성은 됐지만 id가 없으면 목록을 새로고침
                             await loadRooms();
                         }
                     } else {
@@ -256,15 +268,16 @@
                         }
                     }
                 } catch (e) {
-                    console.error(e);
-                    alert('Create failed');
+                    console.error('Error creating room:', e);
+                    alert('Create failed due to network error.');
                 }
             });
         }
 
-        // escape helper
+        // escape helper (XSS 방지)
         function escapeHtml(s) {
             if (!s) return '';
+            // HTML 엔티티 치환: &, <, >, ", '
             return s.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&#039;');
         }
 

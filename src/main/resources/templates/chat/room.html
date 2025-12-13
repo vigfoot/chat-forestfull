@@ -225,8 +225,9 @@
 <script th:inline="javascript">
     const roomId = /*[[${roomId}]]*/ 0;
     const payload = getJwtPayload();
+    // 📢 DTO의 필드와 일치하도록 클라이언트 측 상수 이름을 조정하는 것이 좋습니다.
     const MY_ID = Number(payload?.sub);
-    const MY_NAME = payload?.username;
+    const MY_USERNAME = payload?.username; // DTO와 일치하도록 MY_NAME을 MY_USERNAME으로 변경
     const MY_DISPLAY_NAME = payload?.displayName || 'Me';
     const MY_PROFILE_IMAGE = payload?.profileImage;
 
@@ -241,10 +242,10 @@
     // ------------------------------------------------
 
     function connectWebSocket() {
+        // 🚩 endpoint: /ws/chat 사용
         const socket = new SockJS("/ws/chat");
         stompClient = Stomp.over(socket);
         stompClient.debug = null;
-
         stompClient.connect({}, () => {
             console.log("WebSocket connected");
 
@@ -254,21 +255,20 @@
                 addMessage(message);
             });
 
-            // 참여자 리스트 구독 (Full list update)
+            // 🟢 참여자 리스트 구독 (Full list update)
+            // 서버는 ChatDTO.Participant 목록을 보냅니다.
             stompClient.subscribe(`/topic/rooms/${roomId}/participants`, msg => {
                 const users = JSON.parse(msg.body);
                 updateUsers(users);
             });
 
-            // 채팅방 입장 메시지 전송
+            // 채팅방 입장 메시지 전송 (서버는 ChatDTO.Message를 기대)
             stompClient.send("/app/chat.enter", {}, JSON.stringify({
-                roomId,
-                user: {
-                    id: MY_ID,
-                    name: MY_NAME,
-                    displayName: MY_DISPLAY_NAME,
-                    profileImage: MY_PROFILE_IMAGE,
-                }
+                roomId: roomId,
+                userId: MY_ID,
+                username: MY_USERNAME,
+                displayName: MY_DISPLAY_NAME,
+                profileImage: MY_PROFILE_IMAGE,
             }));
         }, error => {
             console.error("WebSocket connection failed:", error);
@@ -281,12 +281,10 @@
             // LEAVE 메시지를 먼저 보냄
             stompClient.send("/app/chat.leave", {}, JSON.stringify({
                 roomId: roomId,
-                user: {
-                    id: MY_ID,
-                    name: MY_NAME,
-                    displayName: MY_DISPLAY_NAME,
-                    profileImage: MY_PROFILE_IMAGE,
-                }
+                userId: MY_ID,
+                username: MY_USERNAME,
+                displayName: MY_DISPLAY_NAME,
+                profileImage: MY_PROFILE_IMAGE,
             }));
 
             stompClient.disconnect(() => {
@@ -302,7 +300,7 @@
             roomId: roomId,
             user: {
                 id: MY_ID,
-                name: MY_NAME,
+                username: MY_USERNAME,
                 displayName: MY_DISPLAY_NAME,
                 profileImage: MY_PROFILE_IMAGE,
             },
@@ -321,10 +319,9 @@
      * @returns {string} - HTML <img> 태그 문자열
      */
     function renderAvatar(profileImageUrl) {
-        const imageUrl = profileImageUrl || DEFAULT_AVATAR_PATH;
-
-        // 🚩 MODIFIED: 이제 복잡한 아이콘 로직 대신, 이미지가 없으면 DEFAULT_AVATAR_PATH 사용
-        return `<img src="${imageUrl}" alt="Avatar" class="user-avatar">`;
+        // 서버에서 null이나 빈 문자열을 받을 경우 대비
+        const imageUrl = profileImageUrl && profileImageUrl !== 'null' ? profileImageUrl : DEFAULT_AVATAR_PATH;
+        return `<img src="${imageUrl}" onerror="this.onerror=null;this.src='${DEFAULT_AVATAR_PATH}';" alt="Avatar" class="user-avatar">`;
     }
 
 
@@ -332,24 +329,29 @@
         const container = document.getElementById("chatContainer");
         const div = document.createElement("div");
 
+        // 🟢 message.user.id와 message.user.displayName 접근:
+        // 이 메시지들은 ChatDTO.Message 구조(User user 필드 포함)를 따르므로 유효함.
+
         if (message.type === "ENTER" || message.type === "LEAVE") {
             // 시스템 메시지 (입장/퇴장)
-            div.textContent = `${message.user.displayName} has ${message.type === "ENTER" ? "joined" : "left"}`;
+            const userName = message.user?.displayName || 'A user';
+            div.textContent = `${userName} has ${message.type === "ENTER" ? "joined" : "left"}`;
             div.classList.add("system-msg");
         } else { // TALK
-            const isMine = MY_ID === message.user.id;
+            const isMine = MY_ID === message.user?.id; // null 체크 추가
 
             div.classList.add("message");
             div.classList.add(isMine ? "mine" : "other");
 
             if (!isMine) {
                 // 상대방 메시지: 아바타 + 이름 + 메시지
+                const userName = message.user?.displayName || 'User';
                 div.innerHTML = `
                     <div class="avatar-wrap">
-                        ${renderAvatar(message.user.profileImage)}
+                        ${renderAvatar(message.user?.profileImage)}
                     </div>
                     <div class="message-content">
-                        <span class="sender-name">${message.user.displayName || 'User'}</span>
+                        <span class="sender-name">${userName}</span>
                         <span class="text-break">${escapeHtml(message.message)}</span>
                     </div>
                 `;
@@ -363,6 +365,10 @@
         container.scrollTop = container.scrollHeight;
     }
 
+    /**
+     * 참여자 목록 업데이트 (ChatDTO.Participant[] 구조를 가정)
+     * @param {ChatDTO.Participant[]} users - {roomId, username, displayName, profileImage} 배열
+     */
     function updateUsers(users) {
         const container = document.getElementById("participantsList");
         container.innerHTML = "";
@@ -374,17 +380,20 @@
         document.getElementById("mobile-participant-count").textContent = count;
 
         users.forEach(u => {
-            const isMine = MY_ID === u.user.id;
-            const displayName = u.user.displayName || 'Unknown';
+            // 🟢 MODIFIED: u.user.id 대신 MY_ID와 비교할 필드가 필요합니다.
+            // 현재 ChatDTO.Participant에는 memberId 필드가 없으므로, MY_USERNAME을 사용하여 비교합니다.
+            // **Best Practice: ChatDTO.Participant에 memberId 필드를 추가하는 것이 가장 좋습니다.**
+            const isMine = MY_USERNAME === u.username;
+            // 🟢 ChatDTO.Participant DTO 구조에 맞춰 u.displayName, u.profileImage 사용
+            const displayName = u.displayName || u.username || 'Unknown';
 
             const div = document.createElement("div");
             div.classList.add("participant");
             div.classList.add('d-flex');
             div.classList.add('align-items-center');
 
-            // 🚩 MODIFIED: renderAvatar 헬퍼 함수를 사용하여 아바타 렌더링
             div.innerHTML = `
-                ${renderAvatar(u.user.profileImage)}
+                ${renderAvatar(u.profileImage)}
                 <span class="participant-name">${displayName}</span>
                 ${isMine ? '<span class="badge text-bg-info ms-auto">Me</span>' : ''}
             `;
@@ -402,13 +411,13 @@
     // 3. Event Handlers & Initialization
     // ------------------------------------------------
 
-    // 모바일 사이드바 토글
+    // 모바일 사이드바 토글 (기존 로직 유지)
     document.getElementById("toggleParticipantsBtn").addEventListener('click', () => {
         const sidebar = document.getElementById("participantsSidebar");
         const backdrop = document.getElementById("sidebar-backdrop");
         sidebar.classList.toggle('open');
-        // 'd-md-block' 클래스가 모바일에서 숨김을 막지 않도록 조치
         if (window.innerWidth <= 768) {
+            // d-md-block을 제거하여 모바일에서 사이드바가 보일 수 있도록 함
             sidebar.classList.remove('d-md-block');
             sidebar.classList.remove('d-none');
         }

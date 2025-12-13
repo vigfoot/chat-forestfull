@@ -3,43 +3,32 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
 <mapper namespace="com.forestfull.chat.room.ChatRoomMapper">
-    <resultMap id="MessageResultMap" type="com.forestfull.chat.ChatDTO$Message">
-        <id property="id" column="id"/>
-        <result property="roomId" column="room_id"/>
-        <result property="type" column="type"/>
-        <result property="message" column="message"/>
-        <result property="createdAt" column="created_at"/>
-        <result property="user.id" column="member_id"/>
-        <result property="user.name" column="username"/>
-        <result property="user.displayName" column="display_name"/>
-        <result property="user.profileImage" column="profile_image"/>
-    </resultMap>
-
     <select id="findAllRooms" resultType="com.forestfull.chat.ChatDTO$Room">
-        SELECT id, name, created_by, created_at, updated_at
-        FROM chat_forestfull.chat_room
+        SELECT r.id, r.name, m.display_name AS maker, r.created_at, r.updated_at
+        FROM chat_forestfull.chat_room r
+            JOIN chat_forestfull.member m ON r.created_by = m.id
         ORDER BY updated_at DESC
     </select>
 
     <select id="findRoomById" parameterType="long" resultType="com.forestfull.chat.ChatDTO$Room">
-        SELECT id, name, created_by, created_at, updated_at
-        FROM chat_forestfull.chat_room
-        WHERE id = #{roomId}
+        SELECT r.id, r.name, m.display_name AS maker, r.created_at, r.updated_at
+        FROM chat_forestfull.chat_room r
+                 JOIN chat_forestfull.member m ON r.created_by = m.id
+        WHERE r.id = #{roomId}
     </select>
 
-    <insert id="createRoom" parameterType="com.forestfull.chat.ChatDTO$Room" useGeneratedKeys="true" keyProperty="id">
+    <insert id="createRoom" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO chat_forestfull.chat_room (name, created_by)
-        VALUES (#{name}, #{createdBy})
+        VALUES (#{name}, #{memberId})
     </insert>
 
     <delete id="deleteRoom" parameterType="long">
         DELETE FROM chat_forestfull.chat_room WHERE id = #{roomId}
     </delete>
 
-    <select id="findParticipants" parameterType="long" resultMap="MessageResultMap">
+    <select id="findParticipants" parameterType="long" resultType="com.forestfull.chat.ChatDTO$Participant">
         SELECT
             cp.room_id
-            , m.id AS member_id
             , m.name AS username
             , m.display_name
             , m.profile_image
@@ -62,7 +51,7 @@
         WHERE m.id = #{memberId}
     </insert>
 
-    <delete id="removeParticipant" parameterType="map">
+    <delete id="removeParticipant">
         DELETE FROM chat_forestfull.chat_participant
         WHERE room_id = #{roomId}
           AND member_id = #{memberId}

@@ -25,7 +25,7 @@ public class ChatController {
 
     // 채팅 메시지 전송
     @MessageMapping("/chat.sendMessage")
-    public void sendMessage(@Payload ChatDTO.Message message, Principal principal) {
+    public void sendMessage(@Payload ChatDTO.Message message) {
         message.setType(ChatDTO.Message.MessageType.TALK);
 
         ChatDTO.Message saved = chatMessageService.saveMessage(message);
@@ -53,7 +53,7 @@ public class ChatController {
                 enterMsg
         );
 
-        List<ChatDTO.Message> updated = chatRoomService.getParticipants(participant.getRoomId());
+        List<ChatDTO.Participant> updated = chatRoomService.getParticipants(participant.getRoomId());
         simpMessagingTemplate.convertAndSend(
                 "/topic/rooms/" + participant.getRoomId() + "/participants",
                 updated
@@ -82,7 +82,7 @@ public class ChatController {
         );
 
 
-        List<ChatDTO.Message> updated = chatRoomService.getParticipants(participant.getRoomId());
+        List<ChatDTO.Participant> updated = chatRoomService.getParticipants(participant.getRoomId());
         simpMessagingTemplate.convertAndSend(
                 "/topic/rooms/" + participant.getRoomId() + "/participants",
                 updated
