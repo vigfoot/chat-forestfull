@@ -29,6 +29,7 @@
             box-sizing: border-box;
             overflow-y: auto;
             flex-shrink: 0;
+            display: block;
         }
 
         .participants-sidebar h4 {
@@ -47,6 +48,7 @@
             align-items: center;
             padding: 0.3rem 0;
             color: var(--cf-text-primary);
+            cursor: pointer; /* 클릭 가능 표시 */
         }
 
         .participant-name {
@@ -107,8 +109,7 @@
             border-radius: 50%;
             margin-right: 8px;
             flex-shrink: 0;
-            /* 기본 이미지의 검정 테두리를 보존하기 위해 border를 제거합니다. */
-            /* border: 1px solid var(--cf-border-color); */
+            cursor: pointer; /* 클릭 가능 표시 */
         }
 
         .other .sender-name {
@@ -156,7 +157,7 @@
         }
 
         /* 모바일 반응형 조정 */
-        @media (max-width: 768px) {
+        @media (max-width: 1200px) { /* 🚩 수정: 사이드바 토글 너비 조건 1200px로 변경 */
             .participants-sidebar {
                 position: fixed;
                 top: 0;
@@ -164,26 +165,29 @@
                 bottom: 0;
                 transform: translateX(100%);
                 transition: transform 0.3s ease-in-out;
-                z-index: 1040;
-                width: 70%;
+                z-index: 1051;
                 box-shadow: -4px 0 10px rgba(0, 0, 0, 0.5);
             }
-
             .participants-sidebar.open {
                 transform: translateX(0);
             }
-
             .chat-container {
                 border-radius: 0;
+            }
+        }
+        /* 데스크톱 크기에서 사이드바가 항상 보이도록 설정 */
+        @media (min-width: 1201px) { /* 🚩 수정: 사이드바 항상 보이기 조건 1201px로 변경 */
+            .participants-sidebar {
+                transform: translateX(0) !important;
+                position: relative;
             }
         }
     </style>
 
     <title th:text="${'Chat ForestFull - ' + room.name}"></title>
 </head>
-<body class="d-flex flex-column min-vh-100">
-
-<div class="d-flex flex-column flex-grow-1" style="height: 100vh;">
+<body class="d-flex flex-column min-vh-100" style="height: 100vh;">
+<header th:replace="~{/layout/header.html :: header}"></header> <div class="d-flex flex-column flex-grow-1">
     <div class="d-flex align-items-center justify-content-between p-3"
          style="background-color: var(--cf-dark-bg-secondary); border-bottom: 1px solid var(--cf-border-color);">
 
@@ -196,16 +200,15 @@
             <span style="font-size: 1rem; color: gray;" th:text="${'(created by ' + room.maker + ')'}"></span>
         </h5>
 
-        <button id="toggleParticipantsBtn" class="btn btn-sm btn-primary d-md-none fw-bold">
+        <button id="toggleParticipantsBtn" class="btn btn-sm btn-primary d-xl-none fw-bold">
             <i class="bi bi-people-fill me-1"></i> <span id="mobile-participant-count">0</span>
         </button>
-        <div class="d-none d-md-block" style="width: 70px;"></div>
     </div>
 
     <div class="chat-container flex-grow-1">
         <div id="chatContainer"></div>
 
-        <div class="participants-sidebar d-none d-md-block" id="participantsSidebar">
+        <div class="participants-sidebar" id="participantsSidebar">
             <h4>
                 Participants
                 <span class="badge text-bg-secondary fw-bold" id="desktop-participant-count">0</span>
@@ -222,67 +225,82 @@
 
 <div class="modal-backdrop fade" id="sidebar-backdrop" style="display: none;"></div>
 
+<div class="modal fade" id="userInfoModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="background-color: var(--cf-dark-bg-secondary); color: var(--cf-text-primary);">
+            <div class="modal-header" style="border-color: var(--cf-border-color);">
+                <h5 class="modal-title fw-bold">User Information</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img id="modal-profile-image" src="/images/default-avatar.png" alt="Profile" class="rounded-circle mb-3" style="width: 100px; height: 100px; border: 3px solid var(--cf-accent-primary);">
+                <h4 id="modal-display-name" class="fw-bold mb-1"></h4>
+                <p id="modal-username" class="text-muted small mb-3"></p>
+                <div id="modal-user-info">
+                </div>
+            </div>
+            <div class="modal-footer" style="border-color: var(--cf-border-color);">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <script th:inline="javascript">
+    // 전역 함수/변수 (connectWebSocket, get, getJwtPayload 등)는 config.html에서 제공됨을 가정
+
     const roomId = /*[[${roomId}]]*/ 0;
     const payload = getJwtPayload();
-    // 📢 DTO의 필드와 일치하도록 클라이언트 측 상수 이름을 조정하는 것이 좋습니다.
-    const MY_ID = Number(payload?.sub);
-    const MY_USERNAME = payload?.username; // DTO와 일치하도록 MY_NAME을 MY_USERNAME으로 변경
+
+    // 서버의 DTO 필드에 맞게 변수명 정의
+    const MY_USER_ID = Number(payload?.sub); // ChatDTO.Participant.userId
+    const MY_USERNAME = payload?.username;
     const MY_DISPLAY_NAME = payload?.displayName || 'Me';
     const MY_PROFILE_IMAGE = payload?.profileImage;
 
     let reconnectInterval = 5000;
-    let participants = [];
+    let participants = []; // 현재 참여자 목록을 저장하는 배열
 
-    // 🚩 MODIFIED: 기본 프로필 이미지 경로 상수로 정의
     const DEFAULT_AVATAR_PATH = '/images/default-avatar.png';
 
+    let userInfoModal = null;
+    if (typeof bootstrap !== 'undefined' && document.getElementById('userInfoModal')) {
+        userInfoModal = new bootstrap.Modal(document.getElementById('userInfoModal'));
+    }
+
     // ------------------------------------------------
-    // 1. WebSocket / STOMP Logic
+    // 1. WebSocket / STOMP Logic (바인딩 포맷 수정)
     // ------------------------------------------------
 
-    function connectWebSocket() {
-        // 🚩 endpoint: /ws/chat 사용
-        const socket = new SockJS("/ws/chat");
-        stompClient = Stomp.over(socket);
-        stompClient.debug = null;
-        stompClient.connect({}, () => {
-            console.log("WebSocket connected");
-
-            // 메시지 구독
-            stompClient.subscribe(`/topic/rooms/${roomId}`, msg => {
-                const message = JSON.parse(msg.body);
-                addMessage(message);
-            });
-
-            // 🟢 참여자 리스트 구독 (Full list update)
-            // 서버는 ChatDTO.Participant 목록을 보냅니다.
-            stompClient.subscribe(`/topic/rooms/${roomId}/participants`, msg => {
-                const users = JSON.parse(msg.body);
-                updateUsers(users);
-            });
-
-            // 채팅방 입장 메시지 전송 (서버는 ChatDTO.Message를 기대)
-            stompClient.send("/app/chat.enter", {}, JSON.stringify({
-                roomId: roomId,
-                userId: MY_ID,
-                username: MY_USERNAME,
-                displayName: MY_DISPLAY_NAME,
-                profileImage: MY_PROFILE_IMAGE,
-            }));
-        }, error => {
-            console.error("WebSocket connection failed:", error);
-            setTimeout(connectWebSocket, reconnectInterval);
+    function subscribeAndSendEnter() {
+        // 메시지 구독
+        stompClient.subscribe(`/topic/rooms/${roomId}`, msg => {
+            const message = JSON.parse(msg.body);
+            addMessage(message);
         });
+
+        // ChatDTO.Participant 목록 수신
+        stompClient.subscribe(`/topic/rooms/${roomId}/participants`, msg => {
+            const users = JSON.parse(msg.body);
+            updateUsers(users);
+        });
+
+        // 🟢 입장 메시지 전송: ChatDTO.Participant 구조로 평탄화하여 전송 (서버 컨트롤러 기대 포맷)
+        stompClient.send("/app/chat.enter", {}, JSON.stringify({
+            roomId: roomId,
+            userId: MY_USER_ID, // 🚩 MY_ID 대신 userId 필드 사용
+            username: MY_USERNAME,
+            displayName: MY_DISPLAY_NAME,
+            profileImage: MY_PROFILE_IMAGE,
+        }));
     }
 
     function disconnectWebSocket() {
         if (stompClient && stompClient.connected) {
-            // LEAVE 메시지를 먼저 보냄
+            // 🟢 퇴장 메시지 전송: ChatDTO.Participant 구조로 평탄화하여 전송 (서버 컨트롤러 기대 포맷)
             stompClient.send("/app/chat.leave", {}, JSON.stringify({
                 roomId: roomId,
-                userId: MY_ID,
+                userId: MY_USER_ID, // 🚩 MY_ID 대신 userId 필드 사용
                 username: MY_USERNAME,
                 displayName: MY_DISPLAY_NAME,
                 profileImage: MY_PROFILE_IMAGE,
@@ -297,11 +315,12 @@
 
     function sendMessage(text) {
         if (!text || !stompClient || !stompClient.connected) return;
+        // 🟢 TALK 메시지 전송: ChatDTO.Message 구조 (user 객체 포함) 유지
         stompClient.send("/app/chat.sendMessage", {}, JSON.stringify({
             roomId: roomId,
             user: {
-                id: MY_ID,
-                name: MY_USERNAME,
+                id: MY_USER_ID, // 🚩 TALK 메시지 내부 User DTO는 id 필드 사용
+                username: MY_USERNAME,
                 displayName: MY_DISPLAY_NAME,
                 profileImage: MY_PROFILE_IMAGE,
             },
@@ -311,45 +330,63 @@
     }
 
     // ------------------------------------------------
-    // 2. UI Rendering Logic (수정)
+    // 2. UI Rendering Logic (user DTO 필드명 통일)
     // ------------------------------------------------
 
-    /**
-     * 최종 확정된 기본 아바타 이미지를 사용합니다.
-     * @param {string} profileImageUrl - 실제 프로필 이미지 URL
-     * @returns {string} - HTML <img> 태그 문자열
-     */
     function renderAvatar(profileImageUrl) {
-        // 서버에서 null이나 빈 문자열을 받을 경우 대비
         const imageUrl = profileImageUrl && profileImageUrl !== 'null' ? profileImageUrl : DEFAULT_AVATAR_PATH;
-        return `<img src="${imageUrl}" onerror="this.onerror=null;this.src='${DEFAULT_AVATAR_PATH}';" alt="Avatar" class="user-avatar">`;
+        return imageUrl;
+    }
+
+    // 🟢 헬퍼 함수: ChatDTO.Message 내부 User DTO (id, username, displayName, profileImage 포함)
+    function getUserInfoString(user) {
+        if (!user) return '{}';
+        return JSON.stringify({
+            id: user.id,
+            username: user.username,
+            displayName: user.displayName,
+            profileImage: user.profileImage,
+        }).replaceAll('"', '&quot;');
+    }
+
+    // 🟢 헬퍼 함수: ChatDTO.Participant DTO (userId, username, displayName, profileImage 포함)
+    function getParticipantInfoString(p) {
+        if (!p) return '{}';
+        return JSON.stringify({
+            id: p.userId, // 모달에서 id를 기대하므로 userId를 id로 매핑
+            username: p.username,
+            displayName: p.displayName,
+            profileImage: p.profileImage,
+        }).replaceAll('"', '&quot;');
     }
 
 
     function addMessage(message) {
         const container = document.getElementById("chatContainer");
         const div = document.createElement("div");
-
-        // 🟢 message.user.id와 message.user.displayName 접근:
-        // 이 메시지들은 ChatDTO.Message 구조(User user 필드 포함)를 따르므로 유효함.
+        const user = message.user;
 
         if (message.type === "ENTER" || message.type === "LEAVE") {
-            // 시스템 메시지 (입장/퇴장)
-            const userName = message.user?.displayName || 'A user';
+            const userName = user?.displayName || 'A user';
             div.textContent = `${userName} has ${message.type === "ENTER" ? "joined" : "left"}`;
             div.classList.add("system-msg");
         } else { // TALK
-            const isMine = MY_ID === message.user?.id; // null 체크 추가
+            const isMine = MY_USER_ID === user?.id; // 🚩 MY_ID 대신 MY_USER_ID 사용
 
             div.classList.add("message");
             div.classList.add(isMine ? "mine" : "other");
 
+            const userInfoStr = getUserInfoString(user);
+
             if (!isMine) {
-                // 상대방 메시지: 아바타 + 이름 + 메시지
-                const userName = message.user?.displayName || 'User';
+                const userName = user?.displayName || 'User';
+                const avatarUrl = renderAvatar(user?.profileImage);
+
                 div.innerHTML = `
                     <div class="avatar-wrap">
-                        ${renderAvatar(message.user?.profileImage)}
+                        <img src="${avatarUrl}"
+                             onclick="showUserInfoModal(JSON.parse(unescapeHtml('${userInfoStr}')))"
+                             alt="Avatar" class="user-avatar">
                     </div>
                     <div class="message-content">
                         <span class="sender-name">${userName}</span>
@@ -357,7 +394,6 @@
                     </div>
                 `;
             } else {
-                // 내 메시지: 메시지 텍스트만
                 div.innerHTML = `<span class="text-break">${escapeHtml(message.message)}</span>`;
             }
         }
@@ -368,33 +404,34 @@
 
     /**
      * 참여자 목록 업데이트 (ChatDTO.Participant[] 구조를 가정)
-     * @param {ChatDTO.Participant[]} users - {roomId, username, displayName, profileImage} 배열
      */
     function updateUsers(users) {
         const container = document.getElementById("participantsList");
         container.innerHTML = "";
         participants = users; // 전역 변수 업데이트
 
-        // 인원 수 뱃지 업데이트
         const count = users.length;
         document.getElementById("desktop-participant-count").textContent = count;
         document.getElementById("mobile-participant-count").textContent = count;
 
         users.forEach(u => {
-            // 🟢 MODIFIED: u.user.id 대신 MY_ID와 비교할 필드가 필요합니다.
-            // 현재 ChatDTO.Participant에는 memberId 필드가 없으므로, MY_USERNAME을 사용하여 비교합니다.
-            // **Best Practice: ChatDTO.Participant에 memberId 필드를 추가하는 것이 가장 좋습니다.**
             const isMine = MY_USERNAME === u.username;
-            // 🟢 ChatDTO.Participant DTO 구조에 맞춰 u.displayName, u.profileImage 사용
             const displayName = u.displayName || u.username || 'Unknown';
+            const participantInfo = getParticipantInfoString(u);
 
             const div = document.createElement("div");
             div.classList.add("participant");
-            div.classList.add('d-flex');
-            div.classList.add('align-items-center');
+
+            // 🚩 [수정 반영] 리스트 항목 클릭 시 모달 열기, 이벤트 전파 차단 추가
+            div.onclick = (event) => {
+                event.stopPropagation(); // 이벤트를 상위 (backdrop)로 전파하지 않음
+                showUserInfoModal(JSON.parse(unescapeHtml(participantInfo)));
+            };
+
+            const avatarUrl = renderAvatar(u.profileImage);
 
             div.innerHTML = `
-                ${renderAvatar(u.profileImage)}
+                <img src="${avatarUrl}" alt="Avatar" class="user-avatar" style="cursor: default;">
                 <span class="participant-name">${displayName}</span>
                 ${isMine ? '<span class="badge text-bg-info ms-auto">Me</span>' : ''}
             `;
@@ -402,40 +439,85 @@
         });
     }
 
+    // ------------------------------------------------
+    // 3. User Info Modal Logic
+    // ------------------------------------------------
+
+    /**
+     * 사용자 정보를 모달에 표시하고 띄웁니다.
+     * @param {Object} userData - 표시할 사용자 데이터 (id, username, displayName, profileImage 포함)
+     */
+    function showUserInfoModal(userData) {
+        if (!userData || !userInfoModal) {
+            console.error("Modal or User Data missing.", userData);
+            return;
+        }
+
+        const avatarUrl = renderAvatar(userData.profileImage);
+
+        // 모달 필드 업데이트
+        document.getElementById('modal-profile-image').src = avatarUrl;
+        document.getElementById('modal-display-name').textContent = userData.displayName || 'N/A';
+        document.getElementById('modal-username').textContent = `@${userData.username || 'Unknown'}`;
+
+        // 추가 정보 필드 구성
+        const infoDiv = document.getElementById('modal-user-info');
+        infoDiv.innerHTML = `
+            ${userData.id ? `<p class="small mb-0">Member ID: ${userData.id}</p>` : ''}
+        `;
+
+        userInfoModal.show();
+    }
+
+
     // HTML Escape Helper
     function escapeHtml(s) {
         if (!s) return '';
         return s.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&#039;');
     }
+    // HTML Unescape Helper (JSON.parse를 위해 필요)
+    function unescapeHtml(s) {
+        if (!s) return '';
+        return s.replaceAll('&quot;', '"').replaceAll('&#039;', "'").replaceAll('&lt;', '<').replaceAll('&gt;', '>').replaceAll('&amp;', '&');
+    }
 
     // ------------------------------------------------
-    // 3. Event Handlers & Initialization
+    // 4. Event Handlers & Initialization
     // ------------------------------------------------
 
-    // 모바일 사이드바 토글 (기존 로직 유지)
     document.getElementById("toggleParticipantsBtn").addEventListener('click', () => {
         const sidebar = document.getElementById("participantsSidebar");
         const backdrop = document.getElementById("sidebar-backdrop");
-        sidebar.classList.toggle('open');
-        if (window.innerWidth <= 768) {
-            // d-md-block을 제거하여 모바일에서 사이드바가 보일 수 있도록 함
-            sidebar.classList.remove('d-md-block');
-            sidebar.classList.remove('d-none');
+
+        const isOpen = sidebar.classList.toggle('open');
+
+        // 🚩 수정: 사이드바 토글 너비 조건 1200px에 맞춤
+        if (window.innerWidth <= 1200) {
+            backdrop.style.display = isOpen ? 'block' : 'none';
         }
-        backdrop.style.display = sidebar.classList.contains('open') ? 'block' : 'none';
     });
-    // 배경 클릭 시 사이드바 닫기 (모바일)
+
     document.getElementById("sidebar-backdrop").addEventListener('click', () => {
         document.getElementById("participantsSidebar").classList.remove('open');
         document.getElementById("sidebar-backdrop").style.display = 'none';
     });
 
-    // 페이지 로드 시
-    document.addEventListener("DOMContentLoaded", () => {
-        connectWebSocket();
+    window.addEventListener('resize', () => {
+        const sidebar = document.getElementById("participantsSidebar");
+        const backdrop = document.getElementById("sidebar-backdrop");
+        // 🚩 수정: 사이드바 항상 보이기 조건 1201px에 맞춤
+        if (window.innerWidth > 1200) {
+            sidebar.classList.remove('open');
+            backdrop.style.display = 'none';
+        }
+    });
 
-        // 1. 이전 메시지 불러오기 (fetch)
-        fetch(`/api/chat/rooms/${roomId}/messages`, {credentials: 'include'})
+    document.addEventListener("DOMContentLoaded", () => {
+        // 1. WebSocket 연결 및 구독/입장 메시지 전송
+        connectWebSocket(subscribeAndSendEnter);
+
+        // 2. 이전 메시지 불러오기 (전역 get 함수 사용)
+        get(`/api/chat/rooms/${roomId}/messages`)
             .then(res => res.json())
             .then(messages => {
                 if (messages && messages.length > 0) {
@@ -450,7 +532,7 @@
             });
 
 
-        // 2. 메시지 전송 이벤트
+        // 3. 메시지 전송 이벤트
         const input = document.getElementById("messageInput");
         const sendBtn = document.getElementById("sendBtn");
 
@@ -471,7 +553,7 @@
         });
         sendBtn.addEventListener("click", handleSend);
 
-        // 3. 페이지 이탈 시 처리
+        // 4. 페이지 이탈 시 처리
         const handleLeave = () => {
             disconnectWebSocket();
         };
