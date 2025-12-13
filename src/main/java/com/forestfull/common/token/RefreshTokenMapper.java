@@ -25,15 +25,6 @@ public interface RefreshTokenMapper {
     """)
     String findValidTokenByMemberId(@Param("memberId") Long memberId);
 
-    @Select("""
-        SELECT member_id
-        FROM chat_forestfull.refresh_token
-        WHERE token = #{token}
-          AND is_revoked = 0
-        LIMIT 1
-    """)
-    Long findMemberIdByToken(@Param("token") String token);
-
     @Update("""
         UPDATE chat_forestfull.refresh_token
         SET is_revoked = 1

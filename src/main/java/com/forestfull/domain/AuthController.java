@@ -43,7 +43,6 @@ public class AuthController {
             // JWT 발급 (기존 로직)
             final String accessToken = jwtUtil.generateToken(user);
             final String refreshToken = refreshJwtUtil.generateToken(user);
-            refreshJwtUtil.save(user.getId(), refreshToken);
 
             cookieUtil.addAccessToken(response, accessToken);
             cookieUtil.addPayload(response, accessToken);

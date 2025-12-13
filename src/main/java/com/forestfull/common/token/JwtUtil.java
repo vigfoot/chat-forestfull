@@ -17,7 +17,7 @@ import java.util.*;
 
 @Component
 public class JwtUtil {
-    public static final long expireMillis = 24 * 60 * 60 * 1000;
+    public static final long expireMillis = 24 * 60 * 60 * 1000; // 1일 유지
     public static final long refreshExpireMillis = 7L * 24 * 60 * 60 * 1000;  // 7일 유지
 
     public enum TOKEN_TYPE {
@@ -102,18 +102,6 @@ public class JwtUtil {
             return token;
         }
 
-        // 토큰을 저장(이미 다른 로직에서 생성했을 때 사용)
-        public void save(Long id, String refreshToken) {
-            Long memberId = userMapper.findUserIdById(id);
-            if (memberId == null) {
-                throw new IllegalStateException("member not found for id: " + id);
-            }
-            // 토큰 만료시간 파싱
-            DecodedJWT decoded = verifier.verify(refreshToken);
-            LocalDateTime expiryDate = LocalDateTime.ofInstant(decoded.getExpiresAt().toInstant(), ZoneId.systemDefault());
-            refreshTokenMapper.save(memberId, refreshToken, expiryDate);
-        }
-
         // name 기준으로 DB에서 유효한 토큰 조회
         public String getToken(Long id) {
             Long memberId = userMapper.findUserIdById(id);
@@ -127,7 +115,8 @@ public class JwtUtil {
         public void deleteTokenByUserId(Long id) {
             Long memberId = userMapper.findUserIdById(id);
             if (memberId == null) return;
-            refreshTokenMapper.revokeByMemberId(memberId);
+//            refreshTokenMapper.revokeByMemberId(memberId); TODO: 보류
+            refreshTokenMapper.deleteByMemberId(memberId);
         }
 
         // 검증: token 자체를 검증하고 name 반환 (null = invalid)

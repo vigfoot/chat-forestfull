@@ -29,13 +29,13 @@ public class SecurityConfig {
     private final CustomUserDetailsService customUserDetailsService;
     private static final AntPathMatcher antPathMatcher = new AntPathMatcher();
     private static final String[] PUBLIC_RESOURCES = {"/", "/favicon.ico", "/css/**", "/js/**", "/images/**", "/webjars/**", "/document/**"};
-    private static final String[] ALLOW_PATHS = {"/api/auth/login", "/pages/signup", "/api/auth/signup", "/api/auth/check/*/*", "/api/auth/verify/*/*"};
+    private static final String[] ALLOW_PATHS = {"/api/auth/login", "/api/auth/refresh", "/pages/signup", "/api/auth/signup", "/api/auth/check/*/*", "/api/auth/verify/*/*"};
 
     public static boolean isPublicResources(String path) {
         return Arrays.stream(PUBLIC_RESOURCES).anyMatch(pattern -> antPathMatcher.match(pattern, path));
     }
 
-    public static boolean isLoginPath(String path) {
+    public static boolean isAllowPath(String path) {
         return Arrays.stream(ALLOW_PATHS).anyMatch(pattern -> antPathMatcher.match(pattern, path));
     }
 

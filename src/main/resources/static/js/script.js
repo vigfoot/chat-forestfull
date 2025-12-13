@@ -17,27 +17,79 @@ function connectWebSocket(callback) {
         if (callback) callback();
     });
 }
+// /js/script.js (전역 변수)
+let isRefreshing = false;
+let failedQueue = []; // 갱신이 완료될 때까지 대기할 요청들을 저장할 배열
 
-/**
- * 공통 HTTP 요청 함수
- * - 모든 요청에 쿠키 포함
- * - GET / POST / PUT / DELETE 지원
- * - JSON body 자동 처리
- * - Promise 반환
- */
-async function httpRequest(url, method = 'GET', body = null, headers = {}, retry = true) {
+// ... (refreshTokens 함수는 그대로 유지) ...
+
+// 실패한 요청을 큐에 추가하고, 갱신이 완료될 때까지 대기
+function subscribeTokenRefresh(cb) {
+    failedQueue.push(cb);
+}
+
+// 갱신이 완료된 후, 큐에 있는 모든 요청 재시도
+function onRefreshed() {
+    failedQueue.forEach(callback => callback());
+    failedQueue = [];
+}
+
+
+async function httpRequest(url, method = 'GET', body = null, headers = {}) {
+    // 1. 요청 옵션 설정 (body는 재시도를 위해 함수 스코프 내에서 보존)
     const options = {
         method,
-        headers: {...headers},
+        headers: { ...headers },
         credentials: 'include'
     };
-
     if (body) {
         options.headers['Content-Type'] = 'application/json';
         options.body = JSON.stringify(body);
     }
 
-    return fetch(url, options);
+    let response = await fetch(url, options);
+
+    if (response.status === 401) {
+        // 401 발생 시, 원래 요청을 재구성할 함수 정의
+        const retryRequest = async () => {
+            // body는 이미 stringify되었으므로 재사용
+            const retryResponse = await fetch(url, options);
+            return retryResponse;
+        };
+
+        // 🚩 2. 토큰 갱신 잠금/큐 처리
+        if (!isRefreshing) {
+            isRefreshing = true;
+
+            try {
+                const refreshed = await refreshTokens();
+                if (refreshed) {
+                    onRefreshed(); // 대기 중이던 모든 요청 재시도
+                    return retryRequest(); // 현재 요청 재시도
+                } else {
+                    redirectToLogin(); // 갱신 실패 시 즉시 로그인 요청
+                    return response; // 401 응답 반환
+                }
+            } catch (e) {
+                // 갱신 중 오류 발생
+                redirectToLogin();
+                return response;
+            } finally {
+                isRefreshing = false;
+            }
+
+        } else {
+            // 갱신이 진행 중이라면, 현재 요청을 큐에 넣고 대기
+            return new Promise(resolve => {
+                subscribeTokenRefresh(async () => {
+                    const retryResponse = await retryRequest();
+                    resolve(retryResponse);
+                });
+            });
+        }
+    }
+
+    return response;
 }
 
 async function refreshTokens() {

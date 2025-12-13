@@ -195,7 +195,6 @@ public class MemberController {
             final User user = customUserService.loadUserByUserId(userId);
             final String accessToken = jwtUtil.generateToken(user);
             final String refreshToken = jwtRefreshUtil.generateToken(user);
-            jwtRefreshUtil.save(user.getId(), refreshToken);
 
             cookieUtil.addAccessToken(response, accessToken);
             cookieUtil.addPayload(response, accessToken);
