@@ -25,7 +25,13 @@ public class ChatController {
 
     // 채팅 메시지 전송
     @MessageMapping("/chat.sendMessage")
-    public void sendMessage(@Payload ChatDTO.Message message) {
+    public void sendMessage(@Payload ChatDTO.Message message, Principal principal) {
+        if (!(principal instanceof UsernamePasswordAuthenticationToken token)) return;
+
+        Object userDetails = token.getPrincipal();
+        if (!(userDetails instanceof User user)) return;
+
+        message.setUser(user);
         message.setType(ChatDTO.Message.MessageType.TALK);
 
         ChatDTO.Message saved = chatMessageService.saveMessage(message);

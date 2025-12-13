@@ -9,7 +9,6 @@
         <result property="type" column="type"/>
         <result property="message" column="message"/>
         <result property="createdAt" column="created_at"/>
-        <result property="user.id" column="member_id"/>
         <result property="user.name" column="username"/>
         <result property="user.email" column="email"/>
         <result property="user.displayName" column="display_name"/>
@@ -28,7 +27,6 @@
              , msg.room_id
              , msg.message
              , msg.created_at
-             , msg.member_id
              , m.name AS username
              , m.email
              , m.display_name
