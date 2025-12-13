@@ -248,7 +248,7 @@
    ------------------------------------ */
         .emoji-picker-panel {
             position: absolute;
-            bottom: 65px; /* 헤더 높이에 맞게 조정 (대략) */
+            bottom: 125px;
             left: 0;
             right: 0;
             height: 125px; /* 🚩 요구사항 높이 */
@@ -340,22 +340,23 @@
     </div>
 
     <div class="input-wrap d-flex align-items-center">
-        <div sec:authorize="hasRole('ROLE_ADMIN')">
-            <input type="file" id="fileInput" style="display: none;" accept="image/*,video/*">
-            <button id="attachFileBtn" class="btn btn-icon" title="Attach Photo">
-                <i class="bi bi-image"></i>
+        <div class="d-flex flex-column gap-2 justify-content-between">
+            <div sec:authorize="hasRole('ROLE_ADMIN')">
+                <input type="file" id="fileInput" style="display: none;" accept="image/*,video/*">
+                <button id="attachFileBtn" class="btn btn-icon" title="Attach Photo">
+                    <i class="bi bi-image"></i>
+                </button>
+            </div>
+
+            <button id="emojiBtn" class="btn btn-icon" title="Insert Emoji">
+                <i class="bi bi-emoji-smile"></i>
             </button>
         </div>
-
-        <button id="emojiBtn" class="btn btn-icon" title="Insert Emoji">
-            <i class="bi bi-emoji-smile"></i>
-        </button>
 
         <div id="messageInput"
              class="form-control flex-grow-1"
              contenteditable="true"
-             placeholder="Type your message"
-             style="max-height: 100px; overflow-y: auto;">
+             style="height: 100px; overflow-y: auto;">
         </div>
 
         <button id="sendBtn" class="btn btn-primary">Send</button>
