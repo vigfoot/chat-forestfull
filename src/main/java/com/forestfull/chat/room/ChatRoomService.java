@@ -16,13 +16,13 @@ import java.util.stream.Collectors;
 public class ChatRoomService {
 
     private final ChatRoomMapper chatRoomMapper;
-    // 🟢 의존성 추가: 실시간 인원 관리 서비스
     private final ParticipantService participantService;
 
     /**
      * 모든 방 목록을 조회하고 실시간 인원수를 포함하여 반환합니다.
      * (클라이언트 요구사항에 따라 List<Participant>에 의존)
      */
+    @Transactional(readOnly = true)
     public List<ChatDTO.Room> getAllRooms() {
         List<ChatDTO.Room> rooms = chatRoomMapper.findAllRooms();
 
@@ -35,6 +35,7 @@ public class ChatRoomService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     public ChatDTO.Room findRoomById(Long roomId) {
         ChatDTO.Room room = chatRoomMapper.findRoomById(roomId);
         if (room != null) {
@@ -72,6 +73,7 @@ public class ChatRoomService {
         return affected > 0;
     }
 
+    @Transactional(readOnly = true)
     public List<ChatDTO.Participant> getParticipants(Long roomId) {
         return chatRoomMapper.findParticipants(roomId);
     }
