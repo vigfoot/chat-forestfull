@@ -279,12 +279,12 @@
     </div>
 
     <div class="input-wrap d-flex align-items-center">
-        <input type="file" id="fileInput" style="display: none;" accept="image/*,video/*">
-
-        <button id="attachFileBtn" class="btn btn-icon" title="Attach Photo">
-            <i class="bi bi-image"></i>
-        </button>
-
+        <div sec:authorize="hasRole('ROLE_ADMIN')">
+            <input type="file" id="fileInput" style="display: none;" accept="image/*,video/*">
+            <button id="attachFileBtn" class="btn btn-icon" title="Attach Photo">
+                <i class="bi bi-image"></i>
+            </button>
+        </div>
         <button id="emojiBtn" class="btn btn-icon" title="Insert Emoji">
             <i class="bi bi-emoji-smile"></i>
         </button>
@@ -320,7 +320,6 @@
 </div>
 
 <footer th:replace="~{/layout/footer.html}"></footer>
-
 <script th:inline="javascript">
     // 전역 함수/변수 (connectWebSocket, get, getJwtPayload 등)는 config.html에서 제공됨을 가정
 
