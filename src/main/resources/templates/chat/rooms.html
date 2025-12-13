@@ -19,10 +19,6 @@
             cursor: pointer;
         }
 
-        .cf-rooms-card .list-group-item:hover {
-            background-color: var(--cf-hover-dark) !important;
-        }
-
         .cf-rooms-card .text-muted {
             color: var(--cf-text-secondary) !important;
         }
@@ -116,16 +112,63 @@
         const roomsList = document.getElementById('rooms-list');
         const modal = new bootstrap.Modal(document.getElementById('createRoomModal'));
 
-        // 🚩 ADDED: STOMP Client
-        stompClient = null;
+        // 🟢 STOMP Client 정의 및 설정
+        let stompClient = null;
+        const participantsTopic = '/topic/rooms/participants';
+        // 🚩 API URI 상수 정의
+        const ROOMS_READ_URI = '/api/chat/rooms';
+        const ROOMS_CREATE_URI = '/api/admin/chat/rooms'; // 🚨 변경된 관리자 URI
+
+        // ------------------------------------
+        // 웹소켓 연결 및 구독 로직
+        // ------------------------------------
+        function connect() {
+            if (stompClient && stompClient.connected) {
+                return;
+            }
+
+            const socket = new SockJS('/ws');
+            stompClient = Stomp.over(socket);
+            stompClient.debug = null;
+
+            stompClient.connect({}, (frame) => {
+                console.log('STOMP Connection established.');
+                stompClient.subscribe(participantsTopic, (message) => {
+                    const update = JSON.parse(message.body);
+                    handleParticipantUpdate(update);
+                });
+
+            }, (error) => {
+                console.error('STOMP Connection failed:', error);
+                setTimeout(connect, 5000);
+            });
+        }
+
+        function handleParticipantUpdate(update) {
+            const roomId = update.roomId;
+            const newCount = update.count;
+            const roomItem = document.querySelector(`li[data-room-id="${roomId}"]`);
+
+            if (roomItem) {
+                const countElement = roomItem.querySelector('.participant-count-value');
+                if (countElement) {
+                    countElement.innerText = newCount;
+                }
+            }
+        }
+        // ------------------------------------
 
         async function loadRooms() {
             try {
-                // 백엔드에서 참여 인원 수(participantsCount)를 제공한다고 가정
-                const res = await get('/api/chat/rooms');
+                // 방 목록 조회 URI 사용
+                const res = await get(ROOMS_READ_URI);
                 if (!res.ok) throw new Error('Failed to load rooms');
                 const rooms = await res.json();
                 renderRooms(rooms);
+
+                // 초기 로드 후 웹소켓 연결 시작
+                connect();
+
             } catch (e) {
                 console.error(e);
             }
@@ -138,13 +181,11 @@
                 return;
             }
             rooms.forEach(r => {
-                // 초기 로드 시 백엔드에서 받은 count 사용. 없으면 1로 초기화.
-                const participantCount = r.participantsCount ?? 1;
+                const participantCount = r.participantsCount ?? 0;
 
                 const li = document.createElement('li');
                 li.className = 'list-group-item room-item d-flex justify-content-between align-items-center';
                 li.onclick = () => window.location.href = `/pages/rooms/${r.id}`;
-                // 🚩 MODIFIED: 실시간 업데이트를 위해 data-room-id 속성 추가
                 li.setAttribute('data-room-id', r.id);
 
                 li.innerHTML = `
@@ -171,35 +212,55 @@
             });
         }
 
-        // Create room
-        document.getElementById('btn-create-room').addEventListener('click', () => {
-            modal.show();
-            document.getElementById('new-room-name').value = '';
-            setTimeout(() => document.getElementById('new-room-name').focus(), 200);
-        });
-        document.getElementById('create-room-submit').addEventListener('click', async () => {
-            const name = document.getElementById('new-room-name').value.trim();
-            if (!name) return alert('Room name required');
-            try {
-                const createdBy = payload ? Number(payload.sub) : null;
-                const res = await post('/api/chat/rooms', { name, createdBy });
-                if (res.ok) {
-                    modal.hide();
-                    const body = await res.json();
-                    if (body && body.id) {
-                        window.location.href = `/pages/rooms/${body.id}`;
+        // 🚩 수정 시작: 버튼 요소를 먼저 찾습니다.
+        const createRoomButton = document.getElementById('btn-create-room');
+        const createRoomSubmit = document.getElementById('create-room-submit');
+
+        // ------------------------------------
+        // Create room modal event handling
+        // ------------------------------------
+
+        // 🟢 Null 체크 1: createRoomButton이 존재할 때만 리스너 등록
+        if (createRoomButton) {
+            createRoomButton.addEventListener('click', () => {
+                modal.show();
+                document.getElementById('new-room-name').value = '';
+                setTimeout(() => document.getElementById('new-room-name').focus(), 200);
+            });
+        }
+
+        // 🟢 Null 체크 2: createRoomSubmit 버튼은 모달 내부에 있지만,
+        //   modal이 sec:authorize 외부에 있으므로 DOM에 존재할 가능성이 높음.
+        //   하지만 안전을 위해, 버튼을 찾아서 리스너를 등록합니다.
+        if (createRoomSubmit) {
+            createRoomSubmit.addEventListener('click', async () => {
+                const name = document.getElementById('new-room-name').value.trim();
+                if (!name) return alert('Room name required');
+                try {
+                    const createdBy = payload ? Number(payload.sub) : null;
+                    const res = await post(ROOMS_CREATE_URI, { name, createdBy });
+                    if (res.ok) {
+                        modal.hide();
+                        const body = await res.json();
+                        if (body && body.id) {
+                            window.location.href = `/pages/rooms/${body.id}`;
+                        } else {
+                            await loadRooms();
+                        }
                     } else {
-                        await loadRooms();
+                        const text = await res.text();
+                        if (res.status === 403) {
+                            alert('Create failed: You do not have permission (ROLE_ADMIN required).');
+                        } else {
+                            alert('Create failed: ' + text);
+                        }
                     }
-                } else {
-                    const text = await res.text();
-                    alert('Create failed: ' + text);
+                } catch (e) {
+                    console.error(e);
+                    alert('Create failed');
                 }
-            } catch (e) {
-                console.error(e);
-                alert('Create failed');
-            }
-        });
+            });
+        }
 
         // escape helper
         function escapeHtml(s) {
@@ -207,8 +268,17 @@
             return s.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&#039;');
         }
 
-        // initial load
+        // initial load and connect
         loadRooms();
+
+        // 페이지를 벗어날 때 STOMP 연결 해제 (Clean up)
+        window.onbeforeunload = function() {
+            if (stompClient && stompClient.connected) {
+                stompClient.disconnect(() => {
+                    console.log("STOMP Connection disconnected.");
+                });
+            }
+        };
     })();
 </script>
 </body>

@@ -1,10 +1,16 @@
 package com.forestfull.admin;
 
+import com.auth0.jwt.interfaces.DecodedJWT;
+import com.forestfull.chat.ChatDTO;
+import com.forestfull.chat.room.ChatRoomService;
 import com.forestfull.common.CommonResponse;
 import com.forestfull.common.file.FILE_TYPE;
 import com.forestfull.common.file.FileService;
+import com.forestfull.common.token.JwtUtil;
 import com.forestfull.domain.User;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -12,13 +18,16 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/admin")
 public class AdminController {
 
+    private final JwtUtil jwtUtil;
     private final FileService fileService;
+    private final ChatRoomService chatRoomService;
     private final AdminUserService adminUserService;
 
     @GetMapping("/users")
@@ -51,5 +60,17 @@ public class AdminController {
     ResponseEntity<CommonResponse> deleteEmoji(@PathVariable Long id) {
         final CommonResponse result = fileService.deleteFile(id);
         return result.isSuccess() ? ResponseEntity.ok(result) : ResponseEntity.badRequest().body(result);
+    }
+
+
+    @PostMapping("/chat/rooms")
+    public ResponseEntity<ChatDTO.Room> createRoom(@RequestBody ChatDTO.Room roomInfo, HttpServletRequest request) {
+        if (roomInfo.getName() == null) return ResponseEntity.badRequest().build();
+
+        final Optional<DecodedJWT> jwtToken = jwtUtil.getJwtToken(request);
+        if (jwtToken.isEmpty()) return ResponseEntity.badRequest().build();
+
+        ChatDTO.Room created = chatRoomService.createRoom(roomInfo.getName(), Long.valueOf(jwtToken.get().getClaim("id").asString()));
+        return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 }
