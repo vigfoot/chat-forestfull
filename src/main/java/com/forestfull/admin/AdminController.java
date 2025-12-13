@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -25,7 +26,6 @@ import java.util.Optional;
 @RequestMapping("/admin")
 public class AdminController {
 
-    private final JwtUtil jwtUtil;
     private final FileService fileService;
     private final ChatRoomService chatRoomService;
     private final AdminUserService adminUserService;
@@ -64,13 +64,10 @@ public class AdminController {
 
 
     @PostMapping("/chat/rooms")
-    public ResponseEntity<ChatDTO.Room> createRoom(@RequestBody ChatDTO.Room roomInfo, HttpServletRequest request) {
+    public ResponseEntity<ChatDTO.Room> createRoom(@RequestBody ChatDTO.Room roomInfo, @AuthenticationPrincipal User user) {
         if (roomInfo.getName() == null) return ResponseEntity.badRequest().build();
 
-        final Optional<DecodedJWT> jwtToken = jwtUtil.getJwtToken(request);
-        if (jwtToken.isEmpty()) return ResponseEntity.badRequest().build();
-
-        ChatDTO.Room created = chatRoomService.createRoom(roomInfo.getName(), Long.valueOf(jwtToken.get().getClaim("id").asString()));
+        ChatDTO.Room created = chatRoomService.createRoom(roomInfo.getName(), user.getId());
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 }

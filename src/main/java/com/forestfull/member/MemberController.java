@@ -16,11 +16,13 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.File;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 @RestController
@@ -37,30 +39,8 @@ public class MemberController {
     private final CookieUtil cookieUtil;
 
     // ---------------------------------------------------------------------------------
-    // [ Private Utility: JWT에서 ID 추출 ]
-    // ---------------------------------------------------------------------------------
-
-    /**
-     * HttpServletRequest에서 JWT를 파싱하여 사용자 ID를 추출합니다.
-     * ID 추출 실패 시 null을 반환합니다.
-     */
-    private Long extractUserIdFromRequest(HttpServletRequest request) {
-        final Optional<DecodedJWT> decodedJWTOptional = jwtUtil.getJwtToken(request);
-        if (decodedJWTOptional.isEmpty()) {
-            return null;
-        }
-        try {
-            return Long.valueOf(decodedJWTOptional.get().getSubject());
-        } catch (NumberFormatException e) {
-            return null;
-        }
-    }
-
-
-    // ---------------------------------------------------------------------------------
     // [ 인증 및 회원가입 관련 API ] (변경 없음)
     // ---------------------------------------------------------------------------------
-
     @PostMapping("/signup")
     public ResponseEntity<?> signup(@Valid @ModelAttribute MemberDTO request) {
         if (!emailVerificationService.isVerifiedForSignup(request.getEmail())) {
@@ -160,24 +140,23 @@ public class MemberController {
      */
     @PreAuthorize("isAuthenticated()")
     @PostMapping("/users/profile")
-    public ResponseEntity<?> updateProfile(@Valid @ModelAttribute MemberDTO request, HttpServletRequest httpRequest, HttpServletResponse response) { // 🚩 HttpServletRequest 추가
-        final Long userId = extractUserIdFromRequest(httpRequest); // 🚩 ID 추출
-        if (userId == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build(); // 인증 실패 시 401 반환
+    public ResponseEntity<?> updateProfile(@Valid @ModelAttribute MemberDTO request, @AuthenticationPrincipal User user, HttpServletResponse response) { // 🚩 HttpServletRequest 추가
+        if (Objects.isNull(user.getId())) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build(); // 인증 실패 시 401 반환
 
         // 1. 닉네임 유효성 검증
-        if (!memberService.isNicknameAvailableForUpdate(userId, request.getDisplayName())) { // 🚩 userId 사용
+        if (!memberService.isNicknameAvailableForUpdate(user.getId(), request.getDisplayName())) { // 🚩 userId 사용
             return ResponseEntity.status(HttpStatus.CONFLICT)
                     .body(Map.of("error", "Nickname already taken by another user."));
         }
 
         // 2. 이메일 유효성 및 인증 검증
         if (request.getEmail() != null && !request.getEmail().isEmpty()) {
-            if (memberService.isNewEmail(userId, request.getEmail())) { // 🚩 userId 사용
+            if (memberService.isNewEmail(user.getId(), request.getEmail())) { // 🚩 userId 사용
                 if (!emailVerificationService.isVerified(request.getEmail())) {
                     return ResponseEntity.status(HttpStatus.FORBIDDEN)
                             .body(Map.of("error", "The new email address must be verified first."));
                 }
-                if (memberService.isEmailRegisteredByOtherUser(userId, request.getEmail())) { // 🚩 userId 사용
+                if (memberService.isEmailRegisteredByOtherUser(user.getId(), request.getEmail())) { // 🚩 userId 사용
                     return ResponseEntity.status(HttpStatus.CONFLICT)
                             .body(Map.of("error", "This email is already used by another user."));
                 }
@@ -186,15 +165,15 @@ public class MemberController {
 
         try {
             memberService.updateProfile(
-                    userId, // 🚩 userId 사용
+                    user.getId(), // 🚩 userId 사용
                     request.getDisplayName(),
                     request.getEmail(),
                     request.getProfileImage()
             );
 
-            final User user = customUserService.loadUserByUserId(userId);
-            final String accessToken = jwtUtil.generateToken(user);
-            final String refreshToken = jwtRefreshUtil.generateToken(user);
+            final User loadedUser = customUserService.loadUserByUserId(user.getId());
+            final String accessToken = jwtUtil.generateToken(loadedUser);
+            final String refreshToken = jwtRefreshUtil.generateToken(loadedUser);
 
             cookieUtil.addAccessToken(response, accessToken);
             cookieUtil.addPayload(response, accessToken);
@@ -216,16 +195,15 @@ public class MemberController {
      */
     @PreAuthorize("isAuthenticated()")
     @PutMapping("/users/password")
-    public ResponseEntity<?> changePassword(@Valid @RequestBody MemberDTO request, HttpServletRequest httpRequest, HttpServletResponse response) { // 🚩 HttpServletRequest 추가
-        final Long userId = extractUserIdFromRequest(httpRequest); // 🚩 ID 추출
-        if (userId == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build(); // 인증 실패 시 401 반환
+    public ResponseEntity<?> changePassword(@Valid @RequestBody MemberDTO request, @AuthenticationPrincipal User user, HttpServletResponse response) { // 🚩 HttpServletRequest 추가
+        if (Objects.isNull(user.getId())) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build(); // 인증 실패 시 401 반환
 
         if (request.getPassword() == null || request.getNewPassword() == null)
             return ResponseEntity.badRequest().body(Map.of("error", "Current and new passwords are required."));
 
         try {
-            memberService.changePassword(userId, request.getPassword(), request.getNewPassword()); // 🚩 userId 사용
-            jwtRefreshUtil.deleteTokenByUserId(userId); // 🚩 userId 사용
+            memberService.changePassword(user.getId(), request.getPassword(), request.getNewPassword()); // 🚩 userId 사용
+            jwtRefreshUtil.deleteTokenByUserId(user.getId()); // 🚩 userId 사용
             cookieUtil.deleteAuthCookies(response);
 
             return ResponseEntity.ok(Map.of("message", "Password changed successfully. Please re-login."));
@@ -245,19 +223,18 @@ public class MemberController {
      */
     @PreAuthorize("isAuthenticated()")
     @DeleteMapping("/users")
-    public ResponseEntity<?> deleteAccount(HttpServletRequest request, HttpServletResponse response) {
-        final Long userId = extractUserIdFromRequest(request); // 🚩 ID 추출 유틸리티 사용
-        if (userId == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build(); // 인증 실패 시 401 반환
+    public ResponseEntity<?> deleteAccount(@AuthenticationPrincipal User user, HttpServletResponse response) {
+        if (Objects.isNull(user.getId())) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build(); // 인증 실패 시 401 반환
 
         try {
             // 1. Refresh Token DB에서 삭제
-            jwtRefreshUtil.deleteTokenByUserId(userId);
+            jwtRefreshUtil.deleteTokenByUserId(user.getId());
 
             // 2. 사용자 DB에서 삭제 (파일 시스템상의 프로필 이미지 파일도 삭제해야 함)
-            memberService.deleteUser(userId);
+            memberService.deleteUser(user.getId());
 
             // 3. 인증 관련 쿠키 삭제
-            jwtRefreshUtil.deleteTokenByUserId(userId); // 🚩 userId 사용
+            jwtRefreshUtil.deleteTokenByUserId(user.getId()); // 🚩 userId 사용
             cookieUtil.deleteAuthCookies(response);
 
             return ResponseEntity.ok(Map.of("message", "Account successfully deleted."));

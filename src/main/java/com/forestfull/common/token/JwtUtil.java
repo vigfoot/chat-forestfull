@@ -32,13 +32,6 @@ public class JwtUtil {
         this.verifier = JWT.require(algorithm).build();
     }
 
-    public Optional<DecodedJWT> getJwtToken(HttpServletRequest request) {
-        return Arrays.stream(request.getCookies())
-                .filter(cookie -> TOKEN_TYPE.JWT.name().equals(cookie.getName()))
-                .map(cookie -> verifier.verify(cookie.getValue()))
-                .findFirst();
-    }
-
     // JwtUtil.java 예시
     public String generateToken(User user) {
         return JWT.create()
