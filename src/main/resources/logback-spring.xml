@@ -9,21 +9,29 @@
         </encoder>
     </appender>
 
-    <!-- MyBatis SQL 로그를 파란색으로 강제 하이라이트 -->
-    <logger name="org.mybatis" level="INFO">
-        <appender-ref ref="CONSOLE"/>
-    </logger>
     <logger name="java.sql.PreparedStatement" level="INFO">
         <appender-ref ref="CONSOLE"/>
     </logger>
-    <logger name="org.springframework.security" level="DEBUG">
-        <appender-ref ref="CONSOLE"/>
-    </logger>
-    <logger name="java.sql.Connection" level="INFO"/>
     <logger name="java.sql.Statement" level="INFO">
         <appender-ref ref="CONSOLE"/>
     </logger>
+
     <logger name="java.sql.ResultSet" level="WARN"/>
+    <logger name="jdbc.resultset" level="WARN"/>
+    <logger name="jdbc.resultsettable" level="WARN"/>
+
+    <logger name="org.apache" level="WARN">
+        <appender-ref ref="CONSOLE"/>
+    </logger>
+    <logger name="com.zaxxer.hikari" level="WARN">
+        <appender-ref ref="CONSOLE"/>
+    </logger>
+    <logger name="org.springframework" level="WARN">
+        <appender-ref ref="CONSOLE"/>
+    </logger>
+    <logger name="com.ulisesbocchio" level="WARN">
+        <appender-ref ref="CONSOLE"/>
+    </logger>
 
     <!-- File Appender: PROD 에서만 동작 -->
     <springProfile name="prod">
@@ -51,5 +59,4 @@
             <appender-ref ref="CONSOLE"/>
         </root>
     </springProfile>
-
 </configuration>
