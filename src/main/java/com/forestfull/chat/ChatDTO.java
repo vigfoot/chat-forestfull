@@ -13,6 +13,9 @@ public class ChatDTO {
      * WebSocket 실시간 처리 + DB 저장 겸용
      */
     @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
     public static class Message {
 
         public enum MessageType {

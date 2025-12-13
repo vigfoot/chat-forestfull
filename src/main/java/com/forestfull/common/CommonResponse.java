@@ -11,11 +11,18 @@ public class CommonResponse {
     private String message;
     private Object data;
 
-    public static CommonResponse ok(){
-        return CommonResponse.builder().success(true).build();
+    public static CommonResponse ok() {
+        return ok(null);
     }
 
-    public static CommonResponse fail(String message){
+    public static CommonResponse ok(Object data) {
+        return CommonResponse.builder()
+                .success(true)
+                .data(data)
+                .build();
+    }
+
+    public static CommonResponse fail(String message) {
         return CommonResponse.builder()
                 .success(false)
                 .message(message)

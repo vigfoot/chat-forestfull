@@ -120,14 +120,14 @@ public class FileService implements WebMvcConfigurer {
 
             // DB에는 베이스 경로를 제외한 상대 경로를 저장
             String dbDirectory = basePath.relativize(targetPath).toString().replace('\\', '/');
-            fileMapper.saveFile(
-                    FileDTO.builder()
-                            .type(type)
-                            .name(safeFileName)
-                            .directory(dbDirectory)
-                            .build()
-            );
-            return CommonResponse.ok();
+            FileDTO fileDTO = FileDTO.builder()
+                    .type(type)
+                    .name(safeFileName)
+                    .directory(dbDirectory)
+                    .build();
+            fileMapper.saveFile(fileDTO);
+
+            return CommonResponse.ok(fileDTO);
         } catch (IOException e) {
             return CommonResponse.fail("Failed to create directories: " + e.getMessage());
         } catch (Exception e) {

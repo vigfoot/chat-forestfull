@@ -179,3 +179,40 @@ a:hover {
     height: 16px;
     vertical-align: middle;
 }
+
+.file-image, .file-video {
+    max-width: 40vw;
+    max-height: 20vw;
+}
+.file-caption {
+    font-size: 0.85rem; /* 메시지 본문보다 약간 작게 */
+    margin-top: 8px; /* 미디어 요소와의 간격 */
+    margin-bottom: 0; /* 메시지 버블 하단 패딩과 겹치지 않도록 */
+    padding: 0 4px; /* 좌우 여백을 주어 미디어와 분리 */
+    line-height: 1.4;
+    font-style: italic; /* 캡션임을 명확히 표시 */
+    max-width: 100%;
+    word-wrap: break-word; /* 긴 캡션 처리 */
+}
+
+/* 캡션이 이미지/동영상과 분리되는 시각적 구분선 */
+.file-caption:before {
+    content: "";
+    display: block;
+    height: 1px;
+    background-color: var(--cf-border-color); /* 테마 경계색 사용 */
+    opacity: 0.3; /* 은은하게 처리 */
+    margin: 8px 0;
+}
+
+/* 캡션이 '나의 메시지' (mine)에 있을 때의 스타일 */
+.mine .file-caption {
+    color: var(--cf-dark-bg-primary); /* 밝은 버블에 짙은 텍스트 */
+    opacity: 0.9;
+}
+
+/* 캡션이 '상대방 메시지' (other)에 있을 때의 스타일 */
+.other .file-caption {
+    color: var(--cf-text-secondary); /* 배경에 비해 약간 연한 텍스트 */
+    opacity: 0.8;
+}
