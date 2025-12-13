@@ -1,5 +1,7 @@
 let stompClient = null;
 let connectedRoomId = null;
+let lastFocusedElementBeforeModal = null; // 🚩 포커스 관리를 위한 전역 변수
+const DEFAULT_AVATAR_PATH = '/images/default-avatar.png';
 
 /** WebSocket 연결 */
 function connectWebSocket(callback) {
@@ -17,6 +19,7 @@ function connectWebSocket(callback) {
         if (callback) callback();
     });
 }
+
 // /js/script.js (전역 변수)
 let isRefreshing = false;
 let failedQueue = []; // 갱신이 완료될 때까지 대기할 요청들을 저장할 배열
@@ -39,7 +42,7 @@ async function httpRequest(url, method = 'GET', body = null, headers = {}) {
     // 1. 요청 옵션 설정 (body는 재시도를 위해 함수 스코프 내에서 보존)
     const options = {
         method,
-        headers: { ...headers },
+        headers: {...headers},
         credentials: 'include'
     };
     if (body) {
@@ -185,30 +188,60 @@ function getJwtPayload(cookieName = 'JWT_PAYLOAD') {
 }
 
 /**
- * Global function to display the top alert.
+ * Global function to display a stacked alert (Toast-like).
  * @param {string} message Message to display
  * @param {string} type Bootstrap alert class (primary, success, danger, warning, etc.)
+ * @param {number} duration Time in milliseconds before auto-hide
  */
-function showAlert(message, type = 'warning') {
-    const alertArea = document.getElementById('top-alert-area');
-    const alertMessage = document.getElementById('top-alert-message');
-
-    if (!alertArea || !alertMessage) {
-        console.warn("Alert DOM elements not found (top-alert-area or top-alert-message).");
+function showAlert(message, type = 'warning', duration = 1000) {
+    const container = document.getElementById('alert-container');
+    if (!container) {
+        console.warn("Alert container element not found (#alert-container).");
         return;
     }
 
-    alertArea.className = `alert alert-${type} alert-dismissible fade show`;
-    alertMessage.textContent = message;
-    alertArea.classList.remove('d-none'); // Show alert
+    // 🚩 1. 새로운 Alert 요소 동적 생성
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+    alertDiv.setAttribute('role', 'alert');
+    // Stacked 알림을 위해 너비를 제한하고 마진을 줍니다.
+    alertDiv.style.width = '95vw';
+    alertDiv.style.marginBottom = '10px';
 
-    // (Optional) Auto-hide after 5 seconds
-    setTimeout(() => {
-        const bsAlert = bootstrap.Alert.getOrCreateInstance(alertArea);
-        bsAlert.close();
-    }, 5000);
+    // 🚩 2. Alert 내용 구성
+    alertDiv.innerHTML = `
+        <span class="d-block" style="word-break: break-word;">${message}</span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    `;
+
+    // 컨테이너에 Alert 추가 (새 Alert가 가장 위에 쌓이도록)
+    container.prepend(alertDiv); // prepend를 사용하여 위에서 아래로 쌓이도록 함 (Top-down stack)
+
+    // 🚩 3. 닫기 이벤트 리스너 부착
+    // Bootstrap의 `closed.bs.alert` 이벤트는 애니메이션이 끝난 후 발생하며,
+    // 이 이벤트 핸들러 내에서 DOM 요소를 안전하게 제거합니다.
+    alertDiv.addEventListener('closed.bs.alert', function () {
+        alertDiv.remove(); // Alert 요소가 완전히 닫힌 후 DOM에서 제거
+    });
+
+    // 🚩 4. 자동 닫기 타이머 설정
+    if (duration > 0) {
+        setTimeout(() => {
+            // 이 시점에 Alert 요소가 수동으로 닫히고 제거되었을 수 있습니다.
+            // Bootstrap의 Alert 인스턴스를 가져와서 닫기를 시도합니다.
+            const bsAlert = bootstrap.Alert.getInstance(alertDiv);
+
+            if (bsAlert) {
+                // 인스턴스가 존재하면 안전하게 닫기 명령을 내립니다.
+                // 닫기 명령을 내리면 위에서 정의한 'closed.bs.alert' 리스너가 최종적으로 remove()를 처리합니다.
+                bsAlert.close();
+            } else if (container.contains(alertDiv)) {
+                // 인스턴스는 없지만 DOM에는 남아있다면, 직접 제거 (비정상적인 상황 방지)
+                alertDiv.remove();
+            }
+        }, duration);
+    }
 }
-
 /**
  * Global function to display the common modal.
  *
@@ -218,71 +251,125 @@ function showAlert(message, type = 'warning') {
  * @param {Object} options 모달 동작 관련 옵션 객체
  * @param {boolean} options.isStatic 모달을 ESC 키나 배경 클릭으로 닫지 못하게 할지 여부 (기본값: true)
  * @param {boolean} options.showClose Action이 있을 때도 Close 버튼을 표시할지 여부 (기본값: false)
+ * @param {boolean} options.center 모달을 수직 중앙에 배치할지 여부
+ * @param {string} options.customModalClass 모달 크기 조정을 위한 추가 클래스 (예: modal-sm, modal-lg)
  */
 function showModal(title, bodyHtml, confirmAction = null, options = {}) {
-    // 1. 기본 옵션 설정 (isStatic의 기본값을 true로 변경)
+    // 1. 기본 옵션 설정 및 병합
     const defaultOptions = {
-        isStatic: true, // 🚩 기본값을 true로 설정
-        showClose: false
+        isStatic: true,
+        showClose: false,
+        center: false,
+        customModalClass: ''
     };
 
-    let finalOptions = { ...defaultOptions, ...options };
+    let finalOptions = {...defaultOptions, ...options};
 
-    // 2. 🚩 핵심 로직: Static 비활성화 조건 확인 및 적용
+    // 🚩 2. 포커스 저장 (가장 먼저 실행): 현재 포커스된 요소를 저장
+    lastFocusedElementBeforeModal = document.activeElement;
+
+    // 3. Static 비활성화 조건 확인 및 적용
     const onlyCloseButton = !confirmAction && !finalOptions.showClose;
     const bothButtons = confirmAction && finalOptions.showClose;
 
-    // 취소만 있거나 (onlyCloseButton), 액션과 취소가 모두 있을 때 (bothButtons) static을 false로 설정
     if (onlyCloseButton || bothButtons) {
-        // 단, 사용자가 options에서 isStatic을 명시적으로 true로 설정했다면 덮어쓰지 않습니다.
         if (options.isStatic !== true) {
             finalOptions.isStatic = false;
         }
     }
 
-    // --- 3. DOM 요소 및 인스턴스 준비 (이전과 동일) ---
-
+    // --- 4. DOM 요소 및 인스턴스 준비 ---
     const modalElement = document.getElementById('commonModal');
+    const dialogElement = modalElement?.querySelector('.modal-dialog');
 
-    if (!modalElement) {
-        console.error("Modal element 'commonModal' not found.");
+    if (!modalElement || !dialogElement) {
+        console.error("Modal element 'commonModal' or '.modal-dialog' not found.");
         return;
     }
 
     document.getElementById('commonModalLabel').textContent = title;
     document.getElementById('commonModalBody').innerHTML = bodyHtml;
 
+    // 클래스 적용 (중앙 정렬 및 커스텀 클래스)
+    dialogElement.classList.toggle('modal-dialog-centered', finalOptions.center);
+    dialogElement.className = dialogElement.className.replace(/\bmodal-(sm|lg|xl)\b/g, ''); // 기존 크기 클래스 제거
+    if (finalOptions.customModalClass) {
+        dialogElement.classList.add(finalOptions.customModalClass);
+    }
+
+    // 이전 인스턴스 정리 (재사용 시 옵션 적용 및 리스너 재부착을 위해 필요)
+    let modalInstance = bootstrap.Modal.getInstance(modalElement);
+    if (modalInstance) {
+        modalInstance.dispose(); // 기존 인스턴스를 명시적으로 정리
+    }
+
+    const bootstrapOptions = finalOptions.isStatic
+        ? {backdrop: 'static', keyboard: false}
+        : {};
+
+    // 새 인스턴스 생성
+    modalInstance = new bootstrap.Modal(modalElement, bootstrapOptions);
+
     const footer = document.getElementById('commonModalFooter');
     footer.innerHTML = '';
 
-    const bootstrapOptions = finalOptions.isStatic
-        ? { backdrop: 'static', keyboard: false }
-        : {};
+    // --- 5. 모달 닫힘 이벤트 리스너 부착 (핵심 통합 로직 - 수정) ---
 
-    const modalInstance = new bootstrap.Modal(modalElement, bootstrapOptions);
+    // 🚩 hidden.bs.modal 대신 hide.bs.modal을 사용합니다.
+    // 'hide.bs.modal'은 모달이 사라지기 직전에 발생하여 포커스를 미리 뺄 수 있습니다.
+    function restoreFocusAndCleanup(event) {
+        // 모달 닫기를 취소하는 이벤트(event.preventDefault())가 있을 수 있으므로,
+        // 여기서는 포커스 이동만 시도하고, 리스너 제거는 hidden 이벤트에서 처리하는 것이 안전합니다.
 
-    // --- 4. 버튼 생성 헬퍼 함수 ---
+        // 🚩 포커스를 원래 요소로 복원합니다.
+        if (lastFocusedElementBeforeModal && lastFocusedElementBeforeModal.focus) {
+            lastFocusedElementBeforeModal.focus();
+        }
+    }
 
+    // 모달이 완전히 사라진 후 cleanup (이벤트 리스너 제거 및 전역 변수 초기화)
+    function cleanupAfterModalHidden() {
+        lastFocusedElementBeforeModal = null;
+        modalElement.removeEventListener('hide.bs.modal', restoreFocusAndCleanup);
+        modalElement.removeEventListener('hidden.bs.modal', cleanupAfterModalHidden);
+    }
+
+    // 리스너 부착 (hide 이벤트에서 포커스 이동)
+    modalElement.addEventListener('hide.bs.modal', restoreFocusAndCleanup);
+    // 리스너 제거 (hidden 이벤트에서 최종 정리)
+    modalElement.addEventListener('hidden.bs.modal', cleanupAfterModalHidden);
+
+    // --- 6. 버튼 생성 헬퍼 함수 ---
     function createButton(action, classname, text) {
         const btn = document.createElement('button');
         btn.setAttribute('type', 'button');
         btn.className = classname;
         btn.textContent = text;
 
-        btn.setAttribute('data-bs-dismiss', 'modal');
-
         if (action) {
             btn.addEventListener('click', () => {
-                action();
+                // 🚩 1. 클릭 후 포커스 제거: 경고 유발 요소에서 즉시 포커스 제거
+                btn.blur();
+
+                // Confirm 액션 실행 전에 모달을 숨깁니다.
                 modalInstance.hide();
+                action(); // Action 실행
+            });
+            // data-bs-dismiss 속성 제거는 유지
+        } else {
+            // Close 버튼 (Action이 null인 경우)
+            btn.setAttribute('data-bs-dismiss', 'modal');
+
+            btn.addEventListener('click', () => {
+                // 🚩 2. Close 버튼 클릭 시 포커스 제거
+                btn.blur();
+                // data-bs-dismiss="modal" 때문에 hide() 호출은 불필요
             });
         }
 
         footer.appendChild(btn);
     }
-
-    // --- 5. 버튼 생성 로직 ---
-
+    // --- 7. 버튼 생성 로직 ---
     if (confirmAction) {
         // A. Confirm 버튼 (Action이 있을 때)
         createButton(confirmAction, 'btn btn-primary', 'Confirm');
@@ -296,7 +383,7 @@ function showModal(title, bodyHtml, confirmAction = null, options = {}) {
         createButton(null, 'btn btn-secondary', 'Close');
     }
 
-    // --- 6. 모달 표시 ---
+    // --- 8. 모달 표시 ---
     modalInstance.show();
 }
 

@@ -302,7 +302,8 @@
     let participants = [];
     let isFileBeingSent = false;
 
-    const DEFAULT_AVATAR_PATH = '/images/default-avatar.png';
+    const MAX_DIMENSION = 2000; // 가장 긴 변의 최대 해상도 (픽셀)
+    const JPEG_QUALITY = 1; //0.8;   // 리사이징 후 JPEG 압축 품질 (80%)
     const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10MB
 
     // ------------------------------------------------
@@ -517,6 +518,7 @@
         return s.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&#039;');
     }
 
+
     // HTML Unescape Helper (변경 없음)
     function unescapeHtml(s) {
         if (!s) return '';
@@ -577,10 +579,72 @@
         return bodyHtml;
     }
 
-    async function sendFileAction() {
-        const fileInput = document.getElementById("fileInput");
-        const file = fileInput.files[0];
+    /**
+     * 이미지를 로드하고, 비율을 유지하며 최대 해상도(MAX_DIMENSION)로 다운스케일링하여 새로운 Blob으로 반환합니다.
+     * 비디오 파일은 원본 그대로 반환합니다.
+     */
+    async function resizeImage(file) {
+        if (!file.type.startsWith('image/') || file.type === 'image/gif') {
+            return file;
+        }
 
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const img = new Image();
+                img.onload = function() {
+                    let width = img.width;
+                    let height = img.height;
+
+                    // 1. 리사이징이 필요한지 확인
+                    if (width <= MAX_DIMENSION && height <= MAX_DIMENSION) {
+                        resolve(file); // 리사이징 불필요, 원본 파일 반환
+                        return;
+                    }
+
+                    // 2. 새로운 크기 계산 (비율 유지)
+                    let ratio = Math.min(MAX_DIMENSION / width, MAX_DIMENSION / height);
+                    width *= ratio;
+                    height *= ratio;
+
+                    // 3. 캔버스에 그리기
+                    const canvas = document.createElement('canvas');
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    // 4. Blob으로 변환
+                    canvas.toBlob((blob) => {
+                        if (blob) {
+                            // Blob을 File 객체로 변환하여 반환
+                            const resizedFile = new File([blob], file.name, {
+                                type: file.type,
+                                lastModified: Date.now()
+                            });
+                            resolve(resizedFile);
+                        } else {
+                            reject(new Error("Canvas to Blob failed."));
+                        }
+                    }, file.type, JPEG_QUALITY); // JPEG 품질 지정
+                };
+                img.onerror = function(e) { reject(e); };
+                img.src = event.target.result;
+            };
+            reader.onerror = function(e) { reject(e); };
+            reader.readAsDataURL(file);
+        });
+    }
+
+    /**
+     * 파일 전송 로직 (showModal의 Confirm 액션)
+     * 🚩 인수로 리사이징된 파일(resizedFile)을 직접 받도록 수정
+     */
+    async function sendFileAction(resizedFile) {
+        // 🚩 파일 인풋 대신 인수로 받은 resizedFile 사용
+        const file = resizedFile;
+
+        // 캡션 필드 가져오기
         const caption = document.getElementById('fileCaption')?.value || '';
 
         if (!file || !stompClient || !stompClient.connected) {
@@ -589,18 +653,20 @@
             return;
         }
 
-        isFileBeingSent = true;
+        isFileBeingSent = true; // 전송 시작 플래그 설정
         showAlert(`Uploading ${file.name}...`, 'info');
 
         try {
             const formData = new FormData();
-            formData.append('file', file);
+            formData.append('file', file); // 🚩 리사이징된 파일 사용
             formData.append('roomId', roomId);
             formData.append('caption', caption);
 
+            // httpFileRequest는 전역 script.js에 정의되어 있다고 가정
             const response = await httpFileRequest(`/api/chat/rooms/${roomId}/files`, formData);
 
             if (response.ok) {
+                // 서버에서 파일 저장 후, WebSocket으로 메시지를 브로드캐스트할 것으로 예상됨
                 showAlert(`File ${file.name} sent successfully.`, 'success');
             } else {
                 const errorText = await response.text();
@@ -611,6 +677,7 @@
             console.error("File upload network error:", error);
             showAlert("Network error during file upload.", 'danger');
         } finally {
+            // 전송 완료 후 최종 정리
             resetFileInput();
         }
     }
@@ -618,7 +685,6 @@
     // ------------------------------------------------
     // 5. Event Handlers & Initialization (변경 없음)
     // ------------------------------------------------
-
     document.getElementById("toggleParticipantsBtn").addEventListener('click', () => {
         const sidebar = document.getElementById("participantsSidebar");
         const backdrop = document.getElementById("sidebar-backdrop");
@@ -693,11 +759,11 @@
             fileInput.click();
         });
 
-        fileInput.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
+        fileInput.addEventListener('change', async (e) => { // 🚩 async 추가
+            const originalFile = e.target.files[0];
+            if (!originalFile) return;
 
-            const error = validateFile(file);
+            const error = validateFile(originalFile);
 
             if (error) {
                 showAlert(error, 'warning');
@@ -705,12 +771,28 @@
                 return;
             }
 
-            const bodyHtml = renderPreviewHtml(file);
+            // 🚩 로딩 메시지 표시
+            showAlert(`Processing ${originalFile.name}...`, 'info');
 
+            let fileToUpload = originalFile;
+
+            // 🚩 이미지 리사이징 실행 (비동기)
+            try {
+                fileToUpload = await resizeImage(originalFile);
+                showAlert(fileToUpload.type.startsWith('image/') ? 'Image resized successfully.' : 'File processing complete.', 'success', 2000);
+            } catch (resizeError) {
+                console.error("Image resizing failed:", resizeError);
+                showAlert("Image processing failed. Sending original file.", 'warning');
+            }
+
+            // 🚩 리사이징된 파일을 사용하여 미리보기 HTML 생성
+            const bodyHtml = renderPreviewHtml(fileToUpload);
+
+            // 🚩 showModal의 Confirm 액션에 리사이징된 파일 객체를 전달하는 클로저 함수 사용
             showModal(
-                "File Preview: " + file.name,
+                "File Preview: " + fileToUpload.name,
                 bodyHtml,
-                sendFileAction,
+                () => sendFileAction(fileToUpload), // 🚩 클로저를 통해 파일 객체 전달
                 { isStatic: true, showClose: true }
             );
         });

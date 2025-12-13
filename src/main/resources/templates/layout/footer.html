@@ -24,18 +24,13 @@
 -->
 
 <div th:fragment="common-ui">
-    <div id="top-alert-area" class="alert alert-warning alert-dismissible fade show d-none" role="alert"
-         style="position: fixed; top: 0; left: 0; right: 0; z-index: 1050; margin: 0; border-radius: 0;">
-        <span id="top-alert-message">Announcement Message</span>
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
+    <div id="alert-container" style="position: fixed; top: 15px; right: 15px; z-index: 1050; flex-direction: column-reverse;"></div>
 
     <div class="modal fade" id="commonModal" tabindex="-1" aria-labelledby="commonModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content text-bg-dark" style="background-color: var(--cf-dark-bg-secondary) !important; border-color: var(--cf-border-color);">
                 <div class="modal-header border-bottom" style="border-color: var(--cf-border-color) !important;">
                     <h5 class="modal-title" id="commonModalLabel">Title</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body" id="commonModalBody">
                     Content
