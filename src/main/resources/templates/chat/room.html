@@ -135,6 +135,26 @@
             gap: 10px;
         }
 
+        /* 🚩 추가: 입력창 좌측 버튼 스타일 */
+        .input-wrap .btn-icon {
+            flex-shrink: 0; /* 버튼이 줄어들지 않도록 */
+            width: 40px;
+            height: 40px;
+            padding: 0;
+            font-size: 1.25rem;
+            background-color: transparent;
+            color: var(--cf-text-secondary);
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .input-wrap .btn-icon:hover {
+            color: var(--cf-accent-primary);
+        }
+
+
         #messageInput {
             background-color: var(--cf-dark-bg-primary);
             color: var(--cf-text-primary);
@@ -146,6 +166,7 @@
         }
 
         #sendBtn {
+            flex-shrink: 0; /* Send 버튼이 줄어들지 않도록 */
             background-color: var(--cf-accent-primary);
             border-color: var(--cf-accent-primary);
             color: var(--cf-dark-bg-primary);
@@ -165,7 +186,8 @@
                 bottom: 0;
                 transform: translateX(100%);
                 transition: transform 0.3s ease-in-out;
-                z-index: 1051;
+                z-index: 1040;
+                width: 70%;
                 box-shadow: -4px 0 10px rgba(0, 0, 0, 0.5);
             }
             .participants-sidebar.open {
@@ -187,7 +209,7 @@
     <title th:text="${'Chat ForestFull - ' + room.name}"></title>
 </head>
 <body class="d-flex flex-column min-vh-100" style="height: 100vh;">
-<header th:replace="~{/layout/header.html :: header}"></header> <div class="d-flex flex-column flex-grow-1">
+<div class="d-flex flex-column flex-grow-1">
     <div class="d-flex align-items-center justify-content-between p-3"
          style="background-color: var(--cf-dark-bg-secondary); border-bottom: 1px solid var(--cf-border-color);">
 
@@ -203,6 +225,7 @@
         <button id="toggleParticipantsBtn" class="btn btn-sm btn-primary d-xl-none fw-bold">
             <i class="bi bi-people-fill me-1"></i> <span id="mobile-participant-count">0</span>
         </button>
+        <div class="d-none d-xl-block" style="width: 70px;"></div>
     </div>
 
     <div class="chat-container flex-grow-1">
@@ -217,8 +240,18 @@
         </div>
     </div>
 
-    <div class="input-wrap d-flex">
-        <input type="text" id="messageInput" class="form-control" placeholder="Type your message">
+    <div class="input-wrap d-flex align-items-center">
+
+        <button id="attachFileBtn" class="btn btn-icon" title="Attach Photo">
+            <i class="bi bi-image"></i>
+        </button>
+
+        <button id="emojiBtn" class="btn btn-icon" title="Insert Emoji">
+            <i class="bi bi-emoji-smile"></i>
+        </button>
+
+        <input type="text" id="messageInput" class="form-control flex-grow-1" placeholder="Type your message">
+
         <button id="sendBtn" class="btn btn-primary">Send</button>
     </div>
 </div>
@@ -320,7 +353,7 @@
             roomId: roomId,
             user: {
                 id: MY_USER_ID, // 🚩 TALK 메시지 내부 User DTO는 id 필드 사용
-                username: MY_USERNAME,
+                name: MY_USERNAME,
                 displayName: MY_DISPLAY_NAME,
                 profileImage: MY_PROFILE_IMAGE,
             },
@@ -553,7 +586,18 @@
         });
         sendBtn.addEventListener("click", handleSend);
 
-        // 4. 페이지 이탈 시 처리
+        // 4. 🚩 추가: 사진 첨부 및 이모티콘 버튼 클릭 이벤트 핸들러 (기능은 없음, 로그만 출력)
+        document.getElementById("attachFileBtn").addEventListener("click", () => {
+            console.log("Photo attachment button clicked. Implement file input logic here.");
+            // 여기에 파일 입력 필드를 띄우는 로직을 구현해야 합니다.
+        });
+        document.getElementById("emojiBtn").addEventListener("click", () => {
+            console.log("Emoji button clicked. Implement emoji picker logic here.");
+            // 여기에 이모티콘 선택창을 띄우는 로직을 구현해야 합니다.
+        });
+
+
+        // 5. 페이지 이탈 시 처리
         const handleLeave = () => {
             disconnectWebSocket();
         };
