@@ -258,6 +258,7 @@ public class MemberController {
             memberService.deleteUser(userId);
 
             // 3. 인증 관련 쿠키 삭제
+            jwtRefreshUtil.deleteTokenByUserId(userId); // 🚩 userId 사용
             cookieUtil.deleteAuthCookies(response);
 
             return ResponseEntity.ok(Map.of("message", "Account successfully deleted."));
